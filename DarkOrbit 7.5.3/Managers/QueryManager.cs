@@ -65,7 +65,7 @@ namespace Ow.Managers
                         Player.Clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
                         Player.Ship = GameManager.GetShip(Convert.ToInt32(row["shipID"]));
                         Player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
-                        Player.Settings = JsonConvert.DeserializeObject<PlayerSettings>(row["settings"].ToString());
+                        Player.Settings = (row["settings"].ToString() == "" ? new PlayerSettings() : JsonConvert.DeserializeObject<PlayerSettings>(row["settings"].ToString()));
                     }
 
                     string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
@@ -169,7 +169,7 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clans_diplomacy WHERE senderClan = {clan.Id}");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE senderClan = {clan.Id}");
                 foreach (DataRow row in data.Rows)
                 {
                     int id = Convert.ToInt32(row["toClan"]);
@@ -177,7 +177,7 @@ namespace Ow.Managers
                     clan.Diplomacy.Add(id, relation);
                 }
 
-                var data2 = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clans_diplomacy WHERE toClan = {clan.Id}");
+                var data2 = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE toClan = {clan.Id}");
                 foreach (DataRow row in data2.Rows)
                 {
                     int id = Convert.ToInt32(row["senderClan"]);

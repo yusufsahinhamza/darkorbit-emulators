@@ -27,13 +27,6 @@ namespace Ow.Net.netty.handlers
             var player = gameSession.Player;
             string[] packet = read.message.Split('|');
 
-
-            foreach (var p in packet)
-            {
-                Console.WriteLine(p);
-            }
-
-
             switch (packet[0])
             {
                 case ServerCommands.TECHS:

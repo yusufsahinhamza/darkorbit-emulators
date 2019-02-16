@@ -16,115 +16,149 @@ using Ow.Net.netty;
 
 namespace Ow.Game.Objects.Players.Managers
 {
+    public class DataBase
+    {
+        public int uridium { get; set; }
+        public int credits { get; set; }
+        public int honor { get; set; }
+        public int experience { get; set; }
+        public int jackpot { get; set; }
+    }
+
+    public class EquipmentBase
+    {
+        public int Config1Hitpoints { get; set; }
+        public int Config1Damage { get; set; }
+        public int Config1Shield { get; set; }
+        public int Config1Speed { get; set; }
+        public int Config2Hitpoints { get; set; }
+        public int Config2Damage { get; set; }
+        public int Config2Shield { get; set; }
+        public int Config2Speed { get; set; }
+    }
+
     class PlayerSettings
     {
-        public AudioBase Audio { get; set; }
-        public QualityBase Quality { get; set; }
-        public DisplayBase Display { get; set; }
-        public GameplayBase Gameplay { get; set; }
-        public WindowBase Window { get; set; }
-        public InGameSettingsBase InGameSettings { get; set; }
-        public ShipSettingsBase ShipSettings { get; set; }
-        public CurrentCooldownsBase CurrentCooldowns { get; set; }
-        public List<BoundKeysBase> BoundKeys { get; set; }
-
-        public class DataBase
+        public AudioBase Audio = new AudioBase();
+        public QualityBase Quality = new QualityBase();
+        public DisplayBase Display = new DisplayBase();
+        public GameplayBase Gameplay = new GameplayBase();
+        public WindowBase Window = new WindowBase();
+        public InGameSettingsBase InGameSettings = new InGameSettingsBase();
+        public ShipSettingsBase ShipSettings = new ShipSettingsBase();
+        public CurrentCooldownsBase CurrentCooldowns = new CurrentCooldownsBase();
+        public List<BoundKeysBase> BoundKeys = new List<BoundKeysBase>
         {
-            public int uridium { get; set; }
-            public int credits { get; set; }
-            public int honor { get; set; }
-            public int experience { get; set; }
-            public int jackpot { get; set; }
-        }
-
-        public class EquipmentBase
-        {
-            public int Config1Hitpoints { get; set; }
-            public int Config1Damage { get; set; }
-            public int Config1Shield { get; set; }
-            public int Config1Speed { get; set; }
-            public int Config2Hitpoints { get; set; }
-            public int Config2Damage { get; set; }
-            public int Config2Shield { get; set; }
-            public int Config2Speed { get; set; }
-        }
+            new BoundKeysBase(7, 0, 0, new List<int>{49}),
+            new BoundKeysBase(7, 0, 1, new List<int>{50}),
+            new BoundKeysBase(7, 0, 2, new List<int>{51}),
+            new BoundKeysBase(7, 0, 3, new List<int>{52}),
+            new BoundKeysBase(7, 0, 4, new List<int>{53}),
+            new BoundKeysBase(7, 0, 5, new List<int>{54}),
+            new BoundKeysBase(7, 0, 6, new List<int>{55}),
+            new BoundKeysBase(7, 0, 7, new List<int>{56}),
+            new BoundKeysBase(7, 0, 8, new List<int>{57}),
+            new BoundKeysBase(7, 0, 9, new List<int>{48}),
+            new BoundKeysBase(8, 0, 0, new List<int>{112}),
+            new BoundKeysBase(8, 0, 1, new List<int>{113}),
+            new BoundKeysBase(8, 0, 2, new List<int>{114}),
+            new BoundKeysBase(8, 0, 3, new List<int>{115}),
+            new BoundKeysBase(8, 0, 4, new List<int>{116}),
+            new BoundKeysBase(8, 0, 5, new List<int>{117}),
+            new BoundKeysBase(8, 0, 6, new List<int>{118}),
+            new BoundKeysBase(8, 0, 7, new List<int>{119}),
+            new BoundKeysBase(8, 0, 8, new List<int>{120}),
+            new BoundKeysBase(8, 0, 9, new List<int>{121}),
+            new BoundKeysBase(0, 0, 0, new List<int>{74}),
+            new BoundKeysBase(1, 0, 0, new List<int>{67}),
+            new BoundKeysBase(2, 0, 0, new List<int>{17}),
+            new BoundKeysBase(3, 0, 0, new List<int>{32}),
+            new BoundKeysBase(4, 0, 0, new List<int>{69}),
+            new BoundKeysBase(5, 0, 0, new List<int>{82}),
+            new BoundKeysBase(13, 0, 0, new List<int>{68}),
+            new BoundKeysBase(6, 0, 0, new List<int>{76}),
+            new BoundKeysBase(9, 0, 0, new List<int>{72}),
+            new BoundKeysBase(10, 0, 0, new List<int>{70}),
+            new BoundKeysBase(11, 0, 0, new List<int>{107}),
+            new BoundKeysBase(12, 0, 0, new List<int>{109})
+        };
 
         public class AudioBase
         {
-            public bool notSet { get; set; }
-            public bool sound { get; set; }
-            public bool music { get; set; }
+            public bool notSet = false;
+            public bool sound = true;
+            public bool music = true;
         }
 
         public class ShipSettingsBase
         {
-            public string quickbarSlots { get; set; }
-            public string quickbarSlotsPremium { get; set; }
-            public int selectedLaser { get; set; }
-            public int selectedRocket { get; set; }
-            public int selectedRocketLauncher { get; set; }
+            public string quickbarSlots = "6,-1,-1,-1,-1,-1,-1,-1,-1,-1";
+            public string quickbarSlotsPremium = "77,-1,-1,-1,-1,-1,-1,-1,-1,-1";
+            public int selectedLaser = 1;
+            public int selectedRocket = 1;
+            public int selectedRocketLauncher = -1;
         }
 
         public class QualityBase
         {
-            public bool notSet { get; set; }
-            public short qualityAttack { get; set; }
-            public short qualityBackground { get; set; }
-            public short qualityPresetting { get; set; }
-            public bool qualityCustomized { get; set; }
-            public short qualityPoizone { get; set; }
-            public short qualityShip { get; set; }
-            public short qualityEngine { get; set; }
-            public short qualityExplosion { get; set; }
-            public short qualityCollectable { get; set; }
-            public short qualityEffect { get; set; }
+            public bool notSet = false;
+            public short qualityAttack = 0;
+            public short qualityBackground = 3;
+            public short qualityPresetting = 3;
+            public bool qualityCustomized = false;
+            public short qualityPoizone = 3;
+            public short qualityShip = 3;
+            public short qualityEngine = 3;
+            public short qualityExplosion = 3;
+            public short qualityCollectable = 3;
+            public short qualityEffect = 3;
         }
 
         public class DisplayBase
         {
-            public bool notSet { get; set; }
-            public bool displayPlayerNames { get; set; }
-            public bool displayResources { get; set; }
-            public bool showPremiumQuickslotBar { get; set; }
-            public bool allowAutoQuality { get; set; }
-            public bool preloadUserShips { get; set; }
-            public bool displayHitpointBubbles { get; set; }
-            public bool displayChat { get; set; }
-            public bool displayWindowsBackground { get; set; }
-            public bool displayNotFreeCargoBoxes { get; set; }
-            public bool dragWindowsAlways { get; set; }
-            public bool displayNotifications { get; set; }
-            public bool hoverShips { get; set; }
-            public bool displayDrones { get; set; }
-            public bool displayBonusBoxes { get; set; }
-            public bool displayFreeCargoBoxes { get; set; }
+            public bool notSet = false;
+            public bool displayPlayerNames = true;
+            public bool displayResources = true;
+            public bool showPremiumQuickslotBar = true;
+            public bool allowAutoQuality = true;
+            public bool preloadUserShips = true;
+            public bool displayHitpointBubbles = true;
+            public bool displayChat = true;
+            public bool displayWindowsBackground = true;
+            public bool displayNotFreeCargoBoxes = true;
+            public bool dragWindowsAlways = true;
+            public bool displayNotifications = true;
+            public bool hoverShips = true;
+            public bool displayDrones = true;
+            public bool displayBonusBoxes = true;
+            public bool displayFreeCargoBoxes = true;
         }
 
         public class GameplayBase
         {
-            public bool notSet { get; set; }
-            public bool autoRefinement { get; set; }
-            public bool quickSlotStopAttack { get; set; }
-            public bool autoBoost { get; set; }
-            public bool autoBuyBootyKeys { get; set; }
-            public bool doubleclickAttackEnabled { get; set; }
-            public bool autoChangeAmmo { get; set; }
-            public bool autoStartEnabled { get; set; }
+            public bool notSet = false;
+            public bool autoRefinement = false;
+            public bool quickSlotStopAttack = true;
+            public bool autoBoost = false;
+            public bool autoBuyBootyKeys = false;
+            public bool doubleclickAttackEnabled = true;
+            public bool autoChangeAmmo = false;
+            public bool autoStartEnabled = true;
         }
 
         public class WindowBase
         {
-            public bool notSet { get; set; }
-            public int clientResolutionId { get; set; }
-            public string windowSettings { get; set; }
-            public string resizableWindows { get; set; }
-            public int minmapScale { get; set; }
-            public string mainmenuPosition { get; set; }
-            public string barStatus { get; set; }
-            public string slotmenuPosition { get; set; }
-            public string slotMenuOrder { get; set; }
-            public string slotMenuPremiumPosition { get; set; }
-            public string slotMenuPremiumOrder { get; set; }
+            public bool notSet = false;
+            public int clientResolutionId = 0;
+            public string windowSettings = "0,276,8,1,1,503,7,1,3,286,130,1,5,9,7,1,10,17,357,1,13,50,10,0,16,212,242,1,20,3,320,1,23,60,183,1,24,732,211,0,36,530,130,1";
+            public string resizableWindows = "5,240,150,20,316,178,36,260,130,";
+            public int minmapScale = 11;
+            public string mainmenuPosition = "363,393";
+            public string barStatus = "100,1,23,1,24,1,25,1,26,1,27,1";
+            public string slotmenuPosition = "347,334";
+            public string slotMenuOrder = "0";
+            public string slotMenuPremiumPosition = "363,364";
+            public string slotMenuPremiumOrder = "0";
         }
 
         public class BoundKeysBase
@@ -145,31 +179,31 @@ namespace Ow.Game.Objects.Players.Managers
 
         public class InGameSettingsBase
         {
-            public bool inEquipZone { get; set; }
-            public bool blockedGroupInvites { get; set; }
-            public int selectedFormation { get; set; }
-            public int currentConfig { get; set; }
-            public List<string> selectedCpus { get; set; }
+            public bool inEquipZone = true;
+            public bool blockedGroupInvites = false;
+            public int selectedFormation = 0;
+            public int currentConfig = 1;
+            public List<string> selectedCpus = new List<string>();
         }
 
         public class CurrentCooldownsBase
         {
-            public int smbCooldown { get; set; }
-            public int ishCooldown { get; set; }
-            public int empCooldown { get; set; }
-            public int mineCooldown { get; set; }
-            public int dcrCooldown { get; set; }
-            public int pldCooldown { get; set; }
-            public int energyLeechCooldown { get; set; }
-            public int chainImpulseCooldown { get; set; }
-            public int precisionTargeterCooldown { get; set; }
-            public int backupShieldsCooldown { get; set; }
-            public int battleRepairBotCooldown { get; set; }
-            public int sentinelCooldown { get; set; }
-            public int diminisherCooldown { get; set; }
-            public int venomCooldown { get; set; }
-            public int spectrumCooldown { get; set; }
-            public int solaceCooldown { get; set; }
+            public int smbCooldown = 0;
+            public int ishCooldown = 0;
+            public int empCooldown = 0;
+            public int mineCooldown = 0;
+            public int dcrCooldown = 0;
+            public int pldCooldown = 0;
+            public int energyLeechCooldown = 0;
+            public int chainImpulseCooldown = 0;
+            public int precisionTargeterCooldown = 0;
+            public int backupShieldsCooldown = 0;
+            public int battleRepairBotCooldown = 0;
+            public int sentinelCooldown = 0;
+            public int diminisherCooldown = 0;
+            public int venomCooldown = 0;
+            public int spectrumCooldown = 0;
+            public int solaceCooldown = 0;
         }
 
         public override string ToString()

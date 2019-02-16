@@ -16,6 +16,7 @@ namespace Ow.Net.netty.handlers
         public void execute(GameSession gameSession, byte[] bytes)
         {
             var player = gameSession.Player;
+            if (player.RankId != 21) return;
 
             var shipList = new List<ShipWarpModule>();
             shipList.Add(new ShipWarpModule(10, 10, "Goliath", 0, 0, 1, "Goliath"));

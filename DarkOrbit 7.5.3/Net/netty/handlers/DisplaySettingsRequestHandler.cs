@@ -20,6 +20,9 @@ namespace Ow.Net.netty.handlers
             var player = gameSession.Player;
             var displaySettings = player.Settings.Display;
 
+            if (displaySettings.displayDrones != read.displayDrones)
+                player.DroneManager.UpdateDrones();
+
             displaySettings.notSet = false;
             displaySettings.allowAutoQuality = read.useAutoQuality;
             displaySettings.displayBonusBoxes = read.displayBoxes;

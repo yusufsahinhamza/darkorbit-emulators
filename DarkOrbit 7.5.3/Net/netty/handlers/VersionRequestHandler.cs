@@ -124,7 +124,9 @@ namespace Ow.Net.netty.handlers
         {
             player.SendPacket("0|t");
             player.SendCommand(player.GetShipInitializationCommand());
-            player.SendPacket("0|n|t|" + player.Id + "|1|" + player.Title + "");
+
+            if (player.Title != "")
+                player.SendPacket("0|n|t|" + player.Id + "|1|" + player.Title + "");
 
             player.DroneManager.UpdateDrones();
 
@@ -149,6 +151,7 @@ namespace Ow.Net.netty.handlers
             player.SendCommand(PetInitializationCommand.write(true, true, true));
             player.UpdateStatus();
             player.SendCurrentCooldowns();
+            QueryManager.SavePlayer.Information(player);
         }
 
 

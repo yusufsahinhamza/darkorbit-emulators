@@ -602,7 +602,7 @@ namespace Ow.Game.Objects
                 0,
                 0,
                 3,
-                Premium,
+                true,
                 Data.experience,
                 Data.honor,
                 Level,

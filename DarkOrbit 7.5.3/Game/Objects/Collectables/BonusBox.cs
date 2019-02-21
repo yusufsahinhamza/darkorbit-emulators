@@ -22,17 +22,13 @@ namespace Ow.Game.Objects.Collectables
             if (luck == 1)
             {
                 var uridium = Randoms.random.Next(0, 150);
-                player.Data.uridium += uridium;
-                player.SendPacket("0|LM|ST|URI|" + uridium + "|" + player.Data.uridium);
+                player.ChangeData(DataType.URIDIUM, uridium);
             }
             else
             {
                 var credits = Randoms.random.Next(0, 1000);
-                player.Data.credits += credits;
-                player.SendPacket("0|LM|ST|CRE|" + credits + "|" + player.Data.credits);
+                player.ChangeData(DataType.CREDITS, credits);
             }
-
-            QueryManager.SavePlayer.Information(player);
         }
     }
 }

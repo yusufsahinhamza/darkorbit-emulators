@@ -10,8 +10,8 @@ namespace Ow.Managers.MySQLManager
     static class SqlDatabaseManager
     {
         public static string SERVER = "127.0.0.1";
-        public static string UID = "root";
-        public static string PWD = "";
+        public static string UID = "r1s1n1g_b4ttl3"; //r1s1n1g_b4ttl3
+        public static string PWD = "xBGQ9tKbsYFZhuUS"; //xBGQ9tKbsYFZhuUS
         public static string DB = "server";
         public static string DB_EXT = "server";
 

@@ -41,16 +41,18 @@ namespace Ow.Game.Events
                             player.CurrentShieldConfig1 = player.MaxShieldPoints;
                             player.CurrentShieldConfig2 = player.MaxShieldPoints;
                             player.CpuManager.DisableCloak();
-                            player.Jump(Spacemap.Id, new Movements.Position(0, 0));
+
+                            var mmoPosition = new Position(2000, 1500);
+                            var eicPosition = new Position(3800, 10600);
+                            var vruPosition = new Position(18300, 6700);
+
+                            player.Jump(Spacemap.Id, player.FactionId == 1 ? mmoPosition : player.FactionId == 2 ? eicPosition : vruPosition);
                             Players.TryAdd(player.Id, player);
                         }
 
                         var tickId = -1;
                         Program.TickManager.AddTick(this, out tickId);
                         TickId = tickId;
-
-                        jpbTimer = DateTime.Now;
-                        jpbStartTime = DateTime.Now;
                     }
                 }
             }
@@ -60,8 +62,6 @@ namespace Ow.Game.Events
         {
             if (Active)
             {
-                CheckRadiation();
-
                 if (Players.Count == 1)
                 {
                     var lastPlayer = Players.First().Value;
@@ -70,52 +70,20 @@ namespace Ow.Game.Events
             }
         }
 
-        public DateTime jpbTimer = new DateTime();
-        public DateTime jpbStartTime = new DateTime();
-        public int radiationX = 12800;
-        public int radiationY = 1600;
-
-        public int timerSecond = 1;
-
-        public void CheckRadiation()
-        {
-            if (jpbTimer.AddSeconds(timerSecond) < DateTime.Now && jpbStartTime.AddSeconds(10) < DateTime.Now)
-            {
-                if ((radiationX - 100 == 6400 && timerSecond == 1) || (radiationX - 100 == 3200 && timerSecond == 1) || (radiationX - 100 == 1600 && timerSecond == 1))
-                {
-                    timerSecond = 30;
-                    radiationX -= 100;
-                }
-                else if (radiationX - 100 > 800)
-                {
-                    timerSecond = 1;
-                    radiationX -= 100;
-                }
-
-                var newPoi = new POI("jpb_poi", POITypes.RADIATION, POIDesigns.SIMPLE, POIShapes.CIRCLE, new List<Position> { new Position(10400, 6400), new Position(radiationX, radiationY) }, true, true);
-                var oldPoi = Spacemap.POIs.FirstOrDefault(x => x.Value.Id == newPoi.Id).Value;
-
-                if (oldPoi != null)
-                    Spacemap.POIs.TryRemove(oldPoi.Id, out oldPoi);
-
-                Spacemap.POIs.TryAdd("jpb_poi", newPoi);
-
-                GameManager.SendCommandToMap(Spacemap.Id, newPoi.GetPOICreateCommand());
-
-                jpbTimer = DateTime.Now;
-            }
-        }
-
         public async void SendRewardAndStop(Player player)
         {
             Active = false;
             Program.TickManager.RemoveTick(this);
             Players.Clear();
-            Spacemap.POIs.Clear();
 
+            var uridium = 10000;
+            player.ChangeData(DataType.URIDIUM, uridium);
+            var experience = 100000;
+            player.ChangeData(DataType.EXPERIENCE, experience);
+            var honor = 10000;
+            player.ChangeData(DataType.HONOR, honor);
 
-            //ÖDÜL
-
+            GameManager.SendPacketToAll($"0|A|STD|{player.Name} has won the Jacpot Battle!");
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
             player.MoveManager.SetPosition();

@@ -29,8 +29,9 @@ namespace Ow.Game.Objects
 
         public bool Activated = false;
         public bool GuardModeActive = false;
+        public short GearId = PetGearTypeModule.PASSIVE;
 
-        public Pet(Player player) : base(Randoms.CreateRandomID(), player.Name + "'s P.E.T", player.FactionId, GameManager.GetShip(22), player.Position, player.Spacemap, player.Clan)
+        public Pet(Player player) : base(Randoms.CreateRandomID(), "P.E.T 15", player.FactionId, GameManager.GetShip(22), player.Position, player.Spacemap, player.Clan)
         {
             Owner = player;
             MaxHitPoints = Ship.BaseHitpoints;
@@ -45,10 +46,23 @@ namespace Ow.Game.Objects
         {
             if (Activated)
             {
+                CheckShieldPointsRepair();
                 CheckGuardMode();
                 Follow(Owner);
                 Movement.ActualPosition(this);
             }
+        }
+
+        public DateTime lastShieldRepairTime = new DateTime();
+        private void CheckShieldPointsRepair()
+        {
+            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastShieldRepairTime.AddSeconds(1) >= DateTime.Now || CurrentShieldPoints == MaxShieldPoints) return;
+
+            int repairShield = MaxShieldPoints / 25;
+            CurrentShieldPoints += repairShield;
+            UpdateStatus();
+
+            lastShieldRepairTime = DateTime.Now;
         }
 
         public DateTime lastAttackTime = new DateTime();
@@ -121,14 +135,10 @@ namespace Ow.Game.Objects
                     SendPacketToInRangePlayers(cloakPacket);
                 }
 
-                if (target is Player && (target as Player).Sentinel)
+                if (target is Player && (target as Player).Storage.Sentinel)
                     damageShd -= Maths.GetPercentage(damageShd, 30);
 
-                target.LastCombatTime = DateTime.Now;
-                target.CurrentHitPoints -= damageHp;
-                target.CurrentShieldPoints -= damageShd;
-
-                var laserRunCommand = AttackLaserRunCommand.write(Id, target.Id, Owner.AttackManager.GetSelectedLaser(), false, true);
+                var laserRunCommand = AttackLaserRunCommand.write(Id, target.Id, Owner.AttackManager.GetSelectedLaser(), false, false);
                 SendCommandToInRangePlayers(laserRunCommand);
 
 
@@ -142,6 +152,11 @@ namespace Ow.Game.Objects
 
                 if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints == 0)
                     target.Destroy(this, DestructionType.PET);
+                else
+                    target.CurrentHitPoints -= damageHp;
+
+                target.CurrentShieldPoints -= damageShd;
+                target.LastCombatTime = DateTime.Now;
 
                 if (Owner.SettingsManager.SelectedLaser == AmmunitionTypeModule.RSB)
                     lastRSBAttackTime = DateTime.Now;
@@ -206,8 +221,7 @@ namespace Ow.Game.Objects
 
         private void Initialization()
         {
-            Owner.SendCommand(PetHeroActivationCommand.write(Owner.Id, Id, 22, 3, Owner.Name + "'s P.E.T.", (short)Owner.FactionId, Owner.GetClanId(), 15, Owner.GetClanTag(), Position.X, Position.Y, Speed));
-            Owner.SendCommand(PetStatusCommand.write(Id, 15, 27000000, 27000000, CurrentHitPoints, MaxHitPoints, CurrentShieldPoints, MaxShieldPoints, 50000, 50000, Speed, Owner.Name + "'s P.E.T."));
+            Owner.SendCommand(PetStatusCommand.write(Id, 15, 27000000, 27000000, CurrentHitPoints, MaxHitPoints, CurrentShieldPoints, MaxShieldPoints, 50000, 50000, Speed, Name));
             Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.PASSIVE), 0, 0, true));
             Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.GUARD), 0, 0, true));
             SwitchGear(PetGearTypeModule.PASSIVE);
@@ -240,6 +254,7 @@ namespace Ow.Game.Objects
                     GuardModeActive = true;
                     break;
             }
+            GearId = gearId;
             Owner.SendCommand(PetGearSelectCommand.write(new PetGearTypeModule(gearId), new List<int>()));
         }
     }

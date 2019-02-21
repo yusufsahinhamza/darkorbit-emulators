@@ -9,24 +9,24 @@ namespace Ow.Net.netty.commands
 {
     class VideoWindowCreateCommand
     {
-        public const short ID = 1271;
+        public const short ID = 11048;
 
-        public static byte[] write(int windowID, string windowAlign, bool showButtons, List<string> languageKeys,
-            int videoID, short videoType)
+        public static short HELPMOVIE = 0;    
+        public static short COMMANDER = 1;
+
+        public static byte[] write(int windowID, string windowAlign, bool showButtons, List<string> languageKeys, int videoID, short videoType)
         {
             var param1 = new ByteArray(ID);
-            param1.writeInt(videoID << 11 | videoID >> 21);
-            param1.writeBoolean(showButtons);
-            param1.writeShort(videoType);
+            param1.writeInt(windowID);
             param1.writeUTF(windowAlign);
+            param1.writeBoolean(showButtons);
             param1.writeInt(languageKeys.Count);
-            foreach(var key in languageKeys)
+            foreach(var _loc2_ in languageKeys)
             {
-                param1.writeUTF(key);
+                param1.writeUTF(_loc2_);
             }
-            param1.writeShort(-12347);
-            param1.writeInt(windowID << 11 | windowID >> 21);
-            param1.writeShort(1928);
+            param1.writeInt(videoID);
+            param1.writeShort(videoType);
             return param1.ToByteArray();
         }
     }

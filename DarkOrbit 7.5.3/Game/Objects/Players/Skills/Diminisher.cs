@@ -28,7 +28,7 @@ namespace Ow.Game.Objects.Players.Skills
             {
                 if (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION) < DateTime.Now)
                     Disable();
-                if (Player.Selected == null || Player.Selected != Player.UnderDiminisherPlayer)
+                if (Player.Selected == null || Player.Selected != Player.Storage.UnderDiminisherPlayer)
                     Disable();
             }
         }
@@ -36,14 +36,14 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION + TimeManager.DIMINISHER_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (Player.Ship.Id == 64 && (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION + TimeManager.DIMINISHER_COOLDOWN) < DateTime.Now || Player.Storage.GodMode))
             {
                 var enemy = Player.Selected;
                 if (enemy == null || !(enemy is Player)) return;
                 if (!Player.AttackManager.TargetDefinition(enemy as Player, false)) return;
 
-                Player.Diminisher = true;
-                Player.UnderDiminisherPlayer = enemy as Player;
+                Player.Storage.Diminisher = true;
+                Player.Storage.UnderDiminisherPlayer = enemy as Player;
 
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, true));
                 (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, true));
@@ -56,11 +56,11 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            var enemy = Player.UnderDiminisherPlayer;
+            var enemy = Player.Storage.UnderDiminisherPlayer;
             if (enemy == null) return;
 
-            Player.Diminisher = false;
-            Player.UnderDiminisherPlayer = null;
+            Player.Storage.Diminisher = false;
+            Player.Storage.UnderDiminisherPlayer = null;
 
             Player.RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
             (enemy as Player).RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);

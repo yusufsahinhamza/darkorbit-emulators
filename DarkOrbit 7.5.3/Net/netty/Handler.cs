@@ -15,6 +15,7 @@ namespace Ow.Net.netty
     class Handler
     {
         private static Dictionary<short, IHandler> Commands = new Dictionary<short, IHandler>();
+        private static List<short> IgnoredCommands = new List<short> { 28114, 27323 };
 
         public static void AddCommands()
         {
@@ -43,13 +44,8 @@ namespace Ow.Net.netty
             Commands.Add(11209, new HellstormLoadRequestHandler());
             Commands.Add(5239, new ShipWarpWindowRequestHandler());
             Commands.Add(LogoutRequest.ID, new LogoutRequestHandler());
-            /*         
-           
-            Commands.Add(AssetHandleClickRequest.ID, new AssetHandleClickHandler());
-          
-           
-            
-  
+            /*                   
+            Commands.Add(AssetHandleClickRequest.ID, new AssetHandleClickHandler());        
             */
         }
 
@@ -77,7 +73,10 @@ namespace Ow.Net.netty
                 gameSession.LastActiveTime = DateTime.Now;
             }
             else
-                Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
+            {
+                if (!IgnoredCommands.Contains(parser.CMD_ID))
+                    Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
+            }
         }
     }
 }

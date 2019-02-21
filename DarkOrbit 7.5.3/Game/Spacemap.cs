@@ -43,8 +43,6 @@ namespace Ow.Game
         public string StationsJSON { get; set; }
         public Position[] Limits { get; private set; }
 
-        public int VISIBILITY_RANGE = 2000;
-
         private List<PortalBase> PortalBase { get; set; }
         private List<StationBase> StationBase { get; set; }
 
@@ -60,9 +58,6 @@ namespace Ow.Game
             ParseLimits();
             LoadObjects();
 
-            if (Id == 101 || Id == 42)
-                VISIBILITY_RANGE = 999999999;
-
             var tickId = -1;
             Program.TickManager.AddTick(this, out tickId);
             TickId = tickId;
@@ -70,14 +65,13 @@ namespace Ow.Game
 
         public void Tick()
         {
-            
             foreach (var thisCharacter in Characters.Values)
             {
                 foreach (var otherCharacter in Characters.Values)
                 {
                     if (!thisCharacter.Equals(otherCharacter))
                     {
-                        if (thisCharacter.Position.DistanceTo(otherCharacter.Position) <= VISIBILITY_RANGE)
+                        if (thisCharacter.Position.DistanceTo(otherCharacter.Position) <= ((EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(otherCharacter.Id)) ? 999999 : otherCharacter.SeeRange))
                         {
                             thisCharacter.AddInRangeCharacter(otherCharacter);
                         }
@@ -88,7 +82,6 @@ namespace Ow.Game
                     }
                 }
             }
-            
         }
 
         private void ParseLimits()
@@ -129,12 +122,12 @@ namespace Ow.Game
                 }
             }
 
-            
+            /*
             if (Id == 14)
             {
                 var battleStation = new BattleStation(this, 1, new Position(18500, 600), GameManager.GetClan(1));
             }
-            
+            */
 
             if (Id != 101 && Id != 121 && Id != 42)
             {
@@ -163,13 +156,75 @@ namespace Ow.Game
             }
         }
 
-        public void OnPlayerMovement(Player Player)
+        public void OnPlayerMovement(Player player)
         {
-            
-            bool inRadiationChanged = CheckRadiation(Player);
-            bool assetsChanged = CheckActivatables(Player);
+            CheckCollectables(player);
+            CheckMines(player);
+            bool inRadiationChanged = CheckRadiation(player);
+            bool assetsChanged = CheckActivatables(player);
             if (inRadiationChanged || assetsChanged)
-                Player.SendPacket(Player.GetBeaconPacket());            
+                player.SendPacket(player.GetBeaconPacket());            
+        }
+
+        private void CheckCollectables(Player player)
+        {
+            foreach (var collectable in Collectables.Values)
+            {
+                if (collectable.ToPlayer == null || (collectable.ToPlayer != null && player == collectable.ToPlayer))
+                {
+                    if (player.Position.DistanceTo(collectable.Position) <= 1000)
+                    {
+                        if (!player.Storage.InRangeCollectables.ContainsKey(collectable.Hash))
+                        {
+                            player.Storage.InRangeCollectables.TryAdd(collectable.Hash, collectable);
+                            player.SendPacket(collectable.GetCollectableCreatePacket());
+                        }
+                    }
+                    else
+                    {
+                        if (player.Storage.InRangeCollectables.ContainsKey(collectable.Hash))
+                        {
+                            var outCollectable = collectable;
+                            player.Storage.InRangeCollectables.TryRemove(collectable.Hash, out outCollectable);
+                            player.SendPacket("0|" + ServerCommands.REMOVE_BOX + "|" + collectable.Hash);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckMines(Player player)
+        {
+            foreach (var mine in Mines.Values)
+            {
+                if (player.Position.DistanceTo(mine.Position) <= 1000)
+                {
+                    if (!player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                    {
+                        player.Storage.InRangeMines.TryAdd(mine.Hash, mine);
+                        player.SendPacket(mine.GetMineCreatePacket());
+                    }
+                    else
+                    {
+                        if (mine.Active)                       
+                            if (mine.activationTime.AddSeconds(Mine.ACTIVATION_TIME) < DateTime.Now)                    
+                                if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
+                                {
+                                    mine.Remove();
+                                    mine.Explode();
+                                }
+                    }
+                }
+                else
+                {
+                    if (player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                    {
+                        var outMine = mine;
+                        player.Storage.InRangeMines.TryRemove(mine.Hash, out outMine);
+                        player.SendPacket("0|" + ServerCommands.REMOVE_ORE + "|" + mine.Hash);
+                    }
+                }
+            }
         }
 
         private bool CheckActivatables(Player Player)
@@ -231,9 +286,9 @@ namespace Ow.Game
 
             QueryManager.SavePlayer.Settings(Player);
 
-            if (Player.IsInDemilitarizedZone != isInSecureZone)
+            if (Player.Storage.IsInDemilitarizedZone != isInSecureZone)
             {
-                Player.IsInDemilitarizedZone = isInSecureZone;
+                Player.Storage.IsInDemilitarizedZone = isInSecureZone;
                 return true;
             }
             return false;
@@ -260,9 +315,9 @@ namespace Ow.Game
                 }
             }
 
-            if (Player.IsInRadiationZone != inRadiationZone)
+            if (Player.Storage.IsInRadiationZone != inRadiationZone)
             {
-                Player.IsInRadiationZone = inRadiationZone;
+                Player.Storage.IsInRadiationZone = inRadiationZone;
                 return true;
             }
             return false;
@@ -279,13 +334,8 @@ namespace Ow.Game
                 else
                     player.SendCommand(activatableStationary.GetAssetCreateCommand());
             }
-            foreach (Collectable collectable in Collectables.Values)
-                if (collectable.ToPlayer == null)
-                    player.SendPacket(collectable.GetCollectableCreatePacket());
             foreach (var poi in POIs.Values)
-                player.SendCommand(poi.GetPOICreateCommand());
-            foreach (var mine in Mines.Values)
-                player.SendPacket(mine.GetMineCreatePacket());            
+                player.SendCommand(poi.GetPOICreateCommand());          
         }
 
         public void SendPlayers(Player Player)
@@ -293,7 +343,7 @@ namespace Ow.Game
             Player.InRangeCharacters.Clear();
             foreach (var character in Characters.Values)
             {
-                if (Player.Position.DistanceTo(character.Position) <= VISIBILITY_RANGE)
+                if (Player.Position.DistanceTo(character.Position) <= ((EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(character.Id)) ? 999999 : character.SeeRange))
                     Player.AddInRangeCharacter(character);
             }
         }

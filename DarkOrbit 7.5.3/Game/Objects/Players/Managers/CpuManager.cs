@@ -29,7 +29,7 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime cloakCooldown = new DateTime();
         public void Cloak()
         {
-            if (cloakCooldown.AddMilliseconds(Player.Premium ? PREMIUM_CLOAK_COOLDOWN : CLOAK_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cloakCooldown.AddMilliseconds(Player.Premium ? PREMIUM_CLOAK_COOLDOWN : CLOAK_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 if (Player.Spacemap.Id != 42 && Player.Spacemap.Id != 121)
                     if (!Player.Invisible)
@@ -42,7 +42,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void ArolX()
         {
-            if(!Player.AutoRocket)
+            if(!Player.Storage.AutoRocket)
                 EnableArolX();
             else
                 DisableArolX();
@@ -50,7 +50,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void RllbX()
         {
-            if (!Player.AutoRocketLauncher)
+            if (!Player.Storage.AutoRocketLauncher)
                 EnableRllbX();
             else
                 DisableRllbX();
@@ -83,6 +83,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             Player.Invisible = false;
             string cloakPacket = "0|n|INV|" + Player.Id + "|0";
+            Player.SendPacket("0|A|STM|msg_uncloaked");
             Player.SendPacket(cloakPacket);
             Player.SendPacketToInRangePlayers(cloakPacket);
             Player.SettingsManager.SelectedCpus.Remove(CLK_XL);
@@ -92,7 +93,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void EnableArolX()
         {
-            Player.AutoRocket = true;
+            Player.Storage.AutoRocket = true;
             Player.SendPacket($"0|A|{ServerCommands.CPU_INFO}|{ServerCommands.AUTO_ROCKET_CPU_INFO}|1");
             Player.SettingsManager.SelectedCpus.Add(AUTO_ROCKET_CPU);
 
@@ -104,7 +105,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void DisableArolX()
         {
-            Player.AutoRocket = false;
+            Player.Storage.AutoRocket = false;
             Player.SendPacket($"0|A|{ServerCommands.CPU_INFO}|{ServerCommands.AUTO_ROCKET_CPU_INFO}|0");
             Player.SettingsManager.SelectedCpus.Remove(AUTO_ROCKET_CPU);
             Player.Settings.InGameSettings.selectedCpus.Remove(AUTO_ROCKET_CPU);
@@ -113,7 +114,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void EnableRllbX()
         {
-            Player.AutoRocketLauncher = true;
+            Player.Storage.AutoRocketLauncher = true;
             Player.SendPacket($"0|A|{ServerCommands.CPU_INFO}|{ServerCommands.ROCKETLAUNCHER_AUTO_CPU_INFO}|1");
             Player.SettingsManager.SelectedCpus.Add(AUTO_HELLSTROM_CPU);
 
@@ -125,7 +126,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void DisableRllbX()
         {
-            Player.AutoRocketLauncher = false;
+            Player.Storage.AutoRocketLauncher = false;
             Player.SendPacket($"0|A|{ServerCommands.CPU_INFO}|{ServerCommands.ROCKETLAUNCHER_AUTO_CPU_INFO}|0");
             Player.SettingsManager.SelectedCpus.Remove(AUTO_HELLSTROM_CPU);
             Player.Settings.InGameSettings.selectedCpus.Remove(AUTO_HELLSTROM_CPU);

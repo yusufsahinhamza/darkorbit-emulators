@@ -9,16 +9,19 @@ namespace Ow.Chat
 {
     class Room
     {
-        public string Name { get; set; }
         public int Id { get; set; }
-        public int Index { get; set; }
+        public string Name { get; set; }
+        public int TabOrder { get; set; }
+        public int CompanyId { get; set; }
+
         public static Dictionary<Int32, Room> Rooms = new Dictionary<Int32, Room>();
 
-        public Room(int id, int index, string name)
+        public Room(int id, string name, int tabOrder, int companyId)
         {
             Id = id;
-            Index = index;
             Name = name;
+            TabOrder = tabOrder;
+            CompanyId = companyId;
         }
 
         public static void AddRooms()
@@ -28,7 +31,7 @@ namespace Ow.Chat
 
         public override string ToString()
         {
-            return Id + "|" + Name + "|" + Index + "|-1|0|0}";
+            return Id + "|" + Name + "|" + TabOrder + "|" + CompanyId + "|0|0}";
         }
     }
 }

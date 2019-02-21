@@ -18,7 +18,7 @@ namespace Ow.Net.netty.handlers
             var player = gameSession.Player;
             var rocketLauncher = player.AttackManager.RocketLauncher;
             player.AttackManager.LaunchRocketLauncher();
-            rocketLauncher.ReloadingActive = player.AutoRocketLauncher ? true : false;
+            rocketLauncher.ReloadingActive = player.Storage.AutoRocketLauncher ? true : false;
         }
     }
 }

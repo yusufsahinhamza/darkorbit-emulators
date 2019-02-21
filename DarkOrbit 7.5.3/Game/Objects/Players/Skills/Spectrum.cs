@@ -33,9 +33,9 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION + TimeManager.SPECTRUM_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (Player.Ship.Id == 65 && (cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION + TimeManager.SPECTRUM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode))
             {
-                Player.Spectrum = true;
+                Player.Storage.Spectrum = true;
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.PRISMATIC_SHIELD, 0, true));
 
                 Active = true;
@@ -45,7 +45,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            Player.Spectrum = false;
+            Player.Storage.Spectrum = false;
             Player.RemoveVisualModifier(VisualModifierCommand.FORTRESS);
 
             Player.SendCooldown(ServerCommands.SKILL_SPECTRUM, TimeManager.SPECTRUM_COOLDOWN);

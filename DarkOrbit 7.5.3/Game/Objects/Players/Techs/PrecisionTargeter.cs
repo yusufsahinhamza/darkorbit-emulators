@@ -30,9 +30,9 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.PRECISION_TARGETER_DURATION + TimeManager.PRECISION_TARGETER_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.PRECISION_TARGETER_DURATION + TimeManager.PRECISION_TARGETER_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                Player.PrecisionTargeter = true;
+                Player.Storage.PrecisionTargeter = true;
 
                 Active = true;
                 cooldown = DateTime.Now;
@@ -42,7 +42,7 @@ namespace Ow.Game.Objects.Players.Techs
         public void Disable()
         {
             Active = false;
-            Player.PrecisionTargeter = false;
+            Player.Storage.PrecisionTargeter = false;
             Player.TechManager.SendTechStatus();
             Player.SendCooldown(ServerCommands.TECH_ROCKET_PROBABILITY_MAXIMIZER, TimeManager.PRECISION_TARGETER_COOLDOWN);
         }

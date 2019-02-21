@@ -18,7 +18,7 @@ namespace Ow.Net.netty.handlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            if (player.RankId != 21) return;
+            if (!player.Premium) return;
 
             switch (read.petRequestType)
             {

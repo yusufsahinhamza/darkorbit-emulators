@@ -83,18 +83,18 @@ namespace Ow.Net.netty.handlers
                                     GroupSystem.AssembleInvite(gameSession.Player, GroupSystem.GetPlayerByName(Out.DecodeFrom64(packet[3])));
                                     break;
                                 case ServerCommands.GROUPSYSTEM_GROUP_INVITE_SUB_REVOKE:
-                                    GroupSystem.Revoke(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3])).Player);
+                                    GroupSystem.Revoke(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3]))?.Player);
                                     break;
                                 case ServerCommands.GROUPSYSTEM_GROUP_INVITE_SUB_ACKNOWLEDGE:
-                                    GroupSystem.AssembleAcceptedInvitation(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3])).Player);
+                                    GroupSystem.AssembleAcceptedInvitation(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3]))?.Player);
                                     break;
                                 case ServerCommands.GROUPSYSTEM_GROUP_INVITE_SUB_REJECT:
-                                    GroupSystem.Reject(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3])).Player);
+                                    GroupSystem.Reject(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3]))?.Player);
                                     break;
                             }
                             break;
                         case ServerCommands.GROUPSYSTEM_GROUP_EVENT_MEMBER_LEAVES_SUB_KICK:
-                            gameSession.Player.Group?.Kick(GameManager.GetGameSession(Convert.ToInt32(packet[2])).Player);
+                            gameSession.Player.Group?.Kick(GameManager.GetGameSession(Convert.ToInt32(packet[2]))?.Player);
                             break;
                         case ServerCommands.GROUPSYSTEM_GROUP_EVENT_MEMBER_LEAVES_SUB_LEAVE:
                             gameSession.Player.Group?.Leave(gameSession.Player);
@@ -114,12 +114,12 @@ namespace Ow.Net.netty.handlers
                                     GroupSystem.Ping(gameSession.Player, new Position(int.Parse(packet[3]), int.Parse(packet[4])));
                                     break;
                                 case ClientCommands.GROUPSYSTEM_PING_USER:
-                                    GroupSystem.Ping(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3])).Player);
+                                    GroupSystem.Ping(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[3]))?.Player);
                                     break;
                             }
                             break;
                         case ClientCommands.GROUPSYSTEM_FOLLOW:
-                            gameSession.Player.Group?.Follow(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[2])).Player);
+                            gameSession.Player.Group?.Follow(gameSession.Player, GameManager.GetGameSession(Convert.ToInt32(packet[2]))?.Player);
                             break;
                         case ClientCommands.GROUPSYSTEM_PROMOTE:
                             gameSession.Player.Group?.ChangeLeader(GameManager.GetGameSession(Convert.ToInt32(packet[2])));
@@ -152,9 +152,9 @@ namespace Ow.Net.netty.handlers
         public void AssembleMineRequest(string packet, GameSession gameSession)
         {
             var player = gameSession.Player;
-            if (player.IsInDemilitarizedZone || player.CurrentInRangePortalId != -1) return;
+            if (player.Storage.IsInDemilitarizedZone || player.CurrentInRangePortalId != -1) return;
 
-            if (player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || player.GodMode)
+            if (player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || player.Storage.GodMode)
             {
                 switch (packet)
                 {

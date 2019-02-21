@@ -31,9 +31,9 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION + TimeManager.SENTINEL_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (Player.Ship.Id == 66 && (cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION + TimeManager.SENTINEL_COOLDOWN) < DateTime.Now || Player.Storage.GodMode))
             {
-                Player.Sentinel = true;
+                Player.Storage.Sentinel = true;
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.FORTRESS, 0, true));
 
                 Active = true;
@@ -43,7 +43,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            Player.Sentinel = false;
+            Player.Storage.Sentinel = false;
             Player.RemoveVisualModifier(VisualModifierCommand.FORTRESS);
 
             Player.SendCooldown(ServerCommands.SKILL_SENTINEL, TimeManager.SENTINEL_COOLDOWN);

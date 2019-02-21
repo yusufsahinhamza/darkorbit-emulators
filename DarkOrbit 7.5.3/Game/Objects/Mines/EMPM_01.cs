@@ -16,17 +16,12 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var players in Spacemap.Characters.Values)
+            foreach (var characters in Spacemap.Characters.Values)
             {
-                if (players is Player && players.Position.DistanceTo(Position) < RANGE)
+                if (characters is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    var player = players as Player;
-
                     if (player.Invisible && player.Attackable())
-                    {
-                        player.SendPacket("0|A|STM|msg_uncloaked");
                         player.CpuManager.DisableCloak();
-                    }
                 }
             }
         }

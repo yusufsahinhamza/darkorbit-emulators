@@ -11,7 +11,7 @@ namespace Ow.Net.netty.commands
     {
         public const short ID = 8845;
 
-        public static byte[] write(int ownerId, int petId, short petDesignId, short expansionStage, string petName, short petFactionId, int petClanId, short petLevel, string clanTag, ClanRelationModule clanRelationship, int x, int y, int petSpeed, bool isInIdleMode, bool isVisible, class_11d varzL)
+        public static byte[] write(int ownerId, int petId, short petDesignId, short expansionStage, string petName, short petFactionId, int petClanId, short petLevel, string clanTag, ClanRelationModule clanRelationship, int x, int y, int petSpeed, bool isInIdleMode, bool isVisible)
         {
             var param1 = new ByteArray(ID);
             param1.writeInt(ownerId);

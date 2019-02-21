@@ -50,20 +50,21 @@ namespace Ow.Game.Objects
         {
             var player = gameSession.Player;
             if (!Working) return;
-            if (player.Jumping) return;
+            if (player.Storage.Jumping) return;
 
-            player.Jumping = true;
+            player.Storage.Jumping = true;
             player.SendPacket("0|"+ ServerCommands.PLAY_PORTAL_ANIMATION + "|"+TargetSpaceMapId+"|"+Id+"");
             await Task.Delay(JUMP_DELAY);
 
             var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
             player.Pet.Deactivate(true);
 
             player.CurrentInRangePortalId = -1;
             player.Selected = null;
             player.DisableAttack(player.SettingsManager.SelectedLaser);
             player.Spacemap.RemoveCharacter(player);
-            player.InRangeAssets.Clear();
+            player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
             player.SetPosition(TargetPosition);
 
@@ -71,10 +72,20 @@ namespace Ow.Game.Objects
             player.Spacemap = targetSpacemap;
 
             player.Spacemap.AddAndInitPlayer(player);
-            player.Jumping = false;
+            player.Storage.Jumping = false;
 
             if (pet)
+            {
                 player.Pet.Activate();
+                player.Pet.SwitchGear(gearId);
+            }             
+        }
+
+        public void Remove()
+        {
+            var portal = this as Activatable;
+            Spacemap.Activatables.TryRemove(Id, out portal);
+            GameManager.SendPacketToMap(Spacemap.Id, "0|n|p|REM|" + Id);
         }
 
         public override short GetAssetType() { return 0; }

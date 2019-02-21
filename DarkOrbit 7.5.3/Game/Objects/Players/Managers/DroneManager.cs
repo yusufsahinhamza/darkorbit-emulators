@@ -120,9 +120,9 @@ namespace Ow.Game.Objects.Players.Managers
 
         public int GetDesignId(int designItemId)
         {
-            if (designItemId >= 85 && designItemId < 95)
+            if (designItemId >= 120 && designItemId < 130)
                 return 1;
-            else if (designItemId >= 95 && designItemId < 105)
+            else if (designItemId >= 130 && designItemId < 140)
                 return 2;
             return 0;
         }
@@ -158,7 +158,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (NewFormationID == (int)Player.SettingsManager.SelectedFormation) return;
 
-            if (formationCooldown.AddMilliseconds(TimeManager.FORMATION_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (formationCooldown.AddMilliseconds(TimeManager.FORMATION_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SendCooldown(ServerCommands.DRONE_FORMATION_COOLDOWN, 3000);
 

@@ -17,12 +17,12 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var players in Spacemap.Characters.Values)
+            foreach (var characters in Spacemap.Characters.Values)
             {
-                if (players is Player && players.Position.DistanceTo(Position) < RANGE)
+                if (characters is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    var damage = Maths.GetPercentage(players.CurrentShieldPoints, 50);
-                    AttackManager.Damage(Player, players as Player, DamageType.MINE, damage, false, false, true, false);
+                    var damage = Maths.GetPercentage(player.CurrentShieldPoints, 50);
+                    AttackManager.Damage(Player, player as Player, DamageType.MINE, damage, false, false, true, false);
                 }
             }
         }

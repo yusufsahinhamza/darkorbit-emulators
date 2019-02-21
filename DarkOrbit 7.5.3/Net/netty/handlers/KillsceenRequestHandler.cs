@@ -1,4 +1,5 @@
 ﻿using Ow.Game;
+using Ow.Game.Objects;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Net.netty.requests;
@@ -28,12 +29,36 @@ namespace Ow.Net.netty.handlers
                     player.Respawn(true, false, false, true);
                     break;
                 case KillScreenOptionTypeModule.AT_DEATHLOCATION_REPAIR:
-                    player.Respawn(false, true, false);
+                    if (player.Data.uridium >= 300)
+                    {
+                        player.ChangeData(DataType.URIDIUM, 300, ChangeType.DECREASE);
+                        player.Storage.KillscreenDeathLocationRepairTime = DateTime.Now;
+                        player.Respawn(false, true, false);
+                    } else UpdateKillScreen(player);
                     break;
                 case KillScreenOptionTypeModule.AT_JUMPGATE_REPAIR:
-                    player.Respawn(false, false, true);
+                    if (player.Data.uridium >= 200)
+                    {
+                        player.ChangeData(DataType.URIDIUM, 200, ChangeType.DECREASE);
+                        player.Storage.KillscreenPortalRepairTime = DateTime.Now;
+                        player.Respawn(false, false, true);
+                    } else UpdateKillScreen(player);
                     break;
             }
+        }
+
+        public static void UpdateKillScreen(Player player)
+        {
+            var killScreenOptionModules = new List<KillScreenOptionModule>();
+            var basicRepair =
+                   new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.BASIC_REPAIR),
+                                              new PriceModule(PriceModule.URIDIUM, 0), true, 0,
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()));
+            killScreenOptionModules.Add(basicRepair);
+            player.SendCommand(KillScreenUpdateCommand.write(killScreenOptionModules));
         }
     }
 }

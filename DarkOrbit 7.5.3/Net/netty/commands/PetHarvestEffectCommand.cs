@@ -7,14 +7,13 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class command_i3O
+    class PetHarvestEffectCommand
     {
-        //public const short ID = 32339;
+        public const short ID = 7212;
 
-        public static byte[] super(ByteArray param1)
+        public static byte[] write()
         {
-            param1.writeShort(29809);
-            param1.writeShort(15227);
+            var param1 = new ByteArray(ID);
             return param1.ToByteArray();
         }
     }

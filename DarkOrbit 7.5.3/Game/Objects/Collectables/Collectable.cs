@@ -32,10 +32,6 @@ namespace Ow.Game.Objects.Collectables
             Respawnable = respawnable;
             ToPlayer = toPlayer;
             Spacemap.Collectables.TryAdd(Hash, this);
-            if (ToPlayer != null)
-                ToPlayer.SendPacket(GetCollectableCreatePacket());
-            else
-                GameManager.SendPacketToMap(Spacemap.Id, GetCollectableCreatePacket());
 
             var tickId = -1;
             Program.TickManager.AddTick(this, out tickId);
@@ -86,7 +82,6 @@ namespace Ow.Game.Objects.Collectables
             Position = newPos;
             Disposed = false;
             Spacemap.Collectables.TryAdd(Hash, this);
-            GameManager.SendPacketToMap(Spacemap.Id, GetCollectableCreatePacket());
         }
 
         public abstract void Reward(Player player);

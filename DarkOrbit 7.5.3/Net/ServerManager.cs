@@ -33,19 +33,17 @@ namespace Ow.Net
 
         public static void AddChatClient(Chat.ChatClient chatClient)
         {
-            if (ChatClients.ContainsKey(chatClient.UserId)) return;
-            var gameSession = GameManager.GetGameSession(chatClient.UserId);
-            gameSession.Chat = chatClient;
-            ChatClients.TryAdd(chatClient.UserId, chatClient);
+            if (ChatClients.ContainsKey(chatClient.GameSession.Player.Id)) return;
+            chatClient.GameSession.Chat = chatClient;
+            ChatClients.TryAdd(chatClient.GameSession.Player.Id, chatClient);
         }
 
         public static void RemoveChatClient(Chat.ChatClient chatClient)
         {
-            if (ChatClients.ContainsKey(chatClient.UserId))
+            if (ChatClients.ContainsKey(chatClient.GameSession.Player.Id))
             {
-                var gameSession = GameManager.GetGameSession(chatClient.UserId);
-                gameSession.Chat = null;
-                ChatClients.TryRemove(chatClient.UserId, out chatClient);
+                chatClient.GameSession.Chat = null;
+                ChatClients.TryRemove(chatClient.GameSession.Player.Id, out chatClient);
             }
         }
     }

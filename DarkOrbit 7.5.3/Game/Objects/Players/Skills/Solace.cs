@@ -23,7 +23,7 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (Player.Ship.Id == 63 && (cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode))
             {
                 ExecuteHeal();
 

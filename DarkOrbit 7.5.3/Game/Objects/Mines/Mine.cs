@@ -12,10 +12,12 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Mines
 {
-    abstract class Mine : Tick
+    abstract class Mine
     {
-        public const int RANGE = 150; //değiştirilebilir
-        public const int ACTIVATION_TIME = 3; //değiştirilebilir
+        public const int RANGE = 250;
+        public const int EXPLODE_RANGE = 375;
+
+        public const int ACTIVATION_TIME = 2;
 
         public int TickId { get; set; }
         public int MineTypeId { get; set; }
@@ -38,42 +40,26 @@ namespace Ow.Game.Objects.Mines
             Pulse = pulse;
             Hash = Randoms.GenerateHash(16);
             Spacemap.Mines.TryAdd(Hash, this);
-            GameManager.SendPacketToMap(Spacemap.Id, GetMineCreatePacket());
-
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
-            TickId = tickId;
-
             activationTime = DateTime.Now;
         }
 
         public abstract void Explode();
 
-        public void Tick()
-        {
-            if (Active)
-            {
-                if (activationTime.AddSeconds(ACTIVATION_TIME) < DateTime.Now)
-                {
-                    foreach (var player in Spacemap.Characters.Values)
-                    {
-                        if (player.Position.DistanceTo(Position) < RANGE)
-                        {
-                            Remove();
-                            Explode();
-                        }
-                    }
-                }
-            }
-        }
-
         public void Remove()
         {
             Active = false;
             var mine = this;
+
+            foreach (var gameSession in GameManager.GameSessions.Values)
+            {
+                var player = gameSession.Player;
+
+                if (player.Storage.InRangeMines.ContainsKey(Hash))
+                    player.Storage.InRangeMines.TryRemove(Hash, out mine);
+            }
+
             Spacemap.Mines.TryRemove(Hash, out mine);
             GameManager.SendPacketToMap(Spacemap.Id, $"0|n|MIN|{Hash}");
-            Program.TickManager.RemoveTick(this);
         }
 
         public string GetMineCreatePacket()

@@ -16,10 +16,10 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var players in Spacemap.Characters.Values)
+            foreach (var characters in Spacemap.Characters.Values)
             {
                 /*
-                if (players is Player && players.Position.DistanceTo(Position) < RANGE)
+                if (players is Player && players.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
                     (players as Player).AddVisualModifier(new VisualModifierCommand(players.Id, VisualModifierCommand.SURGEON_PLAGUE, 0, "", 0, true));
                 }

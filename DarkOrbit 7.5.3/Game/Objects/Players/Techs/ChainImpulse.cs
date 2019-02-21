@@ -24,7 +24,7 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.CHAIN_IMPULSE_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.CHAIN_IMPULSE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.AttackManager.ECI();
                 Player.SendCooldown(ServerCommands.TECH_ELECTRIC_CHAIN_IMPULSE, TimeManager.CHAIN_IMPULSE_COOLDOWN);

@@ -37,13 +37,13 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 string packet = "0|TX|A|S|ELA|" + Player.Id;
                 Player.SendPacket(packet);
                 Player.SendPacketToInRangePlayers(packet);
 
-                Player.EnergyLeech = true;
+                Player.Storage.EnergyLeech = true;
                 Active = true;
                 cooldown = DateTime.Now;
             }
@@ -55,7 +55,7 @@ namespace Ow.Game.Objects.Players.Techs
             Player.SendPacket(packet);
             Player.SendPacketToInRangePlayers(packet);
 
-            Player.EnergyLeech = false;
+            Player.Storage.EnergyLeech = false;
             Active = false;
             Player.TechManager.SendTechStatus();
             Player.SendCooldown(ServerCommands.TECH_ENERGY_LEECH, TimeManager.ENERGY_LEECH_COOLDOWN);

@@ -60,8 +60,8 @@ namespace Ow.Game.Events
 
         public async void SendReward(Player player)
         {
-            Player.Duel = null;
-            OtherPlayer.Duel = null;
+            Player.Storage.Duel = null;
+            OtherPlayer.Storage.Duel = null;
 
             rewarded = true;
             Program.TickManager.RemoveTick(this);

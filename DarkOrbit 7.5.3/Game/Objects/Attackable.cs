@@ -40,6 +40,8 @@ namespace Ow.Game.Objects
 
         public DateTime LastCombatTime { get; set; }
 
+        public int SeeRange = 2000;
+
         public virtual int AttackRange => 700;
 
         public bool Invisible { get; set; }

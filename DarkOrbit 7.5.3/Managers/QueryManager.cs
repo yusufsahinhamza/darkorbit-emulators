@@ -36,7 +36,27 @@ namespace Ow.Managers
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}' WHERE userID = {player.Id}");
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}', level = {player.Level} WHERE userID = {player.Id}");
+                }
+            }
+        }
+
+        public class ChatFunctions
+        {
+            public static void AddBan(int bannedId, int modId, string reason, int typeId, string untilDate)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    mySqlClient.ExecuteNonQuery($"INSERT INTO server_bans (userId, modId, reason, typeId, until_date) VALUES ({bannedId}, {modId}, '{reason}', {typeId}, '{untilDate}')");
+                }
+            }
+
+            public static bool CheckBanned(int userId)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 0");
+                    return result.Rows.Count >= 1 ? true : false;
                 }
             }
         }
@@ -97,6 +117,7 @@ namespace Ow.Managers
                     var clan = GameManager.GetClan(Convert.ToInt32(querySet["clanID"]));
 
                     player = new Player(playerId, name, clan, factionId, new Position(0, 0), GameManager.GetSpacemap(0), rankId, shipId);
+                    player.Pet.Name = Convert.ToString(querySet["petName"]);
                 }
 
             }
@@ -195,10 +216,11 @@ namespace Ow.Managers
                 foreach (DataRow row in data.Rows)
                 {
                     int id = Convert.ToInt32(row["Id"]);
-                    int index = Convert.ToInt32(row["Index"]);
                     string name = Convert.ToString(row["Name"]);
+                    int tabOrder = Convert.ToInt32(row["TabOrder"]);
+                    int companyId = Convert.ToInt32(row["CompanyId"]);
 
-                    var chat = new Chat.Room(id, index, name);
+                    var chat = new Chat.Room(id, name, tabOrder, companyId);
                     Chat.Room.Rooms.Add(chat.Id, chat);
                 }
             }

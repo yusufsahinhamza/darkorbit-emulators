@@ -9,15 +9,13 @@ namespace Ow.Net.netty.commands
 {
     class LevelUpCommand
     {
-        public static short ID = 19125;
+        public static short ID = 32247;
 
-        public static byte[] write(int uid, int selectedFormationId)
+        public static byte[] write(int uid, int newLevel)
         {
             ByteArray param1 = new ByteArray(ID);
-            param1.writeShort(22039);
-            param1.writeInt(uid >> 12 | uid << 20);
-            param1.writeInt(selectedFormationId << 5 | selectedFormationId >> 27);
-            param1.writeShort(3929);
+            param1.writeInt(uid);
+            param1.writeInt(newLevel);
             return param1.ToByteArray();
         }
     }

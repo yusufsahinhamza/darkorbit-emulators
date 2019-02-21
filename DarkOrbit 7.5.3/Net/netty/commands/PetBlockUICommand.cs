@@ -7,19 +7,15 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class class_84I
+    class PetBlockUICommand
     {
-        public const short ID = 2015;
+        public const short ID = 7348;
 
-        public class_84I()
-        {
-        }
-
-        public byte[] write()
+        public static byte[] write(bool blocked)
         {
             var param1 = new ByteArray(ID);
-
-            return param1.Message.ToArray();
+            param1.writeBoolean(blocked);
+            return param1.ToByteArray();
         }
     }
 }

@@ -31,6 +31,7 @@ namespace Ow.Game.Objects
 
         public Spaceball(int id, int typeId) : base(id, GameManager.GetShip(typeId).Name, 0, GameManager.GetShip(typeId), CurrentPosition, GameManager.GetSpacemap(16), null)
         {
+            SeeRange = 999999;
             Speed = 100;
         }
 
@@ -40,7 +41,7 @@ namespace Ow.Game.Objects
             {
                 CheckDamage();
                 CheckSpeed();
-                if ((Position.DistanceTo(MMOPosition) <= 2000) || (Position.DistanceTo(EICPosition) <= 2000) || (Position.DistanceTo(VRUPosition) <= 2000))
+                if ((Position.DistanceTo(MMOPosition) <= 100) || (Position.DistanceTo(EICPosition) <= 100) || (Position.DistanceTo(VRUPosition) <= 100))
                     SendReward();
             }
         }

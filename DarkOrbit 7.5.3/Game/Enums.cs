@@ -19,6 +19,21 @@ namespace Ow.Game
         SECTOR_CONTROL_SECTOR_ZONE = 8,
     }
 
+    public enum DataType
+    {
+        URIDIUM,
+        CREDITS,
+        HONOR,
+        EXPERIENCE,
+        JACKPOT
+    }
+
+    public enum ChangeType
+    {
+        INCREASE,
+        DECREASE
+    }
+
     public enum HealType
     {
         HEALTH,

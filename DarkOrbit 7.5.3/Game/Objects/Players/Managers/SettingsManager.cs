@@ -94,9 +94,9 @@ namespace Ow.Game.Objects.Players.Managers
         {
             public string quickbarSlots = "6,-1,-1,-1,-1,-1,-1,-1,-1,-1";
             public string quickbarSlotsPremium = "77,-1,-1,-1,-1,-1,-1,-1,-1,-1";
-            public int selectedLaser = 1;
+            public int selectedLaser = 0;
             public int selectedRocket = 1;
-            public int selectedRocketLauncher = -1;
+            public int selectedRocketLauncher = 7;
         }
 
         public class QualityBase
@@ -142,7 +142,7 @@ namespace Ow.Game.Objects.Players.Managers
             public bool autoBoost = false;
             public bool autoBuyBootyKeys = false;
             public bool doubleclickAttackEnabled = true;
-            public bool autoChangeAmmo = false;
+            public bool autoChangeAmmo = true;
             public bool autoStartEnabled = true;
         }
 
@@ -183,7 +183,7 @@ namespace Ow.Game.Objects.Players.Managers
             public bool blockedGroupInvites = false;
             public int selectedFormation = 0;
             public int currentConfig = 1;
-            public List<string> selectedCpus = new List<string>();
+            public List<string> selectedCpus = new List<string> { CpuManager.AUTO_ROCKET_CPU, CpuManager.AUTO_HELLSTROM_CPU };
         }
 
         public class CurrentCooldownsBase
@@ -258,6 +258,8 @@ namespace Ow.Game.Objects.Players.Managers
             if (shipId != 0)
                 Player.SendPacket("0|SD|S|" + skill + "|1");
 
+            Player.SendPacket("0|UI|" + ServerCommands.BUTTON + "|" + ServerCommands.HIDE_BUTTON + "|8"); // SELECTION_LASER_CBO100
+            Player.SendPacket("0|UI|" + ServerCommands.BUTTON + "|" + ServerCommands.HIDE_BUTTON + "|102"); // SELECTION_LAUNCHER_ROCKET_CBR
             Player.SendPacket("0|UI|" + ServerCommands.BUTTON + "|" + ServerCommands.HIDE_BUTTON + "|74"); // SELECTION_ROCKET_BDR_1211
             Player.SendPacket("0|UI|" + ServerCommands.BUTTON + "|" + ServerCommands.HIDE_BUTTON + "|50"); // SELECTION_LAUNCHER_ROCKET_ECO10
             Player.SendPacket("0|UI|" + ServerCommands.BUTTON + "|" + ServerCommands.HIDE_BUTTON + "|75"); // SELECTION_LAUNCHER_ROCKET_SAR_01
@@ -279,7 +281,10 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.CpuManager.EnableArolX();
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.AUTO_HELLSTROM_CPU))
+            {
                 Player.CpuManager.EnableRllbX();
+                Player.AttackManager.RocketLauncher.Reload();
+            }
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.CLK_XL))
                 Player.CpuManager.EnableCloak();
@@ -291,7 +296,7 @@ namespace Ow.Game.Objects.Players.Managers
             items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.X4), 1000));
             items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.RSB), 1000));
             items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.SAB), 1000));
-            items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.CBO), 1000));
+            //items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.CBO), 1000));
 
             Player.SendCommand(AmmunitionCountUpdateCommand.write(items));
             items.Clear();
@@ -326,7 +331,7 @@ namespace Ow.Game.Objects.Players.Managers
             items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.HELLSTORM), 100));
             items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.UBER_ROCKET), 100));
             items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.SAR02), 100));
-            items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.CBR), 100));
+            //items.Add(new AmmunitionCountModule(new AmmunitionTypeModule(AmmunitionTypeModule.CBR), 100));
 
             Player.SendCommand(AmmunitionCountUpdateCommand.write(items));
         }

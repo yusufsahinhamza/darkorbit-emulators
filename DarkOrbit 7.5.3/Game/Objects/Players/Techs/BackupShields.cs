@@ -23,7 +23,7 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.BACKUP_SHIELD_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.BACKUP_SHIELD_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 string packet = "0|TX|A|S|SBU|" + Player.Id;
                 Player.SendPacket(packet);

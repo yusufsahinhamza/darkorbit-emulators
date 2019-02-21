@@ -32,10 +32,9 @@ namespace Ow.Game.Objects.Players
         public Group(Player player, Player acceptedPlayer)
         {
             Id = FindId();
-            LootMode = 2;
+            LootMode = LOOT_MODE_NEED_BEFORE_GREED;
 
             Leader = player;
-            Leader.Group = this;
 
             AddToGroup(acceptedPlayer);
             AddToGroup(player);
@@ -65,15 +64,13 @@ namespace Ow.Game.Objects.Players
         public void SendInitToAll()
         {
             foreach (var player in Members)
-            {
                 InitializeGroup(player.Value);
-            }
         }
 
         private void InitializeGroup(Player player)
         {
             GroupSystem.GroupInitializationCommand(player);
-            player.GroupInitialized = true;
+            player.Storage.GroupInitialized = true;
         }
 
         public DateTime updateTime = new DateTime();
@@ -85,7 +82,7 @@ namespace Ow.Game.Objects.Players
                 {
                     foreach (var groupMemberInstance in Members.Values)
                     {
-                        var instance = groupMemberInstance.GetGameSession();
+                        var instance = groupMemberInstance.GameSession;
                         if (instance == null)
                         {
                             Leave(groupMemberInstance);
@@ -98,7 +95,7 @@ namespace Ow.Game.Objects.Players
                             SendInitToAll();
                         }
 
-                        if (!instance.Player.GroupInitialized)
+                        if (!instance.Player.Storage.GroupInitialized)
                         {
                             InitializeGroup(instance.Player);
                         }
@@ -144,8 +141,8 @@ namespace Ow.Game.Objects.Players
         public void Ping(Position position)
         {
             foreach (var member in Members)
-                if (member.Value.GetGameSession() != null)
-                    member.Value.SendPacket($"0|ps|png|{position.X}|{position.Y}");        
+                if (member.Value.GameSession != null)
+                    member.Value.SendPacket($"0|ps|png|{position.X}|{position.Y}");
         }
 
         public void Follow(Player player, Player followedPlayer)
@@ -187,7 +184,7 @@ namespace Ow.Game.Objects.Players
             Leader = leaderSession.Player;
             foreach (var member in Members)
             {
-                if (member.Value.GetGameSession() == null) continue;
+                if (member.Value.GameSession == null) continue;
                 member.Value.SendPacket("0|ps|nl|" + Leader.Id);
             }
         }
@@ -198,7 +195,7 @@ namespace Ow.Game.Objects.Players
             LeaderInvitesOnly = Convert.ToBoolean(newBehaviour);
             foreach (var member in Members)
             {
-                if (member.Value.GetGameSession() == null) continue;
+                if (member.Value.GameSession == null) continue;
                 member.Value.SendPacket("0|ps|chib|" + Convert.ToInt32(LeaderInvitesOnly));
             }
         }
@@ -218,7 +215,7 @@ namespace Ow.Game.Objects.Players
         {
             foreach (var member in Members)
             {
-                if (member.Value.GetGameSession() == null) continue;
+                if (member.Value.GameSession == null) continue;
                 if (kicked && member.Value.Id == Leader.Id) continue;
                 member.Value.SendPacket($"0|{ServerCommands.GROUPSYSTEM}|{ServerCommands.GROUPSYSTEM_GROUP_EVENT_MEMBER_LEAVES}|{(kicked ? ServerCommands.GROUPSYSTEM_GROUP_EVENT_MEMBER_LEAVES_SUB_KICK : ServerCommands.GROUPSYSTEM_GROUP_EVENT_MEMBER_LEAVES_SUB_LEAVE)}|{player.Id}");
             }
@@ -226,13 +223,15 @@ namespace Ow.Game.Objects.Players
             if (Members.Count == 2)
             {
                 Destroy();
-            } else {
+            }
+            else
+            {
                 player.Group = null;
                 Members.TryRemove(player.Id, out player);
                 if (player != Leader)
                     SendInitToAll();
                 else
-                    ChangeLeader(Members.FirstOrDefault().Value.GetGameSession());
+                    ChangeLeader(Members.FirstOrDefault().Value.GameSession);
             }
         }
     }
@@ -280,12 +279,12 @@ namespace Ow.Game.Objects.Players
                     player.SendPacket("0|A|STM|msg_grp_inv_err_candidate_blocking");
                     return;
                 }
-                if (invited.GroupInvites.ContainsKey(player.Id) && GameManager.Groups.Contains(player.Group))
+                if (invited.Storage.GroupInvites.ContainsKey(player.Id) && GameManager.Groups.Contains(player.Group))
                 {
                     player.SendPacket("0|A|STM|msg_grp_inv_err_duplicate_invitation");
                     return;
                 }
-                invited.GroupInvites.Add(player.Id, player.Group);
+                invited.Storage.GroupInvites.Add(player.Id, player.Group);
                 GroupInviteCommand(player, invited);
             }
         }
@@ -309,7 +308,7 @@ namespace Ow.Game.Objects.Players
             var groupLeader = player.Group.Leader;
 
             builder.Append(
-                $"|{Out.Base64(groupLeader.Name)}|{groupLeader.Id}|{groupLeader.CurrentHitPoints}|{groupLeader.MaxHitPoints}|{groupLeader.CurrentNanoHull}|{groupLeader.MaxNanoHull}|{groupLeader.CurrentShieldPoints}|{groupLeader.MaxShieldPoints}|{groupLeader.Spacemap.Id}|{groupLeader.Position.X}|{groupLeader.Position.Y}|{groupLeader.Level}|0|{Convert.ToInt32(groupLeader.Invisible)}|{Convert.ToInt32(groupLeader.AttackManager.Attacking)}|{Convert.ToInt32(groupLeader.FactionId)}|{Convert.ToInt32((groupLeader.Selected as Player)?.Ship.Id)}|{groupLeader.Clan.Tag}|{groupLeader.Ship.Id}|{Convert.ToInt32(GameManager.GetGameSession(groupLeader.Id) == null)}|");
+                $"|{Out.Base64(groupLeader.Name)}|{groupLeader.Id}|{groupLeader.CurrentHitPoints}|{groupLeader.MaxHitPoints}|{groupLeader.CurrentNanoHull}|{groupLeader.MaxNanoHull}|{groupLeader.CurrentShieldPoints}|{groupLeader.MaxShieldPoints}|{groupLeader.Spacemap.Id}|{groupLeader.Position.X}|{groupLeader.Position.Y}|{groupLeader.Level}|0|{Convert.ToInt32(groupLeader.Invisible)}|{Convert.ToInt32(groupLeader.AttackManager.Attacking)}|{Convert.ToInt32(groupLeader.FactionId)}|{Convert.ToInt32(groupLeader.SelectedCharacter?.Ship.Id)}|{groupLeader.GetClanTag()}|{groupLeader.Ship.Id}|{Convert.ToInt32(GameManager.GetGameSession(groupLeader.Id) == null)}|");
 
             foreach (var grpMember in player.Group.Members)
             {
@@ -317,7 +316,7 @@ namespace Ow.Game.Objects.Players
                 if (groupMember.Id == player.Group.Leader.Id) continue;
 
                 builder.Append(
-                    $"|{Out.Base64(groupMember.Name)}|{groupMember.Id}|{groupMember.CurrentHitPoints}|{groupMember.MaxHitPoints}|{groupMember.CurrentNanoHull}|{groupMember.MaxNanoHull}|{groupMember.CurrentShieldPoints}|{groupMember.MaxShieldPoints}|{groupMember.Spacemap.Id}|{groupMember.Position.X}|{groupMember.Position.Y}|{groupMember.Level}|0|{Convert.ToInt32(groupMember.Invisible)}|{Convert.ToInt32(groupMember.AttackManager.Attacking)}|{Convert.ToInt32(groupMember.FactionId)}|{Convert.ToInt32((groupLeader.Selected as Player)?.Ship.Id)}|{groupMember.Clan.Tag}|{groupMember.Ship.Id}|{Convert.ToInt32(GameManager.GetGameSession(groupMember.Id) == null)}|");
+                    $"|{Out.Base64(groupMember.Name)}|{groupMember.Id}|{groupMember.CurrentHitPoints}|{groupMember.MaxHitPoints}|{groupMember.CurrentNanoHull}|{groupMember.MaxNanoHull}|{groupMember.CurrentShieldPoints}|{groupMember.MaxShieldPoints}|{groupMember.Spacemap.Id}|{groupMember.Position.X}|{groupMember.Position.Y}|{groupMember.Level}|0|{Convert.ToInt32(groupMember.Invisible)}|{Convert.ToInt32(groupMember.AttackManager.Attacking)}|{Convert.ToInt32(groupMember.FactionId)}|{Convert.ToInt32(groupLeader.SelectedCharacter?.Ship.Id)}|{groupMember.GetClanTag()}|{groupMember.Ship.Id}|{Convert.ToInt32(GameManager.GetGameSession(groupMember.Id) == null)}|");
             }
 
             player.SendPacket(builder.ToString());
@@ -325,7 +324,7 @@ namespace Ow.Game.Objects.Players
 
         public static void AssembleAcceptedInvitation(Player player, Player inviter)
         {
-            if (inviter == null || !player.GroupInvites.ContainsKey(inviter.Id))
+            if (inviter == null || !player.Storage.GroupInvites.ContainsKey(inviter.Id))
             {
                 player.SendPacket("0|A|STM|msg_grp_inv_err_inviter_nonexistant");
                 return;
@@ -338,7 +337,7 @@ namespace Ow.Game.Objects.Players
             {
                 inviter.Group.Accept(inviter, player);
             }
-            player.GroupInvites.Clear();
+            player.Storage.GroupInvites.Clear();
         }
 
         public static void BlockInvitations(Player player)
@@ -350,9 +349,9 @@ namespace Ow.Game.Objects.Players
 
         public static void Reject(Player player, Player inviter)
         {
-            if (player.GroupInvites.ContainsKey(inviter.Id))
+            if (player.Storage.GroupInvites.ContainsKey(inviter.Id))
             {
-                player.GroupInvites.Remove(inviter.Id);
+                player.Storage.GroupInvites.Remove(inviter.Id);
                 GroupDeleteInvitationCommand(inviter, player, ServerCommands.GROUPSYSTEM_GROUP_INVITATION_DELETE_REJECT);
                 GroupDeleteInvitationCommand(player, inviter);
             }
@@ -361,9 +360,9 @@ namespace Ow.Game.Objects.Players
         public static void Revoke(Player player, Player inviter)
         {
             if (player == null) return;
-            if (inviter.GroupInvites.ContainsKey(player.Id))
+            if (inviter.Storage.GroupInvites.ContainsKey(player.Id))
             {
-                inviter.GroupInvites.Remove(player.Id);
+                inviter.Storage.GroupInvites.Remove(player.Id);
 
                 GroupDeleteInvitationCommand(inviter, player, ServerCommands.GROUPSYSTEM_GROUP_INVITATION_DELETE_REVOKE);
                 GroupDeleteInvitationCommand(player, inviter);

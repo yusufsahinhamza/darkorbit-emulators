@@ -75,6 +75,8 @@ namespace Ow.Game.Events
             Active = false;
             Program.TickManager.RemoveTick(this);
             Players.Clear();
+            Spacemap.Characters.Clear();
+            Spacemap.Mines.Clear();
 
             var uridium = 10000;
             player.ChangeData(DataType.URIDIUM, uridium);
@@ -86,7 +88,7 @@ namespace Ow.Game.Events
             GameManager.SendPacketToAll($"0|A|STD|{player.Name} has won the Jacpot Battle!");
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
-            player.MoveManager.SetPosition();
+            player.SetPosition(player.FactionId == 1 ? Position.MMOPosition : player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
             player.Jump(player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15, player.Position);
         }
     }

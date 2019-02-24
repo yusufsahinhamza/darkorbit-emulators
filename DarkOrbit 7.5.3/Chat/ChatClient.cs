@@ -36,6 +36,12 @@ namespace Ow.Chat
         public Permissions Permission { get; set; }
         public List<Int32> ChatsJoined = new List<Int32>();
 
+        public static List<string> Filter = new List<string>
+        {
+            "orospu",
+            "ananı"
+        };
+
         public ChatClient(Socket Socket)
         {
             this.Socket = Socket;
@@ -331,6 +337,12 @@ namespace Ow.Chat
             {
                 if (!cmd.StartsWith("/"))
                 {
+                    foreach (var m in Filter)
+                    {
+                        if (message.Contains(m))
+                            Console.WriteLine("BAN, mesaj = " + m);
+                    }
+
                     foreach (var pair in ServerManager.ChatClients.Values)
                     {
                         if (pair.ChatsJoined.Contains(Convert.ToInt32(roomId)))

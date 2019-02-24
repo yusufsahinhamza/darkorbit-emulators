@@ -21,26 +21,9 @@ namespace Ow.Net.netty.handlers
             var settingsManager = player.SettingsManager;
             var newSelectedLaser = read.batteryType.typeValue;
 
-            if (settingsManager.SelectedLaser == newSelectedLaser)
-            {
-                if (player.Settings.Gameplay.quickSlotStopAttack)
-                {
-                    if (player.Selected != null)
-                    {
-                        if (player.AttackManager.Attacking)
-                            player.DisableAttack(newSelectedLaser);
-                        else
-                            player.EnableAttack(newSelectedLaser);
-                    }
-                }
-            }
-            else
-            {            
-                settingsManager.SelectedLaser = newSelectedLaser;
-                player.Settings.ShipSettings.selectedLaser = newSelectedLaser;
-               
-                QueryManager.SavePlayer.Settings(player);
-            }
+            settingsManager.SelectedLaser = newSelectedLaser;
+            player.AttackManager.LaserAttack();
+            player.Settings.ShipSettings.selectedLaser = newSelectedLaser;
         }
     }
 }

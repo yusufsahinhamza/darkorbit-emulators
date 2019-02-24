@@ -29,7 +29,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (Attacking)
             {
-                var enemy = Player.SelectedCharacter;
+                var enemy = Player.Selected as Character;
                 if (enemy == null) return;
                 if (!TargetDefinition(enemy)) return;
 
@@ -214,17 +214,14 @@ namespace Ow.Game.Objects.Players.Managers
 
                 foreach (var otherPlayers in Player.Spacemap.Characters.Values)
                 {
-                    if (otherPlayers is Player otherPlayer)
+                    if (otherPlayers is Player otherPlayer && otherPlayer.Selected == Player)
                     {
-                        if (otherPlayer.Selected == Player)
-                        {
-                            string empMessagePacket = "0|A|STM|msg_own_targeting_harmed";
-                            otherPlayer.SendPacket(empMessagePacket);
-                            otherPlayer.Selected = null;
-                            otherPlayer.DisableAttack(otherPlayer.SettingsManager.SelectedLaser);
-                            otherPlayer.SendCommand(ShipDeselectionCommand.write());
-                            otherPlayer.SendPacket("0|UI|MM|NOISE");
-                        }
+                        string empMessagePacket = "0|A|STM|msg_own_targeting_harmed";
+                        otherPlayer.SendPacket(empMessagePacket);
+                        otherPlayer.Selected = null;
+                        otherPlayer.DisableAttack(otherPlayer.SettingsManager.SelectedLaser);
+                        otherPlayer.SendCommand(ShipDeselectionCommand.write());
+                        otherPlayer.SendPacket("0|UI|MM|NOISE");
                     }
                 }
 

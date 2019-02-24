@@ -94,7 +94,6 @@
     <Compile Include="Game\Objects\Activatables\BattleStation.cs" />
     <Compile Include="Game\Objects\Player.cs" />
     <Compile Include="Game\Objects\Players\Managers\CpuManager.cs" />
-    <Compile Include="Game\Objects\Players\Managers\MoveManager.cs" />
     <Compile Include="Game\Movements\Position.cs" />
     <Compile Include="Game\Objects\Players\Managers\SkillManager.cs" />
     <Compile Include="Game\Objects\Players\Managers\SettingsManager.cs" />

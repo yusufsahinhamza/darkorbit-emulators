@@ -262,9 +262,7 @@ namespace Ow.Game
                 if (activateButton)
                 {
                     if (entity is Portal)
-                    {
                         Player.SendPacket(Player.GetBeaconPacket());
-                    }
                     else
                     {
                         var assetAction = MapAssetActionAvailableCommand.write(entity.Id, status);
@@ -340,19 +338,18 @@ namespace Ow.Game
 
         public void SendPlayers(Player Player)
         {
-            Player.InRangeCharacters.Clear();
-            foreach (var character in Characters.Values)
+            foreach (var character in Player.InRangeCharacters.Values)
             {
-                if (Player.Position.DistanceTo(character.Position) <= ((EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(character.Id)) ? 999999 : character.SeeRange))
-                    Player.AddInRangeCharacter(character);
+                Player.RemoveInRangeCharacter(character);
+                Player.AddInRangeCharacter(character);
             }
         }
 
         public void AddAndInitPlayer(Player player)
         {
             AddCharacter(player);
-            VersionRequestHandler.SendSettings(player);
-            VersionRequestHandler.SendPlayerItems(player);
+            //VersionRequestHandler.SendSettings(player);
+            VersionRequestHandler.SendPlayerItems(player, false);
         }
 
         public Activatable GetActivatableMapEntity(int pAssetId)

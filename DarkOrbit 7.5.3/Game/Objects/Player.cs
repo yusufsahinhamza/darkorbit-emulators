@@ -40,7 +40,6 @@ namespace Ow.Game.Objects
         public CpuManager CpuManager { get; set; }
         public TechManager TechManager { get; set; }
         public SkillManager SkillManager { get; set; }
-        public MoveManager MoveManager { get; set; }
         public BoosterManager BoosterManager { get; set; }
 
         public Player(int id, string name, Clan clan, int factionId, Position position, Spacemap spacemap, int rankId, int shipId)
@@ -63,7 +62,6 @@ namespace Ow.Game.Objects
             AttackManager = new AttackManager(this);
             TechManager = new TechManager(this);
             SkillManager = new SkillManager(this);
-            MoveManager = new MoveManager(this);
             SettingsManager = new SettingsManager(this);
             CpuManager = new CpuManager(this);
             BoosterManager = new BoosterManager(this);
@@ -72,10 +70,10 @@ namespace Ow.Game.Objects
 
         public new void Tick()
         {
+            Movement.ActualPosition(this);
             CheckHitpointsRepair();
             CheckShieldPointsRepair();
             CheckRadiation();
-            MoveManager.Tick();
             AttackManager.LaserAttack();
             AttackManager.RocketLauncher.Tick();
             Logout();
@@ -838,7 +836,7 @@ namespace Ow.Game.Objects
             else if (deathLocation)
                 CurrentHitPoints = Maths.GetPercentage(MaxHitPoints, 10);
             else
-                MoveManager.SetPosition();
+                SetPosition(FactionId == 1 ? Position.MMOPosition : FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
 
             if (basicRepair || fullRepair)
             {

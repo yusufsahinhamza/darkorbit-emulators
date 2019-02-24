@@ -40,12 +40,14 @@ namespace Ow.Game.Objects.Collectables
 
         public void Tick()
         {
+            /*
             if (!Disposed)
                 foreach (var character in Spacemap.Characters.Values)
                 {
                     if (character.Position.X == Position.X && character.Position.Y == Position.Y && character is Pet)
                         Collect(character as Pet);
                 }
+                */
         }
 
         public async void Collect(Character character)

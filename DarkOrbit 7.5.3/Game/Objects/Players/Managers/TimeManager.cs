@@ -35,19 +35,19 @@ namespace Ow.Game.Objects.Players.Managers
         public const int SLM_01_DURATION = 5000;
         public const int MINE_COOLDOWN = 60000;
 
-        public const int SOLACE_COOLDOWN = 1200000;
+        public const int SOLACE_COOLDOWN = 900000;
 
         public const int DIMINISHER_DURATION = 60000;
-        public const int DIMINISHER_COOLDOWN = 1200000;
+        public const int DIMINISHER_COOLDOWN = 900000;
 
         public const int SENTINEL_DURATION = 120000;
-        public const int SENTINEL_COOLDOWN = 1200000;
+        public const int SENTINEL_COOLDOWN = 900000;
 
         public const int SPECTRUM_DURATION = 30000;
-        public const int SPECTRUM_COOLDOWN = 1200000;
+        public const int SPECTRUM_COOLDOWN = 900000;
 
         public const int VENOM_DURATION = 60000;
-        public const int VENOM_COOLDOWN = 1200000;
+        public const int VENOM_COOLDOWN = 900000;
 
         public const int BACKUP_SHIELD_COOLDOWN = 120000;
 

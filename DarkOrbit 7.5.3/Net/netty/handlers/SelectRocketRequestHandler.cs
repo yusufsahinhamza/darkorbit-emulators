@@ -21,19 +21,9 @@ namespace Ow.Net.netty.handlers
             var settingsManager = player.SettingsManager;
             var newSelectedRocket = read.rocketType.typeValue;
 
-            if (settingsManager.SelectedRocket == newSelectedRocket)
-            {
-                if (player.Settings.Gameplay.quickSlotStopAttack)
-                {
-                    player.AttackManager.RocketAttack();
-                }
-            }
-            else
-            {
-                settingsManager.SelectedRocket = newSelectedRocket;
-                player.Settings.ShipSettings.selectedRocket = newSelectedRocket;
-                QueryManager.SavePlayer.Settings(player);
-            }
+            settingsManager.SelectedRocket = newSelectedRocket;
+            player.AttackManager.RocketAttack();
+            player.Settings.ShipSettings.selectedRocket = newSelectedRocket;
         }
     }
 }

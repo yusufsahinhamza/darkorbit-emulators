@@ -109,58 +109,78 @@ namespace Ow.Net.netty.handlers
         private void LoadPlayer()
         {
             Player.Spacemap.AddCharacter(Player);
+            Player.SetPosition(Player.FactionId == 1 ? Position.MMOPosition : Player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
 
             var tickId = -1;
             Program.TickManager.AddTick(GameSession.Player, out tickId);
             GameSession.Player.TickId = tickId;
         }
 
-        public static void SendPlayerItems(Player player)
+        public static void SendPlayerItems(Player player, bool isLogin = true)
         {
-            player.SendPacket("0|t");
             player.SendCommand(player.GetShipInitializationCommand());
 
             if (player.Title != "")
                 player.SendPacket("0|n|t|" + player.Id + "|1|" + player.Title + "");
 
-            player.DroneManager.UpdateDrones();
-
-            player.SendPacket("0|S|CFG|" + player.CurrentConfig);
-            player.SendPacket("0|A|BK|0"); //yeşil kutu miktarı
-            player.SendPacket("0|A|JV|0"); //atlama kuponu miktarı
-
-            var spaceball = EventManager.Spaceball.Character;
-            var mmo = spaceball != null ? spaceball.Mmo : 0;
-            var eic = spaceball != null ? spaceball.Eic : 0;
-            var vru = spaceball != null ? spaceball.Vru : 0;
-            player.SendPacket($"0|n|ssi|{mmo}|{eic}|{vru}");
-
-            player.SendPacket("0|ps|nüscht");
-            player.SendPacket("0|ps|blk|" + Convert.ToInt32(player.Settings.InGameSettings.blockedGroupInvites));
-
-            if (player.Group != null)
-                GroupSystem.GroupInitializationCommand(player.GameSession.Player);
+            if (isLogin)
+            {
+                player.DroneManager.UpdateDrones();
+                player.SendPacket("0|S|CFG|" + player.CurrentConfig);
+                player.SendPacket("0|A|BK|0"); //yeşil kutu miktarı
+                player.SendPacket("0|A|JV|0"); //atlama kuponu miktarı
+            }
             else
             {
-                foreach (var userId in Player.Storage.GroupInvites.Keys)
-                    if (GameManager.GetPlayerById(userId) != null)
-                        GroupSystem.GroupInviteCommand(GameManager.GetPlayerById(userId), Player);
+                player.SendPacket(player.DroneManager.GetDronesPacket());
+                var droneFormationChangeCommand = DroneFormationChangeCommand.write(player.Id, (int)player.SettingsManager.SelectedFormation);
+                player.SendCommand(droneFormationChangeCommand);
+                player.SendCommandToInRangePlayers(droneFormationChangeCommand);
+            }
+
+            var spaceball = EventManager.Spaceball.Character;
+            if (EventManager.Spaceball.Active && spaceball != null)
+                player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
+            else
+                player.SendPacket($"0|n|ssi|0|0|0");
+
+
+            if (isLogin)
+            {
+                player.SendPacket("0|ps|nüscht");
+                player.SendPacket("0|ps|blk|" + Convert.ToInt32(player.Settings.InGameSettings.blockedGroupInvites));
+
+                if (player.Group != null)
+                    GroupSystem.GroupInitializationCommand(player.GameSession.Player);
+                else
+                {
+                    foreach (var userId in player.Storage.GroupInvites.Keys)
+                        if (GameManager.GetPlayerById(userId) != null)
+                            GroupSystem.GroupInviteCommand(GameManager.GetPlayerById(userId), player);
+                }
             }
 
             if (!player.Premium)
                 player.SendCommand(PetBlockUICommand.write(true));
 
             player.Spacemap.SendObjects(player);
-            player.Spacemap.SendPlayers(player);
-            player.Spacemap.OnPlayerMovement(player);
+
+            if (isLogin)
+                player.Spacemap.SendPlayers(player);
 
             player.CheckAbilities(player);
 
-            player.SettingsManager.SendSlotBarItems();
+            if (isLogin)
+                player.SettingsManager.SendSlotBarItems();
+
             player.SettingsManager.SendRemoveWindows();
 
-            player.SendCommand(PetInitializationCommand.write(true, true, true));
-            player.UpdateStatus();
+            if (isLogin)
+            {
+                player.SendCommand(PetInitializationCommand.write(true, true, true));
+                player.UpdateStatus();
+            }
+
             player.SendCurrentCooldowns();
             QueryManager.SavePlayer.Information(player);
         }

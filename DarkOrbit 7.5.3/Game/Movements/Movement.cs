@@ -48,6 +48,9 @@ namespace Ow.Game.Movements
 
         public static Position ActualPosition(Character character)
         {
+            if (character is Player player)
+                player.Spacemap.OnPlayerMovement(player);
+
             Position actualPosition;
 
             if (character.Moving)

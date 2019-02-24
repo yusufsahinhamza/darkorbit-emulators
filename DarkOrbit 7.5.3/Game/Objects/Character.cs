@@ -149,6 +149,12 @@ namespace Ow.Game.Objects
 
             if (this is Player thisPlayer)
             {
+                if (EventManager.JackpotBattle.Active && thisPlayer.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id && EventManager.JackpotBattle.Players.ContainsKey(thisPlayer.Id))
+                {
+                    EventManager.JackpotBattle.Players.TryRemove(thisPlayer.Id, out thisPlayer);
+                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Players.Count);
+                }
+
                 thisPlayer.SkillManager.DisableAllSkills();
                 thisPlayer.Pet.Deactivate(true);
                 thisPlayer.CurrentHitPoints = 0;
@@ -157,12 +163,6 @@ namespace Ow.Game.Objects
                 thisPlayer.CurrentInRangePortalId = -1;
                 thisPlayer.Storage.InRangeAssets.Clear();
                 thisPlayer.KillScreen(destroyer, destructionType);
-
-                if (thisPlayer.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id && EventManager.JackpotBattle.Players.ContainsKey(thisPlayer.Id))
-                {
-                    EventManager.JackpotBattle.Players.TryRemove(thisPlayer.Id, out thisPlayer);
-                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Players.Count);
-                }
             }
 
             Selected = null;
@@ -253,7 +253,7 @@ namespace Ow.Game.Objects
 
                 if (this is Player player)
                 {
-                    if (SelectedCharacter == character)
+                    if (Selected == character)
                     {
                         Selected = null;
                         player.DisableAttack(player.SettingsManager.SelectedLaser);
@@ -327,9 +327,6 @@ namespace Ow.Game.Objects
 
             if (this is Player player)
             {
-                var gameSession = GameManager.GetGameSession(Id);
-                if (gameSession == null) return;
-
                 player.SendCommand(HitpointInfoCommand.write(player.CurrentHitPoints, player.MaxHitPoints, player.CurrentNanoHull, player.MaxNanoHull));
                 player.SendCommand(AttributeShieldUpdateCommand.write(player.CurrentShieldPoints, player.MaxShieldPoints));
                 player.SendCommand(AttributeShipSpeedUpdateCommand.write(player.Speed));
@@ -345,8 +342,8 @@ namespace Ow.Game.Objects
             }
 
             foreach (var character in Spacemap.Characters.Values)
-                if (character is Player && character.Selected != null && character.Selected == this)
-                    (character as Player).SendCommand(ShipSelectionCommand.write(Id, Ship.Id, CurrentShieldPoints, MaxShieldPoints, CurrentHitPoints, MaxHitPoints, CurrentNanoHull, MaxNanoHull, false));
+                if (character is Player otherPlayer && (otherPlayer.Selected != null && otherPlayer.Selected == this))
+                    otherPlayer.SendCommand(ShipSelectionCommand.write(Id, Ship.Id, CurrentShieldPoints, MaxShieldPoints, CurrentHitPoints, MaxHitPoints, CurrentNanoHull, MaxNanoHull, false));
         }
 
         public void AddVisualModifier(VisualModifierCommand visualModifier)

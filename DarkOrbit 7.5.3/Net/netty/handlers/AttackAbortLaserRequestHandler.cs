@@ -14,9 +14,10 @@ namespace Ow.Net.netty.handlers
         public void execute(GameSession gameSession, byte[] bytes)
         {
             var player = gameSession.Player;
+
             player.DisableAttack(player.SettingsManager.SelectedLaser);
 
-            if(player.Selected != null)
+            if (player.Selected != null)
                 player.SendPacket("0|A|STM|attstop|%!|" + (EventManager.JackpotBattle.Active && player.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id ? EventManager.JackpotBattle.Name : player.SelectedCharacter.Name));
         }
     }

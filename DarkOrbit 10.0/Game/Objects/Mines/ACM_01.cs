@@ -13,20 +13,20 @@ namespace Ow.Game.Objects.Mines
 {
     class ACM_01 : Mine
     {
-        public ACM_01(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(player, spacemap, position, mineTypeId, player.SettingsManager.SelectedFormation == DroneManager.LANCE_FORMATION) { }
+        public ACM_01(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(player, spacemap, position, mineTypeId, player.Settings.InGameSettings.selectedLaser == DroneManager.LANCE_FORMATION) { }
 
         public override void Explode()
         {
-            foreach (var players in Spacemap.Characters.Values)
+            foreach (var characters in Spacemap.Characters.Values)
             {
-                if (players is Player && players.Position.DistanceTo(Position) < RANGE)
+                if (characters is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    var damage = Maths.GetPercentage(players.CurrentHitPoints, 20);
+                    var damage = Maths.GetPercentage(player.CurrentHitPoints, 20);
 
                     if (Lance)
                         damage *= 2;
 
-                    Player.AttackManager.Damage(Player, players, DamageType.MINE, damage, 0, false);
+                    Player.AttackManager.Damage(Player, player, DamageType.MINE, damage, 0, false);
                 }
             }
         }

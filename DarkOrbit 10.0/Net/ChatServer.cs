@@ -53,7 +53,7 @@ namespace Ow.Net
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.Message, "ERROR");
+                Out.WriteLine(e.Message, "ChatServer ERROR");
             }
         }
 

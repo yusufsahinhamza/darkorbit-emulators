@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Ow.Game.Objects;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 
@@ -13,8 +15,12 @@ namespace Ow.Game.Objects.Players.Managers
     class DroneManager
     {
         public Player Player { get; set; }
+        public List<int> Config1Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        public List<int> Config2Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        public bool Apis = false;
+        public bool Zeus = false;
 
-        public DroneManager(Player player) { Player = player; }
+        public DroneManager(Player player) { Player = player; SetDroneDesigns(); }
 
         private const int DRONE_CHANGE_COOLDOWN_TIME = 3000;
 
@@ -46,10 +52,88 @@ namespace Ow.Game.Objects.Players.Managers
             MothWeaken();
         }
 
+        public void SetDroneDesigns()
+        {
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
+                var querySet = mySqlClient.ExecuteQueryRow(sql);
+                dynamic config1Drones = JsonConvert.DeserializeObject(querySet["config1_drones"].ToString());
+                dynamic config2Drones = JsonConvert.DeserializeObject(querySet["config2_drones"].ToString());
+                dynamic items = JsonConvert.DeserializeObject(querySet["items"].ToString());
+
+                Apis = items["apis"];
+                Zeus = items["zeus"];
+
+                for (var i = 0; i < 10; i++)
+                {
+                    foreach (var designId in config1Drones[i]["designs"])
+                        Config1Designs[i] = (int)designId;
+
+                    foreach (var designId in config2Drones[i]["designs"])
+                        Config2Designs[i] = (int)designId;
+                }
+            }
+        }
+
+        public void UpdateDrones()
+        {
+            Config1Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            Config2Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+            SetDroneDesigns();
+
+            string drones = GetDronesPacket();
+            Player.SendPacket(drones);
+            Player.SendPacketToInRangePlayers(drones);
+
+            var droneFormationChangeCommand = DroneFormationChangeCommand.write(Player.Id, DroneManager.GetSelectedFormationId(Player.Settings.InGameSettings.selectedFormation));
+            Player.SendCommand(droneFormationChangeCommand);
+            Player.SendCommandToInRangePlayers(droneFormationChangeCommand);
+        }
+
+        public string GetDronesPacket()
+        {
+            var DronePacket = "";
+
+            if (Player.CurrentConfig == 1)
+                DronePacket = $"2|6|{GetDesignId(Config1Designs[0])}|2|6|{GetDesignId(Config1Designs[1])}|2|6|{GetDesignId(Config1Designs[2])}|2|6|{GetDesignId(Config1Designs[3])}|2|6|{GetDesignId(Config1Designs[4])}|2|6|{GetDesignId(Config1Designs[5])}|2|6|{GetDesignId(Config1Designs[6])}|2|6|{GetDesignId(Config1Designs[7])}";
+            else
+                DronePacket = $"2|6|{GetDesignId(Config2Designs[0])}|2|6|{GetDesignId(Config2Designs[1])}|2|6|{GetDesignId(Config2Designs[2])}|2|6|{GetDesignId(Config2Designs[3])}|2|6|{GetDesignId(Config2Designs[4])}|2|6|{GetDesignId(Config2Designs[5])}|2|6|{GetDesignId(Config2Designs[6])}|2|6|{GetDesignId(Config2Designs[7])}";
+
+            if (Apis)
+            {
+                if (Player.CurrentConfig == 1)
+                    DronePacket += $"|3|6|{GetDesignId(Config1Designs[8])}";
+                else
+                    DronePacket += $"|3|6|{GetDesignId(Config2Designs[8])}";
+            }
+
+            if (Zeus)
+            {
+                if (Player.CurrentConfig == 1)
+                    DronePacket += $"|4|6|{GetDesignId(Config1Designs[9])}";
+                else
+                    DronePacket += $"|4|6|{GetDesignId(Config2Designs[9])}";
+            }
+
+            var drones = "0|n|d|" + Player.Id + "|" + DronePacket;
+            return drones;
+        }
+
+        public int GetDesignId(int designItemId)
+        {
+            if (designItemId >= 120 && designItemId < 130)
+                return 1;
+            else if (designItemId >= 130 && designItemId < 140)
+                return 2;
+            return 0;
+        }
+
         public DateTime regenerationCooldown = new DateTime();
         public void DiamondRegeneration()
         {
-            if (regenerationCooldown.AddSeconds(1) >= DateTime.Now || Player.SettingsManager.SelectedFormation != DroneManager.DIAMOND_FORMATION || Player.CurrentShieldPoints >= Player.MaxShieldPoints) return;
+            if (regenerationCooldown.AddSeconds(1) >= DateTime.Now || Player.Settings.InGameSettings.selectedFormation != DroneManager.DIAMOND_FORMATION || Player.CurrentShieldPoints >= Player.MaxShieldPoints) return;
 
             int regeneration = Maths.GetPercentage(Player.MaxShieldPoints, 1);
 
@@ -62,7 +146,7 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime mothWeakenCooldown = new DateTime();
         public void MothWeaken()
         {
-            if (mothWeakenCooldown.AddSeconds(1) >= DateTime.Now || Player.SettingsManager.SelectedFormation != DroneManager.MOTH_FORMATION || Player.CurrentShieldPoints <= 0) return;
+            if (mothWeakenCooldown.AddSeconds(1) >= DateTime.Now || Player.Settings.InGameSettings.selectedFormation != DroneManager.MOTH_FORMATION || Player.CurrentShieldPoints <= 0) return;
 
             int amount = Maths.GetPercentage(Player.MaxShieldPoints, 1);
 
@@ -75,14 +159,14 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime formationCooldown = new DateTime();
         public void ChangeDroneFormation(string NewFormationID)
         {
-            if (NewFormationID == Player.SettingsManager.SelectedFormation) return;
+            if (NewFormationID == Player.Settings.InGameSettings.selectedFormation) return;
 
-            if (formationCooldown.AddMilliseconds(TimeManager.FORMATION_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (formationCooldown.AddMilliseconds(TimeManager.FORMATION_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SendCooldown(DEFAULT_FORMATION, DRONE_CHANGE_COOLDOWN_TIME);
 
-                string oldSelectedItem = Player.SettingsManager.SelectedFormation;
-                Player.SettingsManager.SelectedFormation = NewFormationID;
+                string oldSelectedItem = Player.Settings.InGameSettings.selectedFormation;
+                Player.Settings.InGameSettings.selectedFormation = NewFormationID;
                 Player.SettingsManager.SendNewItemStatus(oldSelectedItem);
                 Player.SettingsManager.SendNewItemStatus(NewFormationID);
                 Player.Settings.InGameSettings.selectedFormation = NewFormationID;

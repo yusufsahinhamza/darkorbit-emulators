@@ -19,9 +19,6 @@ namespace Ow.Net.netty.commands
                                      float jackpot, int rankID, String clanTag, int rings, bool unknown2,
                                      bool cloaked, bool unknown3, List<VisualModifierCommand> pModifiers)
         {
-
-
-
             var param1 = new ByteArray(ID);
             param1.writeInt(factionID << 12 | factionID >> 20);
             param1.writeUTF(shipType);

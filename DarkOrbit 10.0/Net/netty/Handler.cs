@@ -69,36 +69,14 @@ namespace Ow.Net.netty
         {
             var parser = new ByteParser(bytes);
 
-            /*
-             * açılacaksa GameClient.cs'deki Send fonksiyonundaki kontroller kaldırılmalıdır
-             * 
-             * 
-             * 
-            if (parser.CMD_ID == 666)
-            {
-                
-                //last
-                client.Send(ShipInitializationCommandLast.write(1, "LEJYONER", "ship_cyborg_design_cyborg-carbonite", 540, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 3, true, 0, 0, 0, 0, 0, 0, 21, "", 100, true, false, true, new List<VisualModifierCommandLast>()));
-                client.Send(ShipCreateCommandLast.write(2, "ship_goliath", 3, "", "TEST", 0, 0, 1, 0, 20, false, new ClanRelationModuleLast(ClanRelationModuleLast.NON_AGGRESSION_PACT), 100, true, false, false, 0, 2, "", new List<VisualModifierCommandLast>(), new class_q1OLast(class_q1OLast.DEFAULT)));
-                //last
-
-
-                //8.4.5
-                client.Send(ShipInitializationCommand845.write(1, "LEJYONER", "ship_goliath_design_bastion", 540, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 3, true, 0 ,0 ,0 ,0,0,0,20,"",100,true,false,true,new List<VisualModifierCommand845>()));
-                var DronePacket = "2|6|2|2|6|2|2|6|2|2|6|2|2|6|2|2|6|2|2|6|2|2|6|2|2|6|2|2|6|2|3|6|2|4|6|2";
-                var drones = "0|n|d|" + 1 + "|" + 0 + "|" + DronePacket;
-                client.Send(LegacyModule845.write("0|n|t|" +1 + "|366|" + "jackpot_arena_winner"));
-                client.Send(LegacyModule845.write(drones));
-                //8.4.5
-
-            }
-            */
-
             if (parser.CMD_ID == LoginRequest.ID)
             {
                 var read = new LoginRequest();
                 read.readCommand(bytes);
-                new LoginRequestHandler(client, read.userID);
+
+                if (QueryManager.CheckSessionId(read.userID, read.sessionID))
+                    new LoginRequestHandler(client, read.userID);
+
                 return;
             }
 

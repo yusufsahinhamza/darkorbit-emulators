@@ -19,36 +19,26 @@ namespace Ow.Game.Objects.Collectables
 
         public override void Reward(Player player)
         {
-            if(Spaceball)
+            int experience = 0;
+            int honor = 0;
+            int uridium = 0;
+
+            if (Spaceball)
             {
-                int experience = player.Ship.GetExperienceBoost(Randoms.random.Next(25600, 102400));
-                int honor = player.Ship.GetHonorBoost(Randoms.random.Next(256, 1024));
-                int uridium = Randoms.random.Next(256, 1024);
-
-                player.Experience += experience;
-                player.Honor += honor;
-                player.Uridium += uridium;
-
-                player.SendPacket("0|LM|ST|EP|" + experience + "|" + player.Experience + "|" + player.Level);
-                player.SendPacket("0|LM|ST|HON|" + honor + "|" + player.Honor);
-                player.SendPacket("0|LM|ST|URI|" + uridium + "|" + player.Uridium);
+                experience = player.Ship.GetExperienceBoost(Randoms.random.Next(0, 25600));
+                honor = player.Ship.GetHonorBoost(Randoms.random.Next(0, 256));
+                uridium = Randoms.random.Next(0, 256);
             }
             else
             {
-                int experience = player.Ship.GetExperienceBoost(Randoms.random.Next(0, 25600));
-                int honor = player.Ship.GetHonorBoost(Randoms.random.Next(0, 256));
-                int uridium = Randoms.random.Next(0, 256);
-
-                player.Experience += experience;
-                player.Honor += honor;
-                player.Uridium += uridium;
-
-                player.SendPacket("0|LM|ST|EP|" + experience + "|" + player.Experience + "|" + player.Level);
-                player.SendPacket("0|LM|ST|HON|" + honor + "|" + player.Honor);
-                player.SendPacket("0|LM|ST|URI|" + uridium + "|" + player.Uridium);
+                experience = player.Ship.GetExperienceBoost(Randoms.random.Next(0, 12800));
+                honor = player.Ship.GetHonorBoost(Randoms.random.Next(0, 128));
+                uridium = Randoms.random.Next(0, 128);
             }
 
-            QueryManager.SavePlayer.Information(player);
+            player.ChangeData(DataType.EXPERIENCE, experience);
+            player.ChangeData(DataType.HONOR, honor);
+            player.ChangeData(DataType.URIDIUM, uridium);
         }
 
         public override byte[] GetCollectableCreateCommand()

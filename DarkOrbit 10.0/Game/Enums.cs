@@ -19,17 +19,32 @@ namespace Ow.Game
         SECTOR_CONTROL_SECTOR_ZONE = 8,
     }
 
-    public enum POIShapes
+    public enum DataType
     {
-        CIRCLE = 0,
-        POLYGON = 1,
-        RECTANGLE = 2
+        URIDIUM,
+        CREDITS,
+        HONOR,
+        EXPERIENCE,
+        JACKPOT
+    }
+
+    public enum ChangeType
+    {
+        INCREASE,
+        DECREASE
     }
 
     public enum HealType
     {
         HEALTH,
         SHIELD
+    }
+
+    public enum POIShapes
+    {
+        CIRCLE = 0,
+        POLYGON = 1,
+        RECTANGLE = 2
     }
 
     public enum POITypes
@@ -103,7 +118,8 @@ namespace Ow.Game
         RADITATION = 2,
         MINE = 3,
         MISC = 4,
-        BATTLESTATION = 5
+        BATTLESTATION = 5,
+        PET = 6
     }
 
     public enum Diplomacy

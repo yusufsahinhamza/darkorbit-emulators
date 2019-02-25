@@ -15,109 +15,175 @@ using Ow.Utils;
 
 namespace Ow.Game.Objects.Players.Managers
 {
+    public class DataBase
+    {
+        public int uridium { get; set; }
+        public int credits { get; set; }
+        public int honor { get; set; }
+        public int experience { get; set; }
+        public int jackpot { get; set; }
+    }
+
+    public class EquipmentBase
+    {
+        public int Config1Hitpoints { get; set; }
+        public int Config1Damage { get; set; }
+        public int Config1Shield { get; set; }
+        public int Config1Speed { get; set; }
+        public int Config2Hitpoints { get; set; }
+        public int Config2Damage { get; set; }
+        public int Config2Shield { get; set; }
+        public int Config2Speed { get; set; }
+    }
+
     class PlayerSettings
     {
-        public AudioBase Audio { get; set; }
-        public QualityBase Quality { get; set; }
-        public ClassY2TBase ClassY2T { get; set; }
-        public DisplayBase Display { get; set; }
-        public GameplayBase Gameplay { get; set; }
-        public WindowBase Window { get; set; }
-        public InGameSettingsBase InGameSettings { get; set; }
-        public CurrentCooldownsBase CurrentCooldowns { get; set; }
+        public AudioBase Audio = new AudioBase();
+        public QualityBase Quality = new QualityBase();
+        public ClassY2TBase ClassY2T = new ClassY2TBase();
+        public DisplayBase Display = new DisplayBase();
+        public GameplayBase Gameplay = new GameplayBase();
+        public WindowBase Window = new WindowBase();
+        public InGameSettingsBase InGameSettings = new InGameSettingsBase();
+        public CurrentCooldownsBase CurrentCooldowns = new CurrentCooldownsBase();
 
-        public List<BoundKeysBase> BoundKeys { get; set; }
-        public List<SlotBarItemsBase> SlotBarItems { get; set; }
-        public List<SlotBarItemsBase> PremiumSlotBarItems { get; set; }
-        public List<SlotBarItemsBase> ProActionBarItems { get; set; }
+        public List<BoundKeysBase> BoundKeys = new List<BoundKeysBase>
+        {
+            new BoundKeysBase(7, 0, 0, new List<int>{49}),
+            new BoundKeysBase(7, 0, 1, new List<int>{50}),
+            new BoundKeysBase(7, 0, 2, new List<int>{51}),
+            new BoundKeysBase(7, 0, 3, new List<int>{52}),
+            new BoundKeysBase(7, 0, 4, new List<int>{53}),
+            new BoundKeysBase(7, 0, 5, new List<int>{54}),
+            new BoundKeysBase(7, 0, 6, new List<int>{55}),
+            new BoundKeysBase(7, 0, 7, new List<int>{56}),
+            new BoundKeysBase(7, 0, 8, new List<int>{57}),
+            new BoundKeysBase(7, 0, 9, new List<int>{48}),
+            new BoundKeysBase(8, 0, 0, new List<int>{112}),
+            new BoundKeysBase(8, 0, 1, new List<int>{113}),
+            new BoundKeysBase(8, 0, 2, new List<int>{114}),
+            new BoundKeysBase(8, 0, 3, new List<int>{115}),
+            new BoundKeysBase(8, 0, 4, new List<int>{116}),
+            new BoundKeysBase(8, 0, 5, new List<int>{117}),
+            new BoundKeysBase(8, 0, 6, new List<int>{118}),
+            new BoundKeysBase(8, 0, 7, new List<int>{119}),
+            new BoundKeysBase(8, 0, 8, new List<int>{120}),
+            new BoundKeysBase(8, 0, 9, new List<int>{121}),
+            new BoundKeysBase(0, 0, 0, new List<int>{74}),
+            new BoundKeysBase(1, 0, 0, new List<int>{67}),
+            new BoundKeysBase(2, 0, 0, new List<int>{17}),
+            new BoundKeysBase(3, 0, 0, new List<int>{32}),
+            new BoundKeysBase(4, 0, 0, new List<int>{69}),
+            new BoundKeysBase(5, 0, 0, new List<int>{82}),
+            new BoundKeysBase(13, 0, 0, new List<int>{68}),
+            new BoundKeysBase(6, 0, 0, new List<int>{76}),
+            new BoundKeysBase(9, 0, 0, new List<int>{72}),
+            new BoundKeysBase(10, 0, 0, new List<int>{70}),
+            new BoundKeysBase(11, 0, 0, new List<int>{107}),
+            new BoundKeysBase(12, 0, 0, new List<int>{109}),
+            new BoundKeysBase(14, 0, 0, new List<int>()),
+            new BoundKeysBase(15, 0, 0, new List<int>{9}),
+            new BoundKeysBase(8, 0, 9, new List<int>{121}),
+            new BoundKeysBase(16, 0, 0, new List<int>{81})
+        };
+
+        public Dictionary<short, string> SlotBarItems = new Dictionary<short, string>() {
+            {1, AmmunitionManager.UCB_100}
+        };
+
+        public Dictionary<short, string> PremiumSlotBarItems = new Dictionary<short, string>() {
+            {1, DroneManager.DEFAULT_FORMATION}
+        };
+
+        public Dictionary<short, string> ProActionBarItems = new Dictionary<short, string>();
 
         public class AudioBase
         {
-            public bool notSet { get; set; }
-            public bool playCombatMusic { get; set; }
-            public int music { get; set; }
-            public int sound { get; set; }
-            public int voice { get; set; }
+            public bool notSet = false;
+            public bool playCombatMusic = true;
+            public int music = 100;
+            public int sound = 100;
+            public int voice = 100;
         }
 
         public class QualityBase
         {
-            public bool notSet { get; set; }
-            public short qualityAttack { get; set; }
-            public short qualityBackground { get; set; }
-            public short qualityPresetting { get; set; }
-            public bool qualityCustomized { get; set; }
-            public short qualityPoizone { get; set; }
-            public short qualityShip { get; set; }
-            public short qualityEngine { get; set; }
-            public short qualityExplosion { get; set; }
-            public short qualityCollectable { get; set; }
-            public short qualityEffect { get; set; }
+            public bool notSet = false;
+            public short qualityAttack = 0;
+            public short qualityBackground = 3;
+            public short qualityPresetting = 3;
+            public bool qualityCustomized = true;
+            public short qualityPoizone = 3;
+            public short qualityShip = 0;
+            public short qualityEngine = 0;
+            public short qualityExplosion = 0;
+            public short qualityCollectable = 0;
+            public short qualityEffect = 0;
         }
 
         public class ClassY2TBase
         {
-            public bool questsAvailableFilter { get; set; }
-            public bool questsUnavailableFilter { get; set; }
-            public bool questsCompletedFilter { get; set; }
-            public bool var_1151 { get; set; }
-            public bool var_2239 { get; set; }
-            public bool questsLevelOrderDescending { get; set; }
+            public bool questsAvailableFilter = false;
+            public bool questsUnavailableFilter = false;
+            public bool questsCompletedFilter = false;
+            public bool var_1151 = false;
+            public bool var_2239 = false;
+            public bool questsLevelOrderDescending = false;
         }
 
         public class DisplayBase
         {
-            public bool notSet { get; set; }
-            public bool displayPlayerNames { get; set; }
-            public bool displayResources { get; set; }
-            public bool showPremiumQuickslotBar { get; set; }
-            public bool allowAutoQuality { get; set; }
-            public bool preloadUserShips { get; set; }
-            public bool displayHitpointBubbles { get; set; }
-            public bool showNotOwnedItems { get; set; }
-            public bool displayChat { get; set; }
-            public bool displayWindowsBackground { get; set; }
-            public bool displayNotFreeCargoBoxes { get; set; }
-            public bool dragWindowsAlways { get; set; }
-            public bool displayNotifications { get; set; }
-            public bool hoverShips { get; set; }
-            public bool displayDrones { get; set; }
-            public bool displayBonusBoxes { get; set; }
-            public bool displayFreeCargoBoxes { get; set; }
-            public bool var12P { get; set; }
-            public bool varb3N { get; set; }
-            public int displaySetting3DqualityAntialias { get; set; }
-            public int varp3M { get; set; }
-            public int displaySetting3DqualityEffects { get; set; }
-            public int displaySetting3DqualityLights { get; set; }
-            public int displaySetting3DqualityTextures { get; set; }
-            public int var03r { get; set; }
-            public int displaySetting3DsizeTextures { get; set; }
-            public int displaySetting3DtextureFiltering { get; set; }
-            public bool proActionBarEnabled { get; set; }
-            public bool proActionBarKeyboardInputEnabled { get; set; }
-            public bool proActionBarAutohideEnabled { get; set; }
-            public bool proActionBarOpened { get; set; }
+            public bool notSet = false;
+            public bool displayPlayerNames = true;
+            public bool displayResources = true;
+            public bool showPremiumQuickslotBar = true;
+            public bool allowAutoQuality = true;
+            public bool preloadUserShips = true;
+            public bool displayHitpointBubbles = true;
+            public bool showNotOwnedItems = true;
+            public bool displayChat = true;
+            public bool displayWindowsBackground = true;
+            public bool displayNotFreeCargoBoxes = true;
+            public bool dragWindowsAlways = true;
+            public bool displayNotifications = true;
+            public bool hoverShips = true;
+            public bool displayDrones = true;
+            public bool displayBonusBoxes = true;
+            public bool displayFreeCargoBoxes = true;
+            public bool var12P = true;
+            public bool varb3N = false;
+            public int displaySetting3DqualityAntialias = 4;
+            public int varp3M = 4;
+            public int displaySetting3DqualityEffects = 4;
+            public int displaySetting3DqualityLights = 3;
+            public int displaySetting3DqualityTextures = 3;
+            public int var03r = 4;
+            public int displaySetting3DsizeTextures = 3;
+            public int displaySetting3DtextureFiltering = -1;
+            public bool proActionBarEnabled = true;
+            public bool proActionBarKeyboardInputEnabled = true;
+            public bool proActionBarAutohideEnabled = true;
+            public bool proActionBarOpened = false;
         }
 
         public class GameplayBase
         {
-            public bool notSet { get; set; }
-            public bool autoRefinement { get; set; }
-            public bool quickSlotStopAttack { get; set; }
-            public bool autoBoost { get; set; }
-            public bool autoBuyBootyKeys { get; set; }
-            public bool doubleclickAttackEnabled { get; set; }
-            public bool autochangeAmmo { get; set; }
-            public bool autoStartEnabled { get; set; }
-            public bool varE3N { get; set; }
+            public bool notSet = false;
+            public bool autoRefinement = false;
+            public bool quickSlotStopAttack = true;
+            public bool autoBoost = false;
+            public bool autoBuyBootyKeys = false;
+            public bool doubleclickAttackEnabled = true;
+            public bool autochangeAmmo = true;
+            public bool autoStartEnabled = true;
+            public bool varE3N = true;
         }
 
         public class WindowBase
         {
-            public bool hideAllWindows { get; set; }
-            public int scale { get; set; }
-            public string barState { get; set; }
+            public bool hideAllWindows = false;
+            public int scale = 6;
+            public string barState = "24,1|23,1|100,1|25,1|35,0|34,0|39,0|";
         }
 
         public class BoundKeysBase
@@ -136,30 +202,36 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public class SlotBarItemsBase
-        {
-            public string itemId { get; set; }
-
-            public SlotBarItemsBase(string ItemId)
-            {
-                itemId = ItemId;
-            }
-        }
-
         public class InGameSettingsBase
         {
-            public bool BlockedGroupInvites { get; set; }
-            public string selectedLaser { get; set; }
-            public string selectedRocket { get; set; }
-            public string selectedRocketLauncher { get; set; }
-            public string selectedFormation { get; set; }
-            public int currentConfig { get; set; }
-            public List<string> selectedCpus { get; set; }
+            public bool inEquipZone = true;
+            public bool blockedGroupInvites = false;
+            public string selectedLaser = AmmunitionManager.LCB_10;
+            public string selectedRocket = AmmunitionManager.R_310;
+            public string selectedRocketLauncher = AmmunitionManager.HSTRM_01;
+            public string selectedFormation = DroneManager.DEFAULT_FORMATION;
+            public int currentConfig = 1;
+            public List<string> selectedCpus = new List<string> { CpuManager.AUTO_ROCKET_CPU, CpuManager.AUTO_HELLSTROM_CPU };
         }
 
         public class CurrentCooldownsBase
         {
-            public int empCooldown { get; set; }
+            public int smbCooldown = 0;
+            public int ishCooldown = 0;
+            public int empCooldown = 0;
+            public int mineCooldown = 0;
+            public int dcrCooldown = 0;
+            public int pldCooldown = 0;
+            public int energyLeechCooldown = 0;
+            public int chainImpulseCooldown = 0;
+            public int precisionTargeterCooldown = 0;
+            public int backupShieldsCooldown = 0;
+            public int battleRepairBotCooldown = 0;
+            public int sentinelCooldown = 0;
+            public int diminisherCooldown = 0;
+            public int venomCooldown = 0;
+            public int spectrumCooldown = 0;
+            public int solaceCooldown = 0;
         }
 
         public override string ToString()
@@ -170,16 +242,6 @@ namespace Ow.Game.Objects.Players.Managers
 
     class SettingsManager
     {
-        public Dictionary<short, String> SlotBarItems = new Dictionary<short, String>();
-        public Dictionary<short, String> PremiumSlotBarItems = new Dictionary<short, String>();
-        public Dictionary<short, String> ProActionBarItems = new Dictionary<short, String>();
-
-        public string SelectedLaser = AmmunitionManager.LCB_10;
-        public string SelectedRocket = AmmunitionManager.R_310;
-        public string SelectedRocketLauncher = AmmunitionManager.HSTRM_01;
-        public string SelectedFormation = DroneManager.DEFAULT_FORMATION;
-        public List<string> SelectedCpus = new List<string>();
-
         public const String STANDARD_SLOT_BAR = "standardSlotBar";
         public const String PREMIUM_SLOT_BAR  = "premiumSlotBar";
         public const String PRO_ACTION_BAR = "proActionBar";
@@ -190,30 +252,16 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SetCurrentItems()
         {
-            SelectedLaser = Player.Settings.InGameSettings.selectedLaser;
-            SelectedRocket = Player.Settings.InGameSettings.selectedRocket;
-            SelectedRocketLauncher = Player.Settings.InGameSettings.selectedRocketLauncher;
-
-            SelectedFormation = Player.Settings.InGameSettings.selectedFormation;
             Player.CurrentConfig = Player.Settings.InGameSettings.currentConfig;
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.AUTO_ROCKET_CPU))
-            {
-                Player.AutoRocket = true;
-                SelectedCpus.Add(CpuManager.AUTO_ROCKET_CPU);
-            }
+                Player.Storage.AutoRocket = true;
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.AUTO_HELLSTROM_CPU))
-            {
-                Player.AutoRocketLauncher = true;
-                SelectedCpus.Add(CpuManager.AUTO_HELLSTROM_CPU);
-            }
+                Player.Storage.AutoRocketLauncher = true;
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.CLK_XL))
-            {
                 Player.Invisible = true;
-                SelectedCpus.Add(CpuManager.CLK_XL);
-            }
         }
 
         public static string[] LaserCategory =
@@ -277,9 +325,11 @@ namespace Ow.Game.Objects.Players.Managers
 
         public static string[] BuyCategory =
         {
+            /*
                 "ammunition_laser_lcb-10", "ammunition_laser_mcb-25", "ammunition_laser_mcb-50",
                 "ammunition_laser_sab-50", "ammunition_rocket_r-310", "ammunition_rocket_plt-2026",
                 "ammunition_rocket_plt-2021", "ammunition_rocket_plt-3030"
+                */
         };
 
         public static string[] AbilitiesCategory =
@@ -299,40 +349,10 @@ namespace Ow.Game.Objects.Players.Managers
                 DroneManager.STAR_FORMATION, DroneManager.PINCER_FORMATION,
                 DroneManager.DOUBLE_ARROW_FORMATION, DroneManager.DIAMOND_FORMATION,
                 DroneManager.CHEVRON_FORMATION, DroneManager.MOTH_FORMATION,
-                DroneManager.CRAB_FORMATION, DroneManager.HEART_FORMATION,
+                DroneManager.CRAB_FORMATION, DroneManager.HEART_FORMATION/*,
                 DroneManager.DRILL_FORMATION,DroneManager.RING_FORMATION,
-                DroneManager.WHEEL_FORMATION
+                DroneManager.WHEEL_FORMATION*/
         };
-
-        public void SendSlotItemsBars()
-        {
-            short normalIndex = 1;
-            foreach(var item in Player.Settings.SlotBarItems)
-            {
-                if(item.itemId != "")
-                    SlotBarItems.Add(normalIndex, item.itemId);
-                    normalIndex++;
-            }
-
-            short premiumIndex = 1;
-            foreach (var item in Player.Settings.PremiumSlotBarItems)
-            {
-                if (item.itemId != "")
-                    PremiumSlotBarItems.Add(premiumIndex, item.itemId);
-                premiumIndex++;
-            }
-
-            if (Player.Premium)
-            {
-                short proActionIndex = 1;
-                foreach (var item in Player.Settings.ProActionBarItems)
-                {
-                    if (item.itemId != "")
-                        ProActionBarItems.Add(proActionIndex, item.itemId);
-                    proActionIndex++;
-                }
-            }
-        }
 
         public void SendUserKeyBindingsUpdateCommand()
         {            
@@ -517,7 +537,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             var standartItems = new List<ClientUISlotBarItemModule>();
 
-            foreach (var pair in SlotBarItems)
+            foreach (var pair in Player.Settings.SlotBarItems)
             {
                 ClientUISlotBarItemModule item = new ClientUISlotBarItemModule(pair.Value, pair.Key);
                 standartItems.Add(item);
@@ -531,7 +551,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             var premiumItems = new List<ClientUISlotBarItemModule>();
 
-            foreach (var pair in PremiumSlotBarItems)
+            foreach (var pair in Player.Settings.PremiumSlotBarItems)
             {
                 ClientUISlotBarItemModule item = new ClientUISlotBarItemModule(pair.Value, pair.Key);
                 premiumItems.Add(item);
@@ -545,7 +565,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             var proActionItems = new List<ClientUISlotBarItemModule>();
 
-            foreach (var pair in ProActionBarItems)
+            foreach (var pair in Player.Settings.ProActionBarItems)
             {
                 ClientUISlotBarItemModule item = new ClientUISlotBarItemModule(pair.Value, pair.Key);
                 proActionItems.Add(item);
@@ -990,6 +1010,8 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_1815);
                 case AmmunitionManager.WIZ_X:
                     return new CooldownTypeModule(CooldownTypeModule.short_1952);
+                case AmmunitionManager.PLD_8:
+                    return new CooldownTypeModule(CooldownTypeModule.short_2172);
 
                 case AmmunitionManager.SLM_01:
                     return new CooldownTypeModule(CooldownTypeModule.short_2047);
@@ -1078,11 +1100,11 @@ namespace Ow.Game.Objects.Players.Managers
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
                                                                ClientUISlotBarCategoryItemStatusModule.BLUE, pItemId,
                                                                0, false, true,
-                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? SelectedLaser.Equals(pItemId) :
-                                                                                                               RocketsCategory.Contains(pItemId) ? SelectedRocket.Equals(pItemId) :
-                                                                                                               RocketLauncherCategory.Contains(pItemId) ? SelectedRocketLauncher.Equals(pItemId) :
-                                                                                                               FormationsCategory.Contains(pItemId) ? SelectedFormation.Equals(pItemId) :
-                                                                                                               CpusCategory.Contains(pItemId) ? SelectedCpus.Contains(pItemId) :
+                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(pItemId) :
+                                                                                                               RocketsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(pItemId) :
+                                                                                                               RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) :
+                                                                                                               FormationsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedFormation.Equals(pItemId) :
+                                                                                                               CpusCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedCpus.Contains(pItemId) :
                                                                                                                false,
                                                                0);
         }
@@ -1119,12 +1141,12 @@ namespace Ow.Game.Objects.Players.Managers
             ClientUITooltipsCommand itemBarStatusTootip = new ClientUITooltipsCommand(GetItemBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled, doubleClickToFire));
             ClientUITooltipsCommand slotBarStatusTooltip = new ClientUITooltipsCommand(GetSlotBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled));
 
-            var counterColor = SelectedRocketLauncher == AmmunitionManager.ECO_10 ? ClientUISlotBarCategoryItemStatusModule.BLUE :
-                               SelectedRocketLauncher == AmmunitionManager.HSTRM_01 ? ClientUISlotBarCategoryItemStatusModule.YELLOW :
-                               SelectedRocketLauncher == AmmunitionManager.UBR_100 ? ClientUISlotBarCategoryItemStatusModule.RED :
-                               SelectedRocketLauncher == AmmunitionManager.SAR_01 ? ClientUISlotBarCategoryItemStatusModule.short_1167 :
-                               SelectedRocketLauncher == AmmunitionManager.SAR_01 || SelectedRocketLauncher == AmmunitionManager.SAR_02 ? ClientUISlotBarCategoryItemStatusModule.short_1167 :
-                               SelectedRocketLauncher == AmmunitionManager.CBR ? ClientUISlotBarCategoryItemStatusModule.short_790 : ClientUISlotBarCategoryItemStatusModule.BLUE;
+            var counterColor = Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.ECO_10 ? ClientUISlotBarCategoryItemStatusModule.BLUE :
+                               Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.HSTRM_01 ? ClientUISlotBarCategoryItemStatusModule.YELLOW :
+                               Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.UBR_100 ? ClientUISlotBarCategoryItemStatusModule.RED :
+                               Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.SAR_01 ? ClientUISlotBarCategoryItemStatusModule.short_1167 :
+                               Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.SAR_01 || Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.SAR_02 ? ClientUISlotBarCategoryItemStatusModule.short_1167 :
+                               Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.CBR ? ClientUISlotBarCategoryItemStatusModule.short_790 : ClientUISlotBarCategoryItemStatusModule.BLUE;
 
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
                                                                counterColor, pItemId,
@@ -1569,7 +1591,7 @@ namespace Ow.Game.Objects.Players.Managers
                     if (Player.AttackManager.RocketLauncher.CurrentLoad >= 1)
                         Player.AttackManager.LaunchRocketLauncher();
                     else
-                        Player.AttackManager.RocketLauncher.ReloadingActive = Player.AutoRocketLauncher || Player.AttackManager.RocketLauncher.CurrentLoad == 0 ? true : false;
+                        Player.AttackManager.RocketLauncher.ReloadingActive = Player.Storage.AutoRocketLauncher || Player.AttackManager.RocketLauncher.CurrentLoad == 0 ? true : false;
                 }
                 else
                 {
@@ -1625,9 +1647,9 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime mineCooldown = new DateTime();
         public void SendMine(string mineLootId)
         {
-            if (Player.IsInDemilitarizedZone || Player.CurrentInRangePortalId != -1) return;
+            if (Player.Storage.IsInDemilitarizedZone || Player.CurrentInRangePortalId != -1) return;
 
-            if (mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 switch (mineLootId)
                 {
@@ -1662,7 +1684,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SetSelectedLaserItem(string pSelectedLaserItem)
         {
-            if (SelectedLaser.Equals(pSelectedLaserItem))
+            if (Player.Settings.InGameSettings.selectedLaser.Equals(pSelectedLaserItem))
             {
                 if (Player.Settings.Gameplay.quickSlotStopAttack)
                 {
@@ -1677,8 +1699,7 @@ namespace Ow.Game.Objects.Players.Managers
             }
             else
             {
-                string oldSelectedItem = SelectedLaser;
-                SelectedLaser = pSelectedLaserItem;
+                string oldSelectedItem = Player.Settings.InGameSettings.selectedLaser;
                 Player.Settings.InGameSettings.selectedLaser = pSelectedLaserItem;
                 SendNewItemStatus(oldSelectedItem);
                 SendNewItemStatus(pSelectedLaserItem);
@@ -1695,7 +1716,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SetSelectedRocketItem(string pSelectedRocketItem)
         {
-            if (SelectedRocket.Equals(pSelectedRocketItem))
+            if (Player.Settings.InGameSettings.selectedRocket.Equals(pSelectedRocketItem))
             {
                 if (Player.Settings.Gameplay.quickSlotStopAttack)
                 {
@@ -1704,8 +1725,7 @@ namespace Ow.Game.Objects.Players.Managers
             }
             else
             {
-                string oldSelectedItem = SelectedRocket;
-                SelectedRocket = pSelectedRocketItem;
+                string oldSelectedItem = Player.Settings.InGameSettings.selectedRocket;
                 Player.Settings.InGameSettings.selectedRocket = pSelectedRocketItem;
                 SendNewItemStatus(oldSelectedItem);
                 SendNewItemStatus(pSelectedRocketItem);
@@ -1718,15 +1738,14 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (pSelectedRocketLauncherItem != CpuManager.ROCKET_LAUNCHER)
             {
-                if (pSelectedRocketLauncherItem != SelectedRocketLauncher)
+                if (pSelectedRocketLauncherItem != Player.Settings.InGameSettings.selectedRocketLauncher)
                 {
-                    string oldSelectedItem = SelectedRocketLauncher;
-                    SelectedRocketLauncher = pSelectedRocketLauncherItem;
+                    string oldSelectedItem = Player.Settings.InGameSettings.selectedRocketLauncher;
                     Player.Settings.InGameSettings.selectedRocketLauncher = pSelectedRocketLauncherItem;
                     SendNewItemStatus(oldSelectedItem);
                     SendNewItemStatus(pSelectedRocketLauncherItem);
 
-                    Player.AttackManager.RocketLauncher.ChangeLoad(SelectedRocketLauncher);
+                    Player.AttackManager.RocketLauncher.ChangeLoad(Player.Settings.InGameSettings.selectedRocketLauncher);
 
                     QueryManager.SavePlayer.Settings(Player);
                 }
@@ -1742,10 +1761,10 @@ namespace Ow.Game.Objects.Players.Managers
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
                                                                ClientUISlotBarCategoryItemStatusModule.BLUE, pItemId,
                                                                0, false, true,
-                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(selectedItemId) ? SelectedLaser.Equals(selectedItemId) : 
-                                                                                                               RocketsCategory.Contains(selectedItemId) ? SelectedRocket.Equals(selectedItemId) : 
-                                                                                                               CpusCategory.Contains(selectedItemId) ? SelectedCpus.Contains(selectedItemId) :
-                                                                                                               FormationsCategory.Contains(selectedItemId) ? SelectedFormation.Equals(selectedItemId) :
+                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(selectedItemId) : 
+                                                                                                               RocketsCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(selectedItemId) : 
+                                                                                                               CpusCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedCpus.Contains(selectedItemId) :
+                                                                                                               FormationsCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedFormation.Equals(selectedItemId) :
                                                                                                                false,
                                                                0).writeCommand();
         }
@@ -1756,18 +1775,18 @@ namespace Ow.Game.Objects.Players.Managers
             ClientUITooltipsCommand itemBarStatusTootip = new ClientUITooltipsCommand(GetItemBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled, doubleClickToFire));
             ClientUITooltipsCommand slotBarStatusTooltip = new ClientUITooltipsCommand(GetSlotBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled));
 
-            var counterColor = SelectedRocketLauncher == AmmunitionManager.HSTRM_01 ? ClientUISlotBarCategoryItemStatusModule.YELLOW :
-                              SelectedRocketLauncher == AmmunitionManager.UBR_100 ? ClientUISlotBarCategoryItemStatusModule.RED :
+            var counterColor = Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.HSTRM_01 ? ClientUISlotBarCategoryItemStatusModule.YELLOW :
+                              Player.Settings.InGameSettings.selectedRocketLauncher == AmmunitionManager.UBR_100 ? ClientUISlotBarCategoryItemStatusModule.RED :
                                                   ClientUISlotBarCategoryItemStatusModule.BLUE;
 
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
                                                                counterColor, pItemId,
                                                                count, false, true,
-                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? SelectedLaser.Equals(pItemId) :
-                                                                                                               RocketsCategory.Contains(pItemId) ? SelectedRocket.Equals(pItemId) :
-                                                                                                               RocketLauncherCategory.Contains(pItemId) ? SelectedRocketLauncher.Equals(pItemId) :
-                                                                                                               FormationsCategory.Contains(pItemId) ? SelectedFormation.Equals(pItemId) :
-                                                                                                               CpusCategory.Contains(pItemId) ? SelectedCpus.Contains(pItemId) :
+                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(pItemId) :
+                                                                                                               RocketsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(pItemId) :
+                                                                                                               RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) :
+                                                                                                               FormationsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedFormation.Equals(pItemId) :
+                                                                                                               CpusCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedCpus.Contains(pItemId) :
                                                                                                                false,
                                                                5).writeCommand();
         }

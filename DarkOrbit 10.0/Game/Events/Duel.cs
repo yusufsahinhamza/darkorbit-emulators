@@ -60,15 +60,15 @@ namespace Ow.Game.Events
 
         public async void SendReward(Player player)
         {
-            Player.Duel = null;
-            OtherPlayer.Duel = null;
+            Player.Storage.Duel = null;
+            OtherPlayer.Storage.Duel = null;
 
             rewarded = true;
             Program.TickManager.RemoveTick(this);
 
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
-            player.MoveManager.SetPosition();
+            //TODO: player.MoveManager.SetPosition();
             player.Jump(player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15, player.Position);
         }
     }

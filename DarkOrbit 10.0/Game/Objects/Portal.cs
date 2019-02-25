@@ -25,8 +25,7 @@ namespace Ow.Game.Objects
 
     class Portal : Activatable
     {
-        public static int JUMP_DELAY_NOW = 1000;
-        public static int JUMP_DELAY = 3250;
+        public static int JUMP_DELAY = 0;
         public static int SECURE_ZONE_RANGE = 1500;
 
         public Position TargetPosition { get; set; }
@@ -49,21 +48,22 @@ namespace Ow.Game.Objects
         {
             var player = gameSession.Player;
             if (!Working) return;
-            if (player.Jumping) return;
+            if (player.Storage.Jumping) return;
 
-            player.Jumping = true;
+            player.Storage.Jumping = true;
             var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
             player.SendCommand(apc);
             await Task.Delay(JUMP_DELAY);
 
             var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
             player.Pet.Deactivate(true);
 
             player.CurrentInRangePortalId = -1;
             player.Selected = null;
-            player.DisableAttack(player.SettingsManager.SelectedLaser);
+            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
             player.Spacemap.RemoveCharacter(player);
-            player.InRangeAssets.Clear();
+            player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
             player.SetPosition(TargetPosition);
 
@@ -71,10 +71,20 @@ namespace Ow.Game.Objects
             player.Spacemap = targetSpacemap;
 
             player.Spacemap.AddAndInitPlayer(player);
-            player.Jumping = false;
+            player.Storage.Jumping = false;
 
             if (pet)
+            {
                 player.Pet.Activate();
+                player.Pet.SwitchGear(gearId);
+            }
+        }
+
+        public void Remove()
+        {
+            var portal = this as Activatable;
+            Spacemap.Activatables.TryRemove(Id, out portal);
+            //TODO: in 10.0 command GameManager.SendPacketToMap(Spacemap.Id, "0|n|p|REM|" + Id);
         }
 
         public override short GetAssetType() { return 0; }

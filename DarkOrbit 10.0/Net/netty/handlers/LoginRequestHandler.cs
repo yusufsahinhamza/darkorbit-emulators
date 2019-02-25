@@ -4,6 +4,7 @@ using Ow.Game.Movements;
 using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
@@ -28,10 +29,7 @@ namespace Ow.Net.netty.handlers
                 Player = gameSession.Player;
                 gameSession.Disconnect();
             }
-            else
-            {
-                Player = QueryManager.GetPlayer(userId);
-            }
+            else Player = QueryManager.GetPlayer(userId);
 
             if (Player != null) GameSession = CreateSession(client, Player);
             else
@@ -45,7 +43,7 @@ namespace Ow.Net.netty.handlers
             if (Player.Destroyed) Player.KillScreen(null, DestructionType.MISC, true);
             else
             {
-                SendSettings(Player, !(gameSession != null && Player == gameSession.Player));
+                SendSettings(Player);
                 SendPlayerItems(Player);
             }
         }
@@ -61,32 +59,38 @@ namespace Ow.Net.netty.handlers
 
         public void Execute()
         {
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 1 WHERE userID = {Player.Id}");
+            }
+
             if (GameSession == null) return;
 
             if (!GameManager.GameSessions.ContainsKey(Player.Id))
+            {
+                SetShip();
+                SetSpacemap();
                 GameManager.GameSessions.TryAdd(Player.Id, GameSession);
+            }
             else
             {
                 GameManager.GameSessions[Player.Id].Disconnect(GameSession.DisconnectionType.NORMAL);
                 GameManager.GameSessions[Player.Id] = GameSession;
             }
 
-            SetShip();
-            SetSpacemap();
-            LoadTick();
+            LoadPlayer();
         }
 
         private void SetShip()
         {
             var player = GameSession.Player;
             player.CurrentHitPoints = player.MaxHitPoints;
-            player.CurrentShieldConfig1 = player.EquipmentManager.shieldCfg1;
-            player.CurrentShieldConfig2 = player.EquipmentManager.shieldCfg2;
+            player.CurrentShieldConfig1 = player.Equipment.Config1Shield;
+            player.CurrentShieldConfig2 = player.Equipment.Config2Shield;
 
             if (player.RankId == 21)
             {
-                //player.VisualModifiers.Add(new VisualModifierCommand(player.Id, VisualModifierCommand.LEONOV_EFFECT, 0, "", 0, true));
-                //player.VisualModifiers.Add(new VisualModifierCommand(player.Id, VisualModifierCommand.DAMAGE_ICON, 0, "", 0, true));
+                //player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.GREEN_GLOW, 0, true));
             }
         }
 
@@ -95,29 +99,43 @@ namespace Ow.Net.netty.handlers
             var player = GameSession.Player;
             var mapId = player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15;
             player.Spacemap = GameManager.GetSpacemap(mapId);
-            player.Spacemap.AddCharacter(player);
         }
 
-        private void LoadTick()
+        private void LoadPlayer()
         {
+            Player.Spacemap.AddCharacter(Player);
+            Player.SetPosition(Player.FactionId == 1 ? Position.MMOPosition : Player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
+
             var tickId = -1;
             Program.TickManager.AddTick(GameSession.Player, out tickId);
             GameSession.Player.TickId = tickId;
         }
 
-        public static void SendPlayerItems(Player player)
+        public static void SendPlayerItems(Player player, bool isLogin = true)
         {
-            player.SendPacket("0|t");
+            player.SendPacket("0|t"); //TODO:: LAZIMSA GÖNDER
             player.SendCommand(player.GetShipInitializationCommand());
-            player.SendPacket("0|n|t|" + player.Id + "|0|title_1");
-            player.SendPacket(player.GetDronesPacket());
-            player.SendCommand(DroneFormationChangeCommand.write(player.Id, DroneManager.GetSelectedFormationId(player.SettingsManager.SelectedFormation)));
+
+            if (player.Title != "")
+                player.SendPacket("0|n|t|" + player.Id + "|1|" + player.Title + "");
+
+            player.SendPacket(player.DroneManager.GetDronesPacket());
+            player.SendCommand(DroneFormationChangeCommand.write(player.Id, DroneManager.GetSelectedFormationId(player.Settings.InGameSettings.selectedFormation)));
             player.SendPacket("0|S|CFG|" + player.CurrentConfig);
 
-            player.SendPacket("0|A|BK|100"); //yeşil kutu miktarı
-            player.SendPacket("0|A|JV|100"); //atlama kuponu miktarı
-            player.SendPacket("0|n|ssi|0|0|0");
+            if (isLogin)
+            {
+                player.SendPacket("0|A|BK|100"); //yeşil kutu miktarı
+                player.SendPacket("0|A|JV|100"); //atlama kuponu miktarı
+            }
 
+            var spaceball = EventManager.Spaceball.Character;
+            if (EventManager.Spaceball.Active && spaceball != null)
+                player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
+            else
+                player.SendPacket($"0|n|ssi|0|0|0");
+
+            /*
             var priceList = new List<JumpCPUPriceMappingModule>();
             var price = new List<int>();
             price.Add(1);
@@ -128,19 +146,28 @@ namespace Ow.Net.netty.handlers
             player.SendCommand(JumpCPUUpdateCommand.write(priceList));
 
             player.SendCommand(CpuInitializationCommand.write(true, false));
-
-            player.BoosterManager.Initiate();
+            */
+            //player.BoosterManager.Initiate();
             //player.SendPacket("0|A|JCPU|S|20|1"); //ATLAMA GERİ SAYIM
-       
+
+            /* TODO:: GEREK VARSA YAP
+            if (!player.Premium)
+                player.SendCommand(PetBlockUICommand.write(true));
+                */
+
             player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));
 
             player.Spacemap.SendObjects(player);
-            player.Spacemap.SendPlayers(player);
+
+            if (isLogin)
+                player.Spacemap.SendPlayers(player);
+
+            player.CheckAbilities(player);
 
             //player.SendCommand(VideoWindowCreateCommand.write(1, "l", true, new List<string> { "start_head", "tutorial_video_msg_reward_premium_intro" }, 1, 1));    
 
             //player.SendPacket("0|n|KSMSG|start_head");
-            
+
 
             //player.SendCommand(command_e4W.write(1, "", new class_oS(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), "", new class_s16(1, class_s16.varC3p), 1));
             player.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 0));
@@ -173,8 +200,13 @@ namespace Ow.Net.netty.handlers
 
 
 
-            player.SendCommand(PetInitializationCommand.write(true, true, true));
-            player.CheckAbilities(player);
+            if (isLogin)
+            {
+                player.SendCommand(PetInitializationCommand.write(true, true, true));
+                player.UpdateStatus();
+            }
+
+            QueryManager.SavePlayer.Information(player);
             /*
             var ht = new List<UbaHtModule>();
             var j3s = new List<Ubaj3sModule>();
@@ -189,7 +221,6 @@ namespace Ow.Net.netty.handlers
 
 
         }
-
 
         public void CheckAbilities(Player player)
         {
@@ -217,10 +248,6 @@ namespace Ow.Net.netty.handlers
         public static void SendSettings(Player player, bool isLogin = true)
         {
             player.SettingsManager.SendUserKeyBindingsUpdateCommand();
-            if (isLogin)
-            {
-                player.SettingsManager.SendSlotItemsBars();
-            }
             player.SettingsManager.SendUserSettingsCommand();
             player.SettingsManager.SendMenuBarsCommand();
             player.SettingsManager.SendSlotBarCommand();

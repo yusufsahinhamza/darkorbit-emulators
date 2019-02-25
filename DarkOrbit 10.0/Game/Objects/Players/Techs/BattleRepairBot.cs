@@ -14,10 +14,7 @@ namespace Ow.Game.Objects.Players.Techs
         private static int HEALT = 10000;
         public bool Active = false;
 
-        public BattleRepairBot(Player player)
-        {
-            Player = player;
-        }
+        public BattleRepairBot(Player player) { Player = player; }
 
         public void Tick()
         {
@@ -44,7 +41,7 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.BATTLE_REPAIR_BOT_DURATION + TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.BATTLE_REPAIR_BOT_DURATION + TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 string packet = "0|TX|A|S|BRB|" + Player.Id;
                 Player.SendPacket(packet);

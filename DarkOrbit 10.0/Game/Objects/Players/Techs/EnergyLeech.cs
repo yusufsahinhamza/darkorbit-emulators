@@ -15,10 +15,7 @@ namespace Ow.Game.Objects.Players.Techs
 
         public bool Active = false;
 
-        public EnergyLeech(Player player)
-        {
-            Player = player;
-        }
+        public EnergyLeech(Player player) { Player = player; }
 
         public void Tick()
         {
@@ -30,21 +27,20 @@ namespace Ow.Game.Objects.Players.Techs
         public void ExecuteHeal(int damage)
         {
             int heal = Maths.GetPercentage(damage, 10);
-
             Player.Heal(heal);
         }
 
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 string packet = "0|TX|A|S|ELA|" + Player.Id;
                 Player.SendPacket(packet);
                 Player.SendPacketToInRangePlayers(packet);
 
                 Player.SendCooldown(TechManager.TECH_ENERGY_LEECH, TimeManager.ENERGY_LEECH_DURATION, true);
-                Player.EnergyLeech = true;
+                Player.Storage.EnergyLeech = true;
                 Active = true;
                 cooldown = DateTime.Now;
             }
@@ -57,7 +53,7 @@ namespace Ow.Game.Objects.Players.Techs
             Player.SendPacketToInRangePlayers(packet);
 
             Player.SendCooldown(TechManager.TECH_ENERGY_LEECH, TimeManager.ENERGY_LEECH_COOLDOWN);
-            Player.EnergyLeech = false;
+            Player.Storage.EnergyLeech = false;
             Active = false;
         }
     }

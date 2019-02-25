@@ -16,13 +16,7 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var players in Spacemap.Characters.Values)
-            {
-                if (players is Player && players.Position.DistanceTo(Position) < RANGE)
-                {
-                    (players as Player).AddVisualModifier(new VisualModifierCommand(players.Id, VisualModifierCommand.SURGEON_PLAGUE, 0, "", 0, true));
-                }
-            }
+            ///hastalık
         }
     }
 }

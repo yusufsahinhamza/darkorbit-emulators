@@ -11,83 +11,37 @@ using System.Collections.Concurrent;
 using Ow.Game.Events;
 using Ow.Game.Objects.Stations;
 using Ow.Game.Objects.Players;
+using Ow.Net.netty;
 
 namespace Ow.Game.Objects
 {
     class Player : Character
     {
-        public int Uridium { get; set; }
-        public int Credits { get; set; }
-        public int Experience { get; set; }
-        public int Honor { get; set; }
         public int RankId { get; set; }
         public bool Premium { get; set; }
         public string Title { get; set; }
         public int Level { get; set; }
-        public PlayerSettings Settings { get; set; }
 
         public bool UbaMatchmakingAccepted = false;
         public Player UbaOpponent = null;
 
-        public Group Group { get; set; }
-        public Dictionary<int, Group> GroupInvites = new Dictionary<int, Group>();
-
-        public ConcurrentDictionary<int, Activatable> InRangeAssets = new ConcurrentDictionary<int, Activatable>();
-        public Dictionary<int, Player> DuelInvites = new Dictionary<int, Player>();
-        public Duel Duel { get; set; }
         public int CurrentInRangePortalId = -1;
         public int CurrentShieldConfig1 { get; set; }
         public int CurrentShieldConfig2 { get; set; }
         public int CurrentConfig { get; set; }
-        public int SpeedBoost = 0;
-        public bool IsInDemilitarizedZone = false;
-        public bool IsInRadiationZone = false;
-        public bool IsInEquipZone = false;
-        public bool AutoRocket = false;
-        public bool AutoRocketLauncher = false;
-        public bool RepairBotActivated = false;
-        public bool ShieldSkillActivated = false;
-        public bool PrecisionTargeter = false;
-        public bool EnergyLeech = false;
-        public bool Jumping = false;
-        public bool GodMode = false;
-        public bool GroupInitialized { get; set; }
 
-        public bool Sentinel = false;
-        public bool Spectrum = false;
-
-        public bool Diminisher = false;
-        public Player UnderDiminisherPlayer { get; set; }
-        public bool Venom = false;
-        public Player UnderVenomPlayer { get; set; }
-
-        public bool underR_IC3 = false;
-        public DateTime underR_IC3Time = new DateTime();
-
-        public bool underDCR_250 = false;
-        public DateTime underDCR_250Time = new DateTime();
-
-        public bool underSLM_01 = false;
-        public DateTime underSLM_01Time = new DateTime();
-
-        public bool invincibilityEffect = false;
-        public DateTime invincibilityEffectTime = new DateTime();
-
-        public bool mirroredControlEffect = false;
-        public DateTime mirroredControlEffectTime = new DateTime();
-
-        public bool wizardEffect = false;
-        public DateTime wizardEffectTime = new DateTime();
-
+        public PlayerSettings Settings { get; set; }
+        public EquipmentBase Equipment { get; set; }
+        public DataBase Data { get; set; }
+        public Group Group { get; set; }
         public Pet Pet { get; set; }
+        public Storage Storage { get; set; }
         public AttackManager AttackManager { get; set; }
         public SettingsManager SettingsManager { get; set; }
         public DroneManager DroneManager { get; set; }
         public CpuManager CpuManager { get; set; }
-        public EquipmentManager EquipmentManager { get; set; }
         public TechManager TechManager { get; set; }
         public SkillManager SkillManager { get; set; }
-        public MoveManager MoveManager { get; set; }
         public BoosterManager BoosterManager { get; set; }
 
         public Player(int id, string name, Clan clan, int factionId, Position position, Spacemap spacemap, int rankId, int shipId)
@@ -105,33 +59,31 @@ namespace Ow.Game.Objects
 
         public void InitiateManagers()
         {
+            Storage = new Storage(this);
+            DroneManager = new DroneManager(this);
             AttackManager = new AttackManager(this);
             TechManager = new TechManager(this);
             SkillManager = new SkillManager(this);
-            MoveManager = new MoveManager(this);
             SettingsManager = new SettingsManager(this);
-            DroneManager = new DroneManager(this);
             CpuManager = new CpuManager(this);
-            EquipmentManager = new EquipmentManager(this);
             BoosterManager = new BoosterManager(this);
             Pet = new Pet(this);
         }
 
         public new void Tick()
         {
+            Movement.ActualPosition(this);
             CheckHitpointsRepair();
             CheckShieldPointsRepair();
             CheckRadiation();
-            CheckUnderEffects();
-
             AttackManager.LaserAttack();
             AttackManager.RocketLauncher.Tick();
+            Logout();
+
+            CheckUnderEffects();
             DroneManager.Tick();
-            MoveManager.Tick();
             TechManager.Tick();
             SkillManager.Tick();
-
-            Logout();
             // UpdateCurrentCooldowns();
             /*
             if (MoveManager.Moving && Collecting)
@@ -145,7 +97,7 @@ namespace Ow.Game.Objects
         public DateTime lastHpRepairTime = new DateTime();
         private void CheckHitpointsRepair()
         {
-            if (AttackingOrUnderAttack() || lastHpRepairTime.AddSeconds(1) >= DateTime.Now || CurrentHitPoints == MaxHitPoints) return;
+            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now || CurrentHitPoints == MaxHitPoints) return;
 
             int repairHitpoints = MaxHitPoints / 35;
             Heal(repairHitpoints);
@@ -157,7 +109,7 @@ namespace Ow.Game.Objects
         private void CheckShieldPointsRepair()
         {
             if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastShieldRepairTime.AddSeconds(1) >= DateTime.Now ||
-                CurrentShieldPoints == MaxShieldPoints || SettingsManager.SelectedFormation == DroneManager.MOTH_FORMATION) return;
+                CurrentShieldPoints == MaxShieldPoints || Settings.InGameSettings.selectedFormation == DroneManager.MOTH_FORMATION) return;
 
             int repairShield = MaxShieldPoints / 25;
             CurrentShieldPoints += repairShield;
@@ -166,45 +118,34 @@ namespace Ow.Game.Objects
             lastShieldRepairTime = DateTime.Now;
         }
 
-        private DateTime LastInviteClean = new DateTime();
-        public void CleanInvites()
-        {
-            if (LastInviteClean.AddSeconds(30) < DateTime.Now)
-            {
-                foreach (var invite in GroupInvites.ToList())
-                {
-                    if (GameManager.GetGameSession(invite.Key) == null ||
-                        invite.Value == null)
-                    {
-                        GroupInvites.Remove(invite.Key);
-                        //var gHandler = new GroupSystemHandler();
-                        //gHandler.Error(Player.GetGameSession(), ServerCommands.GROUPSYSTEM_GROUP_INVITE_SUB_ERROR_CANDIDATE_NOT_AVAILABLE);
-                        //gHandler.DeleteInvitation(World.StorageManager.GetGameSession(invite.Key)?.Player, Player);
-                    }
-                }
-                LastInviteClean = DateTime.Now;
-            }
-        }
-
         public void CheckUnderEffects()
         {
-            if (underR_IC3 && underR_IC3Time.AddMilliseconds(TimeManager.R_IC3_DURATION) < DateTime.Now)
+            if (Storage.underR_IC3 && Storage.underR_IC3Time.AddMilliseconds(TimeManager.R_IC3_DURATION) < DateTime.Now)
                 DeactiveR_RIC3();
-            if (underDCR_250 && underDCR_250Time.AddMilliseconds(TimeManager.DCR_250_DURATION) < DateTime.Now)
+            if (Storage.underDCR_250 && Storage.underDCR_250Time.AddMilliseconds(TimeManager.DCR_250_DURATION) < DateTime.Now)
                 DeactiveDCR_250();
-            if (underSLM_01 && underSLM_01Time.AddMilliseconds(TimeManager.SLM_01_DURATION) < DateTime.Now)
+            if (Storage.underPLD8 && Storage.underPLD8Time.AddMilliseconds(TimeManager.PLD8_DURATION) < DateTime.Now)
+                DeactivePLD8();
+            if (Storage.underSLM_01 && Storage.underSLM_01Time.AddMilliseconds(TimeManager.SLM_01_DURATION) < DateTime.Now)
                 DeactiveSLM_01();
-            if (invincibilityEffect && invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
+            if (Storage.invincibilityEffect && Storage.invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
                 DeactiveInvincibilityEffect();
-            if (mirroredControlEffect && mirroredControlEffectTime.AddMilliseconds(TimeManager.MIRRORED_CONTROL_DURATION) < DateTime.Now)
+            if (Storage.mirroredControlEffect && Storage.mirroredControlEffectTime.AddMilliseconds(TimeManager.MIRRORED_CONTROL_DURATION) < DateTime.Now)
                 DeactiveMirroredControlEffect();
-            if (wizardEffect && wizardEffectTime.AddMilliseconds(TimeManager.WIZARD_DURATION) < DateTime.Now)
+            if (Storage.wizardEffect && Storage.wizardEffectTime.AddMilliseconds(TimeManager.WIZARD_DURATION) < DateTime.Now)
                 DeactiveWizardEffect();
         }
 
+        public void DeactivePLD8()
+        {
+            Storage.underPLD8 = false;
+            SendPacket("0|n|MAL|REM|" + Id + "");
+            SendPacketToInRangePlayers("0|n|MAL|REM|" + Id + "");
+
+        }
         public void DeactiveR_RIC3()
         {
-            underR_IC3 = false;
+            Storage.underR_IC3 = false;
             SendPacket("0|n|fx|end|ICY_CUBE|" + Id + "");
             SendPacketToInRangePlayers("0|n|fx|end|ICY_CUBE|" + Id + "");
             SendCommand(SetSpeedCommand.write(Speed, Speed));
@@ -212,7 +153,7 @@ namespace Ow.Game.Objects
 
         public void DeactiveDCR_250()
         {
-            underDCR_250 = false;
+            Storage.underDCR_250 = false;
             SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
             SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
             SendCommand(SetSpeedCommand.write(Speed, Speed));
@@ -220,7 +161,7 @@ namespace Ow.Game.Objects
 
         public void DeactiveSLM_01()
         {
-            underSLM_01 = false;
+            Storage.underSLM_01 = false;
             SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
             SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
             SendCommand(SetSpeedCommand.write(Speed, Speed));
@@ -228,53 +169,46 @@ namespace Ow.Game.Objects
 
         public void DeactiveInvincibilityEffect()
         {
-            invincibilityEffect = false;
+            Storage.invincibilityEffect = false;
             RemoveVisualModifier(VisualModifierCommand.INVINCIBILITY);
         }
 
         public void DeactiveMirroredControlEffect()
         {
-            mirroredControlEffect = false;
+            Storage.mirroredControlEffect = false;
             RemoveVisualModifier(VisualModifierCommand.MIRRORED_CONTROLS);
         }
 
         public void DeactiveWizardEffect()
         {
-            wizardEffect = false;
+            Storage.wizardEffect = false;
             RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
         }
 
         public DateTime lastRadiationDamageTime = new DateTime();
         public void CheckRadiation()
         {
-            if (!Jumping && IsInRadiationZone && invincibilityEffectTime.AddSeconds(5) < DateTime.Now)
-            {
-                if (lastRadiationDamageTime.AddSeconds(1) < DateTime.Now)
-                {
-                    int damage = 20000;
+            if (Storage.Jumping || !Storage.IsInRadiationZone || Storage.invincibilityEffectTime.AddSeconds(5) >= DateTime.Now || lastRadiationDamageTime.AddSeconds(1) >= DateTime.Now) return;
 
-                    AttackManager.Damage(this, this, DamageType.RADIATION, damage, true, true, false);
-
-                    lastRadiationDamageTime = DateTime.Now;
-                }
-            }
+            AttackManager.Damage(this, this, DamageType.RADIATION, 20000, true, true, false);
+            lastRadiationDamageTime = DateTime.Now;
         }
 
         public void SetSpeedBoost(int speed)
         {
-            SpeedBoost = speed;
+            Storage.SpeedBoost = speed;
             SendCommand(SetSpeedCommand.write(Speed, Speed));
         }
 
         public void RepairBot(bool activated)
         {
-            RepairBotActivated = activated;
+            Storage.RepairBotActivated = activated;
             SendCommand(GetBeaconCommand());
         }
 
         public void SetShieldSkillActivated(bool pShieldSkillActivated)
         {
-            ShieldSkillActivated = pShieldSkillActivated;
+            Storage.ShieldSkillActivated = pShieldSkillActivated;
 
             if (pShieldSkillActivated)
                 SendCommand(AttributeSkillShieldUpdateCommand.write(1, 1, 0));
@@ -286,9 +220,9 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = 540;
+                var value = CurrentConfig == 1 ? Equipment.Config1Speed : Equipment.Config2Speed;
 
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.CRAB_FORMATION:
                         value -= Maths.GetPercentage(value, 20);
@@ -307,16 +241,16 @@ namespace Ow.Game.Objects
                         break;
                 }
 
-                if (underDCR_250)
+                if (Storage.underDCR_250)
                     value -= Maths.GetPercentage(value, 30);
 
-                if (underSLM_01)
+                if (Storage.underSLM_01)
                     value -= Maths.GetPercentage(value, 50);
 
-                if (underR_IC3)
+                if (Storage.underR_IC3)
                     value -= value;
 
-                value += SpeedBoost;
+                value += Storage.SpeedBoost;
 
                 return value;
             }
@@ -326,11 +260,11 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = Ship.BaseHitpoints;
+                var value = CurrentConfig == 1 ? Equipment.Config1Hitpoints : Equipment.Config2Hitpoints;
                 //value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.MAXHP));
                 //portaldan atlayınca can yükseliyor booster hatası
 
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.CHEVRON_FORMATION:
                         value -= Maths.GetPercentage(value, 20);
@@ -354,7 +288,7 @@ namespace Ow.Game.Objects
             {
                 var value = Premium ? 1 : 3;
 
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.RING_FORMATION:
                         value += Maths.GetPercentage(value, 25);
@@ -385,11 +319,12 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = CurrentConfig == 1 ? EquipmentManager.shieldCfg1 : EquipmentManager.shieldCfg2;
+                var value = CurrentConfig == 1 ? Equipment.Config1Shield : Equipment.Config2Shield;
+                value += Maths.GetPercentage(value, 40);
                 //value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.SHIELD));
                 //portaldan atlayınca can yükseliyor booster hatası
 
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.HEART_FORMATION:
                     case DroneManager.TURTLE_FORMATION:
@@ -415,7 +350,7 @@ namespace Ow.Game.Objects
             get
             {
                 var value = 0.8;
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.CRAB_FORMATION:
                         value += 0.2;
@@ -435,7 +370,7 @@ namespace Ow.Game.Objects
         {
             get
             {
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.MOTH_FORMATION:
                         return 0.2;
@@ -453,11 +388,12 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = CurrentConfig == 1 ? EquipmentManager.damageCfg1 : EquipmentManager.damageCfg2;
+                var value = CurrentConfig == 1 ? Equipment.Config1Damage : Equipment.Config2Damage;
+                value += Maths.GetPercentage(value, 60);
                 //value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.DAMAGE));
                 //portaldan atlayınca can yükseliyor booster hatası
 
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.TURTLE_FORMATION:
                         value -= Maths.GetPercentage(value, (int)7.5);
@@ -488,7 +424,7 @@ namespace Ow.Game.Objects
 
         public int GetHonorBoost(int honor)
         {
-            switch (SettingsManager.SelectedFormation)
+            switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
             {
                 case DroneManager.PINCER_FORMATION:
                     return honor += Maths.GetPercentage(honor, 5);
@@ -502,7 +438,7 @@ namespace Ow.Game.Objects
             get
             {
                 var value = AttackManager.GetRocketDamage();
-                switch (SettingsManager.SelectedFormation)
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.TURTLE_FORMATION:
                         value -= Maths.GetPercentage(value, (int)7.5);
@@ -523,7 +459,7 @@ namespace Ow.Game.Objects
 
         public bool UpdateActivatable(Activatable pEntity, bool pInRange)
         {
-            if (InRangeAssets.ContainsKey(pEntity.Id))
+            if (Storage.InRangeAssets.ContainsKey(pEntity.Id))
             {
                 if (pInRange)
                 {
@@ -535,7 +471,7 @@ namespace Ow.Game.Objects
                     {
                         CurrentInRangePortalId = -1;
                     }
-                    InRangeAssets.TryRemove(pEntity.Id, out pEntity);
+                    Storage.InRangeAssets.TryRemove(pEntity.Id, out pEntity);
                     return true;
                 }
             }
@@ -547,7 +483,7 @@ namespace Ow.Game.Objects
                     {
                         CurrentInRangePortalId = pEntity.Id;
                     }
-                    InRangeAssets.TryAdd(pEntity.Id, pEntity);
+                    Storage.InRangeAssets.TryAdd(pEntity.Id, pEntity);
                     return true;
                 }
                 else
@@ -560,7 +496,7 @@ namespace Ow.Game.Objects
         public DateTime ConfigCooldown = new DateTime();
         public void ChangeConfiguration(string LootID)
         {
-            if (ConfigCooldown.AddSeconds(5) < DateTime.Now || GodMode)
+            if (ConfigCooldown.AddSeconds(5) < DateTime.Now || Storage.GodMode)
             {
                 SendPacket("0|S|CFG|" + LootID);
                 SetCurrentConfiguration(Convert.ToInt32(LootID));
@@ -577,34 +513,24 @@ namespace Ow.Game.Objects
         {
             CurrentConfig = Convert.ToInt32(pCurrentConfiguration);
             Settings.InGameSettings.currentConfig = Convert.ToInt32(pCurrentConfiguration);
-
-            String drones = GetDronesPacket();
-            SendPacket(drones);
-            SendPacketToInRangePlayers(drones);
-
+            DroneManager.UpdateDrones();
             UpdateStatus();
         }
 
         public byte[] GetBeaconCommand()
         {
-            return BeaconCommand.write(1, 1, 1, 1, IsInDemilitarizedZone, RepairBotActivated, false,
-                         "equipment_extra_repbot_rep-4", IsInRadiationZone);
+            return BeaconCommand.write(1, 1, 1, 1, Storage.IsInDemilitarizedZone, Storage.RepairBotActivated, false,
+                         "equipment_extra_repbot_rep-4", Storage.IsInRadiationZone);
         }
 
         public string GetClanTag()
         {
-            if (Clan != null)
-                return Clan.Tag;
-            else
-                return "";
+            return (Clan != null ? Clan.Tag : "");
         }
 
         public int GetClanId()
         {
-            if (Clan != null)
-                return Clan.Id;
-            else
-                return 0;
+            return (Clan != null ? Clan.Id : 0);
         }
 
         public byte[] GetShipCreateCommand(bool fromAdmin, short relationType, bool sameClan, bool jackpotBattle = false)
@@ -654,11 +580,11 @@ namespace Ow.Game.Objects
                 GetClanId(),
                 3,
                 Premium,
-                Experience,
-                Honor,
+                Data.experience,
+                Data.honor,
                 (short)Level,
-                Credits,
-                Uridium,
+                Data.credits,
+                Data.uridium,
                 0,
                 RankId,
                 GetClanTag(),
@@ -671,7 +597,7 @@ namespace Ow.Game.Objects
 
         public bool Attackable()
         {
-            if (AttackManager.IshCooldown.AddMilliseconds(TimeManager.ISH_DURATION) > DateTime.Now || invincibilityEffect || GodMode)
+            if (AttackManager.IshCooldown.AddMilliseconds(TimeManager.ISH_DURATION) > DateTime.Now || Storage.invincibilityEffect || Storage.GodMode)
                 return false;
             else
                 return true;
@@ -689,84 +615,123 @@ namespace Ow.Game.Objects
 
         public void UpdateCurrentCooldowns()
         {
+            int smbCooldown = (int)(TimeManager.SMB_COOLDOWN - (DateTime.Now - AttackManager.SmbCooldown).TotalMilliseconds);
+            int ishCooldown = (int)(TimeManager.ISH_COOLDOWN - (DateTime.Now - AttackManager.IshCooldown).TotalMilliseconds);
             int empCooldown = (int)(TimeManager.EMP_COOLDOWN - (DateTime.Now - AttackManager.EmpCooldown).TotalMilliseconds);
+            int mineCooldown = (int)(TimeManager.MINE_COOLDOWN - (DateTime.Now - AttackManager.mineCooldown).TotalMilliseconds);
+            int dcrCooldown = (int)(TimeManager.DCR_250_COOLDOWN - (DateTime.Now - AttackManager.dcr_250Cooldown).TotalMilliseconds);
+            int pldCooldown = (int)(TimeManager.PLD8_COOLDOWN - (DateTime.Now - AttackManager.pld8Cooldown).TotalMilliseconds);
+            /*
+            int energyLeechCooldown = (int)(TimeManager.ENERGY_LEECH_COOLDOWN - (DateTime.Now - TechManager.EnergyLeech.cooldown).TotalMilliseconds);
+            int chainImpulseCooldown = (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - (DateTime.Now - TechManager.ChainImpulse.cooldown).TotalMilliseconds);
+            int precisionTargeterCooldown = (int)(TimeManager.PRECISION_TARGETER_COOLDOWN - (DateTime.Now - TechManager.PrecisionTargeter.cooldown).TotalMilliseconds);
+            int backupShieldsCooldown = (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - (DateTime.Now - TechManager.BackupShields.cooldown).TotalMilliseconds);
+            int battleRepairBotCooldown = (int)(TimeManager.BATTLE_REPAIR_BOT_COOLDOWN - (DateTime.Now - TechManager.BattleRepairBot.cooldown).TotalMilliseconds);
+            */
+            int sentinelCooldown = (int)(TimeManager.SENTINEL_COOLDOWN - (DateTime.Now - SkillManager.Sentinel.cooldown).TotalMilliseconds);
+            int diminisherCooldown = (int)(TimeManager.DIMINISHER_COOLDOWN - (DateTime.Now - SkillManager.Diminisher.cooldown).TotalMilliseconds);
+            int venomCooldown = (int)(TimeManager.VENOM_COOLDOWN - (DateTime.Now - SkillManager.Venom.cooldown).TotalMilliseconds);
+            int spectrumCooldown = (int)(TimeManager.SPECTRUM_COOLDOWN - (DateTime.Now - SkillManager.Spectrum.cooldown).TotalMilliseconds);
+            int solaceCooldown = (int)(TimeManager.SOLACE_COOLDOWN - (DateTime.Now - SkillManager.Solace.cooldown).TotalMilliseconds);
 
-            if (empCooldown >= 0)
-            {
-                Settings.CurrentCooldowns.empCooldown = empCooldown;
-                QueryManager.SavePlayer.Settings(this);
-            }
+            if (empCooldown >= 0) Settings.CurrentCooldowns.smbCooldown = smbCooldown;
+            if (ishCooldown >= 0) Settings.CurrentCooldowns.ishCooldown = ishCooldown;
+            if (empCooldown >= 0) Settings.CurrentCooldowns.empCooldown = empCooldown;
+            if (mineCooldown >= 0) Settings.CurrentCooldowns.mineCooldown = mineCooldown;
+            if (dcrCooldown >= 0) Settings.CurrentCooldowns.dcrCooldown = dcrCooldown;
+            if (pldCooldown >= 0) Settings.CurrentCooldowns.pldCooldown = pldCooldown;
+            /*
+            if (energyLeechCooldown >= 0)  Settings.CurrentCooldowns.energyLeechCooldown = energyLeechCooldown;
+            if (chainImpulseCooldown >= 0)  Settings.CurrentCooldowns.chainImpulseCooldown = chainImpulseCooldown;
+            if (precisionTargeterCooldown >= 0)  Settings.CurrentCooldowns.precisionTargeterCooldown = precisionTargeterCooldown;
+            if (backupShieldsCooldown >= 0)  Settings.CurrentCooldowns.backupShieldsCooldown = backupShieldsCooldown;
+            if (battleRepairBotCooldown >= 0)  Settings.CurrentCooldowns.battleRepairBotCooldown = battleRepairBotCooldown;
+            */
+            if (sentinelCooldown >= 0) Settings.CurrentCooldowns.sentinelCooldown = sentinelCooldown;
+            if (diminisherCooldown >= 0) Settings.CurrentCooldowns.diminisherCooldown = diminisherCooldown;
+            if (venomCooldown >= 0) Settings.CurrentCooldowns.venomCooldown = venomCooldown;
+            if (spectrumCooldown >= 0) Settings.CurrentCooldowns.spectrumCooldown = spectrumCooldown;
+            if (solaceCooldown >= 0) Settings.CurrentCooldowns.solaceCooldown = solaceCooldown;
+            QueryManager.SavePlayer.Settings(this);
         }
 
         public void SetCurrentCooldowns()
         {
-            AttackManager.EmpCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.EMP_COOLDOWN - Settings.CurrentCooldowns.empCooldown));
+            if (Settings.CurrentCooldowns.smbCooldown > 0) AttackManager.SmbCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SMB_COOLDOWN - Settings.CurrentCooldowns.smbCooldown));
+            if (Settings.CurrentCooldowns.ishCooldown > 0) AttackManager.IshCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.ISH_COOLDOWN - Settings.CurrentCooldowns.ishCooldown));
+            if (Settings.CurrentCooldowns.empCooldown > 0) AttackManager.EmpCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.EMP_COOLDOWN - Settings.CurrentCooldowns.empCooldown));
+            if (Settings.CurrentCooldowns.mineCooldown > 0) AttackManager.mineCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.MINE_COOLDOWN - Settings.CurrentCooldowns.mineCooldown));
+            if (Settings.CurrentCooldowns.dcrCooldown > 0) AttackManager.dcr_250Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.DCR_250_COOLDOWN - Settings.CurrentCooldowns.dcrCooldown));
+            if (Settings.CurrentCooldowns.pldCooldown > 0) AttackManager.pld8Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.PLD8_COOLDOWN - Settings.CurrentCooldowns.pldCooldown));
+            /*
+            TechManager.EnergyLeech.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.ENERGY_LEECH_COOLDOWN - Settings.CurrentCooldowns.energyLeechCooldown));
+            TechManager.ChainImpulse.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.CHAIN_IMPULSE_COOLDOWN - Settings.CurrentCooldowns.chainImpulseCooldown));
+            TechManager.PrecisionTargeter.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.PRECISION_TARGETER_COOLDOWN - Settings.CurrentCooldowns.precisionTargeterCooldown));
+            TechManager.BackupShields.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.BACKUP_SHIELD_COOLDOWN - Settings.CurrentCooldowns.backupShieldsCooldown));
+            TechManager.BattleRepairBot.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.BATTLE_REPAIR_BOT_COOLDOWN - Settings.CurrentCooldowns.battleRepairBotCooldown));
+            */
+            if (Settings.CurrentCooldowns.sentinelCooldown > 0) SkillManager.Sentinel.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SENTINEL_COOLDOWN - Settings.CurrentCooldowns.sentinelCooldown));
+            if (Settings.CurrentCooldowns.diminisherCooldown > 0) SkillManager.Diminisher.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.DIMINISHER_COOLDOWN - Settings.CurrentCooldowns.diminisherCooldown));
+            if (Settings.CurrentCooldowns.venomCooldown > 0) SkillManager.Venom.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.VENOM_COOLDOWN - Settings.CurrentCooldowns.venomCooldown));
+            if (Settings.CurrentCooldowns.spectrumCooldown > 0) SkillManager.Spectrum.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SPECTRUM_COOLDOWN - Settings.CurrentCooldowns.spectrumCooldown));
+            if (Settings.CurrentCooldowns.solaceCooldown > 0) SkillManager.Solace.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SOLACE_COOLDOWN - Settings.CurrentCooldowns.solaceCooldown));
         }
 
         public void SendCurrentCooldowns()
         {
-            var ishCooldown = (DateTime.Now - AttackManager.IshCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.ISH_01, (int)(TimeManager.ISH_COOLDOWN - ishCooldown));
-
             var smbCooldown = (DateTime.Now - AttackManager.SmbCooldown).TotalMilliseconds;
             SendCooldown(AmmunitionManager.SMB_01, (int)(TimeManager.SMB_COOLDOWN - smbCooldown));
+
+            var ishCooldown = (DateTime.Now - AttackManager.IshCooldown).TotalMilliseconds;
+            SendCooldown(AmmunitionManager.ISH_01, (int)(TimeManager.ISH_COOLDOWN - ishCooldown));
 
             var empCooldown = (DateTime.Now - AttackManager.EmpCooldown).TotalMilliseconds;
             SendCooldown(AmmunitionManager.EMP_01, (int)(TimeManager.EMP_COOLDOWN - empCooldown));
 
-            var rsbCooldown = (DateTime.Now - AttackManager.lastRSBAttackTime).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.RSB_75, (int)(3000 - rsbCooldown));
+            var mineCooldown = (DateTime.Now - AttackManager.mineCooldown).TotalMilliseconds;
+            SendCooldown(AmmunitionManager.DCR_250, (int)(TimeManager.MINE_COOLDOWN - mineCooldown));
 
-            var formationCooldown = (DateTime.Now - DroneManager.formationCooldown).TotalMilliseconds;
-            SendCooldown(DroneManager.DEFAULT_FORMATION, (int)(TimeManager.FORMATION_COOLDOWN - formationCooldown));
+            var dcrCooldown = (DateTime.Now - AttackManager.dcr_250Cooldown).TotalMilliseconds;
+            SendCooldown(AmmunitionManager.DCR_250, (int)(TimeManager.DCR_250_COOLDOWN - dcrCooldown));
 
-            var shieldTechCooldown = (DateTime.Now - TechManager.BackupShields.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_BACKUP_SHIELDS, (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - shieldTechCooldown));
+            var pldCooldown = (DateTime.Now - AttackManager.pld8Cooldown).TotalMilliseconds;
+            SendCooldown(AmmunitionManager.PLD_8, (int)(TimeManager.PLD8_COOLDOWN - pldCooldown));
+         
+            var energyLeechCooldown = (DateTime.Now - TechManager.EnergyLeech.cooldown).TotalMilliseconds;
+            SendCooldown(TechManager.TECH_ENERGY_LEECH, (int)((TechManager.EnergyLeech.Active ? TimeManager.ENERGY_LEECH_DURATION : TimeManager.ENERGY_LEECH_COOLDOWN) - energyLeechCooldown), TechManager.EnergyLeech.Active);
 
-            var repairTechCooldown = (DateTime.Now - TechManager.BattleRepairBot.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_BATTLE_REPAIR_BOT, (int)((TechManager.BattleRepairBot.Active ? TimeManager.BATTLE_REPAIR_BOT_DURATION : TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) - repairTechCooldown), TechManager.BattleRepairBot.Active ? true : false);
+            var chainImpulseCooldown = (DateTime.Now - TechManager.ChainImpulse.cooldown).TotalMilliseconds;
+            SendCooldown(TechManager.TECH_CHAIN_IMPULSE, (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - chainImpulseCooldown));
 
-            var chainTechCooldown = (DateTime.Now - TechManager.ChainImpulse.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_CHAIN_IMPULSE, (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - chainTechCooldown));
+            var precisionTargeterCooldown = (DateTime.Now - TechManager.PrecisionTargeter.cooldown).TotalMilliseconds;
+            SendCooldown(TechManager.TECH_PRECISION_TARGETER, (int)((TechManager.PrecisionTargeter.Active ? TimeManager.PRECISION_TARGETER_DURATION : TimeManager.PRECISION_TARGETER_COOLDOWN) - precisionTargeterCooldown), TechManager.PrecisionTargeter.Active);
 
-            var energyTechCooldown = (DateTime.Now - TechManager.EnergyLeech.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_ENERGY_LEECH, (int)((TechManager.EnergyLeech.Active ? TimeManager.ENERGY_LEECH_DURATION : TimeManager.ENERGY_LEECH_COOLDOWN) - energyTechCooldown), TechManager.EnergyLeech.Active ? true : false);
+            var backupShieldsCooldown = (DateTime.Now - TechManager.BackupShields.cooldown).TotalMilliseconds;
+            SendCooldown(TechManager.TECH_BACKUP_SHIELDS, (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - backupShieldsCooldown));
 
-            var precisionTechCooldown = (DateTime.Now - TechManager.PrecisionTargeter.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_PRECISION_TARGETER, (int)((TechManager.PrecisionTargeter.Active ? TimeManager.PRECISION_TARGETER_DURATION : TimeManager.PRECISION_TARGETER_COOLDOWN) - precisionTechCooldown), TechManager.PrecisionTargeter.Active ? true : false);
+            var battleRepairBotCooldown = (DateTime.Now - TechManager.BattleRepairBot.cooldown).TotalMilliseconds;
+            SendCooldown(TechManager.TECH_BATTLE_REPAIR_BOT, (int)((TechManager.BattleRepairBot.Active ? TimeManager.BATTLE_REPAIR_BOT_DURATION : TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) - battleRepairBotCooldown), TechManager.BattleRepairBot.Active);       
 
-            var sentinelSkillCooldown = (DateTime.Now - SkillManager.Sentinel.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.SENTINEL, (int)((SkillManager.Sentinel.Active ? TimeManager.SENTINEL_DURATION : TimeManager.SENTINEL_COOLDOWN) - sentinelSkillCooldown), SkillManager.Sentinel.Active ? true : false);
+            var sentinelCooldown = (DateTime.Now - SkillManager.Sentinel.cooldown).TotalMilliseconds;
+            SendCooldown(SkillManager.SENTINEL, (int)((SkillManager.Sentinel.Active ? TimeManager.SENTINEL_DURATION : TimeManager.SENTINEL_COOLDOWN) - sentinelCooldown), SkillManager.Sentinel.Active);
 
-            var diminisherSkillCooldown = (DateTime.Now - SkillManager.Diminisher.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.DIMINISHER, (int)((SkillManager.Diminisher.Active ? TimeManager.DIMINISHER_DURATION : TimeManager.DIMINISHER_COOLDOWN) - diminisherSkillCooldown), SkillManager.Diminisher.Active ? true : false);
+            var diminisherCooldown = (DateTime.Now - SkillManager.Diminisher.cooldown).TotalMilliseconds;
+            SendCooldown(SkillManager.DIMINISHER, (int)((SkillManager.Diminisher.Active ? TimeManager.DIMINISHER_DURATION : TimeManager.DIMINISHER_COOLDOWN) - diminisherCooldown), SkillManager.Diminisher.Active);
 
-            var spectrumSkillCooldown = (DateTime.Now - SkillManager.Spectrum.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.SPECTRUM, (int)((SkillManager.Spectrum.Active ? TimeManager.SPECTRUM_DURATION : TimeManager.SPECTRUM_COOLDOWN) - spectrumSkillCooldown), SkillManager.Spectrum.Active ? true : false);
+            var venomCooldown = (DateTime.Now - SkillManager.Venom.cooldown).TotalMilliseconds;
+            SendCooldown(SkillManager.VENOM, (int)((SkillManager.Venom.Active ? TimeManager.VENOM_DURATION : TimeManager.VENOM_COOLDOWN) - venomCooldown), SkillManager.Venom.Active);
 
-            var venomSkillCooldown = (DateTime.Now - SkillManager.Venom.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.VENOM, (int)((SkillManager.Venom.Active ? TimeManager.VENOM_DURATION : TimeManager.VENOM_COOLDOWN) - venomSkillCooldown), SkillManager.Venom.Active ? true : false);
+            var spectrumCooldown = (DateTime.Now - SkillManager.Spectrum.cooldown).TotalMilliseconds;
+            SendCooldown(SkillManager.SPECTRUM, (int)((SkillManager.Spectrum.Active ? TimeManager.SPECTRUM_DURATION : TimeManager.SPECTRUM_COOLDOWN) - spectrumCooldown), SkillManager.Spectrum.Active);
 
-            var solaceSkillCooldown = (DateTime.Now - SkillManager.Solace.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.SOLACE, (int)(TimeManager.SOLACE_COOLDOWN - solaceSkillCooldown));
-
-            var r_ic3Cooldown = (DateTime.Now - AttackManager.r_ic3Cooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.R_IC3, (int)(TimeManager.R_IC3_COOLDOWN - r_ic3Cooldown));
-
-            var dcr_250Cooldown = (DateTime.Now - AttackManager.dcr_250Cooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.DCR_250, (int)(TimeManager.DCR_250_COOLDOWN - dcr_250Cooldown));
-
-            var wiz_xCooldown = (DateTime.Now - AttackManager.wiz_xCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.WIZ_X, (int)(TimeManager.WIZARD_COOLDOWN - wiz_xCooldown));
-
-            var mineCooldown = (DateTime.Now - SettingsManager.mineCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.SLM_01, (int)(TimeManager.MINE_COOLDOWN - mineCooldown));
+            var solaceCooldown = (DateTime.Now - SkillManager.Solace.cooldown).TotalMilliseconds;
+            SendCooldown(SkillManager.SOLACE, (int)(TimeManager.SOLACE_COOLDOWN - solaceCooldown));
         }
 
         public void SelectShip(int targetId)
         {
             if (AttackManager.Attacking)
-                DisableAttack(SettingsManager.SelectedLaser);
+                DisableAttack(SettingsManager.Player.Settings.InGameSettings.selectedLaser);
 
             try
             {
@@ -793,20 +758,51 @@ namespace Ow.Game.Objects
             }
         }
 
+        public void ChangeShip(int shipId)
+        {
+            var player = this;
+            if (player.Storage.Jumping) return;
+
+            player.Storage.Jumping = true;
+
+            var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
+            player.Pet.Deactivate(true);
+
+            player.SkillManager.DisableAllSkills();
+            player.Ship = GameManager.GetShip(shipId);
+            player.CurrentInRangePortalId = -1;
+            player.Selected = null;
+            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+            player.Spacemap.RemoveCharacter(player);
+            player.Storage.InRangeAssets.Clear();
+            player.InRangeCharacters.Clear();
+
+            player.Spacemap.AddAndInitPlayer(player);
+            player.Storage.Jumping = false;
+
+            if (pet)
+            {
+                player.Pet.Activate();
+                player.Pet.SwitchGear(gearId);
+            }
+        }
+
         public void Jump(int mapId, Position targetPosition)
         {
             var player = this;
 
-            player.Jumping = true;
+            player.Storage.Jumping = true;
 
             var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
             player.Pet.Deactivate(true);
 
             player.CurrentInRangePortalId = -1;
             player.Selected = null;
-            player.DisableAttack(player.SettingsManager.SelectedLaser);
+            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
             player.Spacemap.RemoveCharacter(player);
-            player.InRangeAssets.Clear();
+            player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
             player.SetPosition(targetPosition);
 
@@ -814,17 +810,13 @@ namespace Ow.Game.Objects
             player.Spacemap = targetSpacemap;
 
             player.Spacemap.AddAndInitPlayer(player);
-            player.Jumping = false;
+            player.Storage.Jumping = false;
 
             if (pet)
+            {
                 player.Pet.Activate();
-        }
-
-        public String GetDronesPacket()
-        {
-            var DronePacket = "3|6|0|4|6|0|2|6|0|2|6|0|2|6|0|2|6|0|2|6|0|2|6|0|2|6|0|2|6|0";
-            var drones = "0|n|d|" + Id + "|" + DronePacket;
-            return drones;
+                player.Pet.SwitchGear(gearId);
+            }
         }
 
         public void KillScreen(Character killerPlayer, DestructionType destructionType, bool killedLogin = false)
@@ -833,90 +825,48 @@ namespace Ow.Game.Objects
             var basicRepair =
                    new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.BASIC_REPAIR),
                                               new PriceModule(PriceModule.URIDIUM, 0), true, 0,
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()));
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()));
+            var portalRepairTime = (int)(15 - ((DateTime.Now - Storage.KillscreenPortalRepairTime).TotalSeconds));
+            var portalRepairPrice = 200;
             var portalRepair =
                   new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.AT_JUMPGATE_REPAIR),
-                                             new PriceModule(PriceModule.URIDIUM, 0), true, 0,
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()),
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()),
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()),
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()));
+                                             new PriceModule(PriceModule.URIDIUM, portalRepairPrice), Data.uridium >= portalRepairPrice, portalRepairTime,
+                                             new MessageLocalizedWildcardCommand("desc_killscreen_repair_gate", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule> { new MessageWildcardReplacementModule("%COUNT%", portalRepairPrice.ToString(), new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED)) }),
+                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                             new MessageLocalizedWildcardCommand(Data.uridium >= portalRepairPrice ? "btn_killscreen_repair_for_uri" : "btn_killscreen_payment", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule> { new MessageWildcardReplacementModule("%COUNT%", portalRepairPrice.ToString(), new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED)) }));
+            var deathLocationRepairTime = (int)(30 - ((DateTime.Now - Storage.KillscreenDeathLocationRepairTime).TotalSeconds));
+            var deathLocationRepairPrice = 300;
             var deathLocationRepair =
                   new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.AT_DEATHLOCATION_REPAIR),
-                                             new PriceModule(PriceModule.URIDIUM, 0), true, 0,
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()),
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()),
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()),
-                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                 new ClientUITooltipTextFormatModule(
-                                                                                         ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                 new List<MessageWildcardReplacementModule>()));
+                                             new PriceModule(PriceModule.URIDIUM, deathLocationRepairPrice), Data.uridium >= deathLocationRepairPrice, deathLocationRepairTime,
+                                             new MessageLocalizedWildcardCommand("desc_killscreen_repair_location", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule> { new MessageWildcardReplacementModule("%COUNT%", deathLocationRepairPrice.ToString(), new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED)) }),
+                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                             new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                             new MessageLocalizedWildcardCommand(Data.uridium >= deathLocationRepairPrice ? "btn_killscreen_repair_for_uri" : "btn_killscreen_payment", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule> { new MessageWildcardReplacementModule("%COUNT%", deathLocationRepairPrice.ToString(), new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED)) }));
             var fullRepair =
                    new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.BASIC_FULL_REPAIR),
                                               new PriceModule(PriceModule.URIDIUM, 0), true, 0,
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
-                                                                                  new ClientUITooltipTextFormatModule(
-                                                                                          ClientUITooltipTextFormatModule.LOCALIZED),
-                                                                                  new List<MessageWildcardReplacementModule>()));
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
+                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()));
             killScreenOptionModules.Add(basicRepair);
+
             if (!killedLogin)
             {
-                if (Spacemap.Activatables.FirstOrDefault(x => x.Value is Portal).Value is Portal)
+                if (Spacemap.Activatables.FirstOrDefault(x => x.Value is Portal).Value is Portal && Data.uridium >= portalRepairPrice)
                     killScreenOptionModules.Add(portalRepair);
 
-                if (Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id && Spacemap.Id != 121)
+                if (Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id && Spacemap.Id != 121 && Data.uridium >= deathLocationRepairPrice)
                     killScreenOptionModules.Add(deathLocationRepair);
 
                 //killScreenOptionModules.Add(fullRepair);
             }
+
             var killScreenPostCommand =
                     KillScreenPostCommand.write(killerPlayer != null ? killerPlayer.Name : "", "http://localhost/indexInternal.es?action=internalDock",
                                               "MISC", new DestructionTypeModule((short)destructionType),
@@ -927,16 +877,18 @@ namespace Ow.Game.Objects
 
         public void Respawn(bool basicRepair = false, bool deathLocation = false, bool atNearestPortal = false, bool fullRepair = false)
         {
-            IsInDemilitarizedZone = basicRepair || fullRepair ? true : false;
-            IsInEquipZone = basicRepair || fullRepair ? true : false;
-            IsInRadiationZone = false;
+            AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.INVINCIBILITY, 0, "", 0, true));
+
+            Storage.IsInDemilitarizedZone = basicRepair || fullRepair ? true : false;
+            Settings.InGameSettings.inEquipZone = basicRepair || fullRepair ? true : false;
+            Storage.IsInRadiationZone = false;
 
             if (atNearestPortal)
                 SetPosition(GetNearestPortalPosition());
             else if (deathLocation)
-                CurrentHitPoints = Maths.GetPercentage(MaxHitPoints, 1);
+                CurrentHitPoints = Maths.GetPercentage(MaxHitPoints, 10);
             else
-                MoveManager.SetPosition();
+                SetPosition(FactionId == 1 ? Position.MMOPosition : FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
 
             if (basicRepair || fullRepair)
             {
@@ -953,9 +905,60 @@ namespace Ow.Game.Objects
 
             Spacemap.AddAndInitPlayer(this);
 
-            AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.INVINCIBILITY, 0, "", 0, true));
-
             Destroyed = false;
+        }
+
+        public void ChangeData(DataType dataType, int amount, ChangeType changeType = ChangeType.INCREASE)
+        {
+            amount = Convert.ToInt32(amount);
+            switch (dataType)
+            {
+                case DataType.URIDIUM:
+                    Data.uridium = (changeType == ChangeType.INCREASE ? (Data.uridium + amount) : (Data.uridium - amount));
+                    if (Data.uridium < 0) Data.uridium = 0;
+                    SendPacket("0|LM|ST|URI|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.uridium);
+                    break;
+                case DataType.CREDITS:
+                    Data.credits = (changeType == ChangeType.INCREASE ? (Data.credits + amount) : (Data.credits - amount));
+                    if (Data.credits < 0) Data.credits = 0;
+                    SendPacket("0|LM|ST|CRE|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.credits);
+                    break;
+                case DataType.HONOR:
+                    Data.honor = (changeType == ChangeType.INCREASE ? (Data.honor + amount) : (Data.honor - amount));
+                    SendPacket("0|LM|ST|HON|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.honor);
+                    break;
+                case DataType.EXPERIENCE:
+                    Data.experience = (changeType == ChangeType.INCREASE ? (Data.experience + amount) : (Data.experience - amount));
+                    if (Data.experience < 0) Data.experience = 0;
+                    SendPacket("0|LM|ST|EP|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.experience + "|" + Level);
+                    CheckNextLevel(Data.experience);
+                    break;
+                case DataType.JACKPOT:
+                    break;
+            }
+            QueryManager.SavePlayer.Information(this);
+        }
+
+        public void CheckNextLevel(long experience)
+        {
+            short lvl = 1;
+            long expNext = 10000;
+
+            while (experience >= expNext)
+            {
+                expNext *= 2;
+                lvl++;
+            }
+
+            if (lvl > Level)
+            {
+                SendPacket($"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.LEVEL_UPDATE}|{lvl}|{expNext - experience}");
+                var levelUpCommand = LevelUpCommand.write(Id, lvl);
+                SendCommand(levelUpCommand);
+                SendCommandToInRangePlayers(levelUpCommand);
+                Level = lvl;
+                QueryManager.SavePlayer.Information(this);
+            }
         }
 
         public bool AttackingOrUnderAttack(int combatSecond = 10)
@@ -1000,7 +1003,7 @@ namespace Ow.Game.Objects
                 var gameSession = GameManager.GetGameSession(Id);
                 if (gameSession == null) return;
                 if (!Spacemap.Characters.ContainsKey(Id)) return;
-                //if (!Program.TickManager.Ticks.Contains(this) && !Program.TickManager.ToBeAdded.Contains(this)) return;
+                if (!Program.TickManager.Exists(this)) return;
                 if (!gameSession.Client.Socket.IsBound) return;
                 if (!gameSession.Client.Socket.Connected) return;
 
@@ -1019,7 +1022,7 @@ namespace Ow.Game.Objects
                 var gameSession = GameManager.GetGameSession(Id);
                 if (gameSession == null) return;
                 if (!Spacemap.Characters.ContainsKey(Id)) return;
-                //if (!Program.TickManager.Ticks.Contains(this) && !Program.TickManager.ToBeAdded.Contains(this)) return;
+                if (!Program.TickManager.Exists(this)) return;
                 if (!gameSession.Client.Socket.IsBound) return;
                 if (!gameSession.Client.Socket.Connected) return;
 
@@ -1054,8 +1057,7 @@ namespace Ow.Game.Objects
             if (LogoutStartTime.AddSeconds((Premium || RankId == 21) ? 5 : 10) < DateTime.Now)
             {
                 SendPacket("0|l|" + Id);
-                var gameSession = GetGameSession();
-                gameSession.Disconnect(GameSession.DisconnectionType.NORMAL);
+                GameSession.Disconnect(GameSession.DisconnectionType.NORMAL);
                 LoggingOut = false;
             }
 
@@ -1086,9 +1088,12 @@ namespace Ow.Game.Objects
             }
         }
 
-        public GameSession GetGameSession()
+        public GameSession GameSession
         {
-            return GameManager.GetGameSession(Id);
+            get
+            {
+                return GameManager.GetGameSession(Id);
+            }
         }
     }
 }

@@ -58,6 +58,13 @@ namespace Ow.Game.Ticks
             Ticks.TryRemove(tick.TickId, out tick);
         }
 
+        public bool Exists(Tick tickable)
+        {
+            if (Ticks.Count == 0) return false;
+            if (Ticks.ContainsKey(tickable.TickId)) return true;
+            return false;
+        }
+
         public async void Tick()
         {
             while (true)

@@ -23,14 +23,12 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
             var player = gameSession.Player;
             var inviterPlayer = GameManager.GetPlayerById(read.userId);
 
-            if (inviterPlayer != null) {
-                AssembleAcceptedInvitation(player, inviterPlayer);
-            }
+            AssembleAcceptedInvitation(player, inviterPlayer);
         }
 
         public void AssembleAcceptedInvitation(Player player, Player inviterPlayer)
         {
-            if (inviterPlayer == null || !player.GroupInvites.ContainsKey(inviterPlayer.Id))
+            if (inviterPlayer == null || !player.Storage.GroupInvites.ContainsKey(inviterPlayer.Id))
             {
                 player.SendPacket("0|A|STM|msg_grp_inv_err_inviter_nonexistant");
                 return;
@@ -43,7 +41,7 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
             {
                 inviterPlayer.Group.Accept(inviterPlayer, player);
             }
-            player.GroupInvites.Clear();
+            player.Storage.GroupInvites.Clear();
         }
     }
 }

@@ -23,9 +23,9 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
             var inviterSession = GameManager.GetGameSession(read.userId);
 
             if (inviterSession == null) return;
-            if (player.GroupInvites.ContainsKey(inviterSession.Player.Id))
+            if (player.Storage.GroupInvites.ContainsKey(inviterSession.Player.Id))
             {
-                player.GroupInvites.Remove(inviterSession.Player.Id);
+                player.Storage.GroupInvites.Remove(inviterSession.Player.Id);
                 inviterSession.Player.SendCommand(GroupRemoveInvitationCommand.write(inviterSession.Player.Id, player.Id, GroupRemoveInvitationCommand.REJECT));
             }
         }

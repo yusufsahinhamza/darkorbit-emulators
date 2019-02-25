@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public bool Active = false;
 
-        public Spectrum(Player player)
-        {
-            Player = player;
-        }
+        public Spectrum(Player player) { Player = player; }
 
         public void Tick()
         {
@@ -31,13 +29,13 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION + TimeManager.SPECTRUM_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION + TimeManager.SPECTRUM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                Player.Spectrum = true;
+                Player.SkillManager.DisableAllSkills();
 
-                string packet = "0|SD|A|R|3|" + Player.Id + "";
-                Player.SendPacket(packet);
-                Player.SendPacketToInRangePlayers(packet);
+                Player.Storage.Spectrum = true;
+
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.PRISMATIC_SHIELD, 0, "", 0, true));
 
                 Player.SendCooldown(SkillManager.SPECTRUM, TimeManager.SPECTRUM_DURATION, true);
                 Active = true;
@@ -47,11 +45,9 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            Player.Spectrum = false;
+            Player.Storage.Spectrum = false;
 
-            string packet = "0|SD|D|R|3|" + Player.Id + "";
-            Player.SendPacket(packet);
-            Player.SendPacketToInRangePlayers(packet);
+            Player.RemoveVisualModifier(VisualModifierCommand.FORTRESS);
 
             Player.SendCooldown(SkillManager.SPECTRUM, TimeManager.SPECTRUM_COOLDOWN);
             Active = false;

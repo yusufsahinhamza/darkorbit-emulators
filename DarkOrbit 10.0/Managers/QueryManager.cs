@@ -16,6 +16,9 @@ using Ow.Game.Objects;
 using Ow.Game.Objects.Collectables;
 using Ow.Managers.MySQLManager;
 using Ow.Game.Movements;
+using static Ow.Game.Objects.Players.Managers.PlayerSettings;
+using Newtonsoft.Json.Linq;
+using Ow.Net;
 
 namespace Ow.Managers
 {
@@ -23,25 +26,51 @@ namespace Ow.Managers
     {
         public class SavePlayer
         {
-            public static void Settings(Player Player)
+            public static void Settings(Player player)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    mySqlClient.ExecuteNonQuery($"UPDATE players_accounts SET settings = '{Player.Settings.ToString()}' WHERE userID = {Player.Id}");
+                    if (SocketServer.ValidateJSON(JsonConvert.SerializeObject(player.Settings)))
+                        mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET settings = '{JsonConvert.SerializeObject(player.Settings)}' WHERE userID = {player.Id}");
                 }
             }
 
-            public static void Information(Player Player)
+            public static void Information(Player player)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    mySqlClient.ExecuteNonQuery($"UPDATE players_accounts SET " +
-                    $"uridium = {Player.Uridium}," +
-                    $"credits = {Player.Credits}," +
-                    $"honor = {Player.Honor}," +
-                    $"experience = {Player.Experience}" +
-                    $" WHERE userID =" + Player.Id);
+                    if (SocketServer.ValidateJSON(JsonConvert.SerializeObject(player.Data)))
+                        mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}', level = {player.Level} WHERE userID = {player.Id}");
                 }
+            }
+        }
+
+        public class ChatFunctions
+        {
+            public static void AddBan(int bannedId, int modId, string reason, int typeId, string untilDate)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    mySqlClient.ExecuteNonQuery($"INSERT INTO server_bans (userId, modId, reason, typeId, until_date) VALUES ({bannedId}, {modId}, '{reason}', {typeId}, '{untilDate}')");
+                }
+            }
+
+            public static bool CheckBanned(int userId)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 0");
+                    return result.Rows.Count >= 1 ? true : false;
+                }
+            }
+        }
+
+        public static bool CheckSessionId(int userId, string sessionId)
+        {
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                var result = mySqlClient.ExecuteQueryRow($"SELECT sessionID FROM player_accounts WHERE userID = {userId}");
+                return sessionId == result["sessionID"].ToString();
             }
         }
 
@@ -51,20 +80,22 @@ namespace Ow.Managers
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM players_accounts WHERE userID = {Player.Id} ");
+                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userID = {Player.Id} ");
                     foreach (DataRow row in data.Rows)
                     {
-                        Player.Uridium = Convert.ToInt32(row["uridium"]);
-                        Player.Experience = Convert.ToInt32(row["experience"]);
-                        Player.Credits = Convert.ToInt32(row["credits"]);
                         Player.Level = Convert.ToInt32(row["level"]);
-                        Player.Honor = Convert.ToInt32(row["honor"]);
                         Player.Premium = Convert.ToBoolean(row["premium"]);
                         Player.Title = Convert.ToString(row["title"]);
                         Player.Clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
                         Player.Ship = GameManager.GetShip(Convert.ToInt32(row["shipID"]));
-                        Player.Settings = JsonConvert.DeserializeObject<PlayerSettings>(row["settings"].ToString());
+                        Player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
+                        Player.Settings = (row["settings"].ToString() == "" ? new PlayerSettings() : JsonConvert.DeserializeObject<PlayerSettings>(row["settings"].ToString()));
                     }
+
+                    string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
+                    var querySet = mySqlClient.ExecuteQueryRow(sql);
+
+                    Player.Equipment = JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString());
                 }
             }
             catch (Exception e)
@@ -80,30 +111,17 @@ namespace Ow.Managers
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    string sql = $"SELECT * FROM players_accounts WHERE userID = {playerId} ";
+                    string sql = $"SELECT * FROM player_accounts WHERE userID = {playerId} ";
                     var querySet = mySqlClient.ExecuteQueryRow(sql);
 
                     var name = Convert.ToString(querySet["shipName"]);
                     var shipId = Convert.ToInt32(querySet["shipID"]);
-                    var ship = GameManager.GetShip(Convert.ToInt32(querySet["shipID"]));
-                    var mapId = Convert.ToInt32(querySet["mapID"]);
-
-                    if (!GameManager.Spacemaps.ContainsKey(mapId))
-                    {
-                        Console.WriteLine("PROBLEM -> MAPID " + mapId + " DOESN'T EXIST!");
-                        return null;
-                    }
-
-                    var spacemap = GameManager.GetSpacemap(mapId);
-                    //var currentHealth = intConv(querySet["SHIP_HP"]);
-                    //var currentNanohull = intConv(querySet["SHIP_NANO"]);
                     var factionId = Convert.ToInt32(querySet["factionID"]);
                     var rankId = Convert.ToInt32(querySet["rankID"]);
-                    //var sessionId = stringConv(querySet["SESSION_ID"]);
                     var clan = GameManager.GetClan(Convert.ToInt32(querySet["clanID"]));
-                    //var clan = playerId == 5036 ? Global.StorageManager.Clans[2] : Global.StorageManager.Clans[1];
 
-                    player = new Player(playerId, name, clan, factionId, new Position(0, 0), spacemap, rankId, shipId);
+                    player = new Player(playerId, name, clan, factionId, new Position(0, 0), GameManager.GetSpacemap(0), rankId, shipId);
+                    player.Pet.Name = Convert.ToString(querySet["petName"]);
                 }
 
             }
@@ -114,33 +132,11 @@ namespace Ow.Managers
             return player;
         }
 
-        public static DataTable data { get; set; }
-        public static int LoadItem(int UserId, string lootID, uint ConfigID, bool isDrone)
-        {
-            using (var mySqlClient = SqlDatabaseManager.GetClient())
-            {
-                if (isDrone)
-                    data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM players_equipment WHERE lootID = {lootID} AND configID = {ConfigID}  AND playerID = {UserId}");
-                else
-                    data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM players_equipment WHERE lootID = {lootID} AND configID= {ConfigID}  AND playerID = {UserId}");
-
-                if (isDrone ? lootID == "equipment_drones_weapon_shield_b0_2" : lootID == "equipment_weapon_shield_b0_2")
-                {
-                    return isDrone ? data.Rows.Count * 17500 : data.Rows.Count * 10000;
-                }
-                else if (isDrone ? lootID == "equipment_drones_weapon_laser_lf_3" : lootID == "equipment_weapon_laser_lf_3")
-                {
-                    return isDrone ? data.Rows.Count * 200 : data.Rows.Count * 150;
-                }
-                else return 0;
-            }
-        }
-
         public static void LoadMaps()
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM maps");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_maps");
                 foreach (DataRow row in data.Rows)
                 {
                     int MapID = Convert.ToInt32(row["mapID"]);
@@ -160,7 +156,7 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM ships");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_ships");
                 foreach (DataRow row in data.Rows)
                 {
                     string name = Convert.ToString(row["name"]);
@@ -179,7 +175,7 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM clans");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_clan");
                 foreach (DataRow row in data.Rows)
                 {
                     int id = Convert.ToInt32(row["clanID"]);
@@ -198,20 +194,20 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM clans_diplomacy WHERE clanID1 = {clan.Id}");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE senderClan = {clan.Id}");
                 foreach (DataRow row in data.Rows)
                 {
-                    int id = Convert.ToInt32(row["clanID2"]);
-                    Diplomacy relation = (Diplomacy)Convert.ToInt32(row["relationType"]);
-                    clan.Diplomacy.Add(id, relation);
+                    int id = Convert.ToInt32(row["toClan"]);
+                    Diplomacy relation = (Diplomacy)Convert.ToInt32(row["diplomacyType"]);
+                    clan.Diplomacies.Add(id, relation);
                 }
 
-                var data2 = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM clans_diplomacy WHERE clanID2 = {clan.Id}");
+                var data2 = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE toClan = {clan.Id}");
                 foreach (DataRow row in data2.Rows)
                 {
-                    int id = Convert.ToInt32(row["clanID1"]);
-                    Diplomacy relation = (Diplomacy)Convert.ToInt32(row["relationType"]);
-                    clan.Diplomacy.Add(id, relation);
+                    int id = Convert.ToInt32(row["senderClan"]);
+                    Diplomacy relation = (Diplomacy)Convert.ToInt32(row["diplomacyType"]);
+                    clan.Diplomacies.Add(id, relation);
                 }
             }
         }
@@ -224,10 +220,11 @@ namespace Ow.Managers
                 foreach (DataRow row in data.Rows)
                 {
                     int id = Convert.ToInt32(row["Id"]);
-                    int index = Convert.ToInt32(row["Index"]);
                     string name = Convert.ToString(row["Name"]);
+                    int tabOrder = Convert.ToInt32(row["TabOrder"]);
+                    int companyId = Convert.ToInt32(row["CompanyId"]);
 
-                    var chat = new Chat.Room(id, index, name);
+                    var chat = new Chat.Room(id, name, tabOrder, companyId);
                     Chat.Room.Rooms.Add(chat.Id, chat);
                 }
             }

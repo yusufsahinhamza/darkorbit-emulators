@@ -31,6 +31,7 @@ namespace Ow.Game.Objects
 
         public Spaceball(int id, int typeId) : base(id, GameManager.GetShip(typeId).Name, 0, GameManager.GetShip(typeId), CurrentPosition, GameManager.GetSpacemap(16), null)
         {
+            SeeRange = 999999;
             Speed = 100;
         }
 
@@ -40,7 +41,7 @@ namespace Ow.Game.Objects
             {
                 CheckDamage();
                 CheckSpeed();
-                if ((Position.DistanceTo(MMOPosition) <= 2000) || (Position.DistanceTo(EICPosition) <= 2000) || (Position.DistanceTo(VRUPosition) <= 2000))
+                if ((Position.DistanceTo(MMOPosition) <= 100) || (Position.DistanceTo(EICPosition) <= 100) || (Position.DistanceTo(VRUPosition) <= 100))
                     SendReward();
             }
         }
@@ -155,9 +156,9 @@ namespace Ow.Game.Objects
             SelectedFactionId = 0;
         }
 
-        public void AddDamage(Player player, int damage)
+        public void AddDamage(Character character, int damage)
         {
-            switch (player.FactionId)
+            switch (character.FactionId)
             {
                 case 1:
                     MMODamage += damage;
@@ -210,7 +211,7 @@ namespace Ow.Game.Objects
                 FactionId,
                 0,
                 0,
-                true,
+                false,
                 new ClanRelationModule(ClanRelationModule.AT_WAR),
                 0,
                 false,
@@ -219,7 +220,8 @@ namespace Ow.Game.Objects
                 ClanRelationModule.AT_WAR,
                 ClanRelationModule.AT_WAR,
                 new List<VisualModifierCommand>(),
-                new class_11d(class_11d.DEFAULT));
+                new class_11d(class_11d.DEFAULT)
+                );
         }
     }
 }

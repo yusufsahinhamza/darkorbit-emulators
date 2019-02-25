@@ -12,8 +12,7 @@ namespace Ow.Managers.MySQLManager
         public static string SERVER = "127.0.0.1";
         public static string UID = "root";
         public static string PWD = "";
-        public static string DB = "server_10";
-        public static string DB_EXT = "server";
+        public static string DB = "server";
 
         public static void Initialize()
         {
@@ -30,33 +29,6 @@ namespace Ow.Managers.MySQLManager
             Connection.Open();
             return new SqlDatabaseClient(Connection);
         }
-
-        public static SqlDatabaseClient GetGlobalClient()
-        {
-            MySqlConnection Connection = new MySqlConnection(GenerateGlobalConnectionString());
-            Connection.Open();
-            return new SqlDatabaseClient(Connection);
-        }
-
-        public static string GenerateGlobalConnectionString()
-        {
-            if (GlobalConnectionString == "")
-            {
-                MySqlConnectionStringBuilder ConnectionStringBuilder = new MySqlConnectionStringBuilder();
-                ConnectionStringBuilder.Server = SERVER;
-                ConnectionStringBuilder.Port = 3306;
-                ConnectionStringBuilder.UserID = UID;
-                ConnectionStringBuilder.Password = PWD;
-                ConnectionStringBuilder.Database = DB_EXT;
-                ConnectionStringBuilder.ConvertZeroDateTime = true;
-                ConnectionStringBuilder.Pooling = false;
-                ConnectionStringBuilder.SslMode = MySqlSslMode.None;
-                GlobalConnectionString = ConnectionStringBuilder.ToString();
-            }
-            return GlobalConnectionString;
-        }
-
-        public static string GlobalConnectionString = "";
 
         public static string GenerateConnectionString()
         {

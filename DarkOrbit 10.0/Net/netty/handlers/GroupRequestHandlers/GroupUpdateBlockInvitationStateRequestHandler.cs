@@ -18,9 +18,8 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
         {
             var player = gameSession.Player;
 
-            player.Settings.InGameSettings.BlockedGroupInvites = player.Settings.InGameSettings.BlockedGroupInvites ? false : true;
-            player.SendCommand(GroupUpdateBlockInvitationState.write(player.Settings.InGameSettings.BlockedGroupInvites));
-
+            player.Settings.InGameSettings.blockedGroupInvites = player.Settings.InGameSettings.blockedGroupInvites ? false : true;
+            player.SendCommand(GroupUpdateBlockInvitationState.write(player.Settings.InGameSettings.blockedGroupInvites));
             QueryManager.SavePlayer.Settings(player);
         }
     }

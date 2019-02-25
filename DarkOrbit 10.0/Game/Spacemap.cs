@@ -41,8 +41,6 @@ namespace Ow.Game
         public string StationsJSON { get; set; }
         public Position[] Limits { get; private set; }
 
-        public int VISIBILITY_RANGE = 2000;
-
         private List<PortalBase> PortalBase { get; set; }
         private List<StationBase> StationBase { get; set; }
 
@@ -58,9 +56,6 @@ namespace Ow.Game
             ParseLimits();
             LoadObjects();
 
-            if (Id == 101 || Id == 42)
-                VISIBILITY_RANGE = 999999999;
-
             var tickId = -1;
             Program.TickManager.AddTick(this, out tickId);
             TickId = tickId;
@@ -74,24 +69,13 @@ namespace Ow.Game
                 {
                     if (!thisCharacter.Equals(otherCharacter))
                     {
-                        if (thisCharacter.Position.DistanceTo(otherCharacter.Position) <= VISIBILITY_RANGE)
+                        if (thisCharacter.Position.DistanceTo(otherCharacter.Position) <= ((EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(otherCharacter.Id)) ? 999999 : otherCharacter.SeeRange))
                         {
-                            if (thisCharacter is Player)
-                                (thisCharacter as Player).AddInRangeCharacter(otherCharacter);
-                            else
-                                thisCharacter.InRangeCharacters.TryAdd(otherCharacter.Id, otherCharacter);
+                            thisCharacter.AddInRangeCharacter(otherCharacter);
                         }
-                        else if (((thisCharacter.SelectedCharacter == null || !thisCharacter.SelectedCharacter.Equals(otherCharacter)) &&
-                        (otherCharacter.SelectedCharacter == null || !otherCharacter.SelectedCharacter.Equals(thisCharacter))))
+                        else if (thisCharacter.SelectedCharacter == null || !thisCharacter.SelectedCharacter.Equals(otherCharacter))
                         {
-                            if (thisCharacter.IsInRangeCharacter(otherCharacter))
-                            {
-                                thisCharacter.RemoveInRangeCharacter(otherCharacter);
-                            }
-                            if (otherCharacter.IsInRangeCharacter(thisCharacter))
-                            {
-                                otherCharacter.RemoveInRangeCharacter(thisCharacter);
-                            }
+                            thisCharacter.RemoveInRangeCharacter(otherCharacter);
                         }
                     }
                 }
@@ -166,12 +150,75 @@ namespace Ow.Game
             }
         }
 
-        public void OnPlayerMovement(Player Player)
+        public void OnPlayerMovement(Player player)
         {
-            bool inRadiationChanged = CheckRadiation(Player);
-            bool assetsChanged = CheckActivatables(Player);
+            CheckCollectables(player);
+            CheckMines(player);
+            bool inRadiationChanged = CheckRadiation(player);
+            bool assetsChanged = CheckActivatables(player);
             if (inRadiationChanged || assetsChanged)
-                Player.SendCommand(Player.GetBeaconCommand());
+                player.SendCommand(player.GetBeaconCommand());
+        }
+
+        private void CheckCollectables(Player player)
+        {
+            foreach (var collectable in Collectables.Values)
+            {
+                if (collectable.ToPlayer == null || (collectable.ToPlayer != null && player == collectable.ToPlayer))
+                {
+                    if (player.Position.DistanceTo(collectable.Position) <= 1250)
+                    {
+                        if (!player.Storage.InRangeCollectables.ContainsKey(collectable.Hash))
+                        {
+                            player.Storage.InRangeCollectables.TryAdd(collectable.Hash, collectable);
+                            player.SendCommand(collectable.GetCollectableCreateCommand());
+                        }
+                    }
+                    else
+                    {
+                        if (player.Storage.InRangeCollectables.ContainsKey(collectable.Hash))
+                        {
+                            var outCollectable = collectable;
+                            player.Storage.InRangeCollectables.TryRemove(collectable.Hash, out outCollectable);
+                            player.SendCommand(DisposeBoxCommand.write(collectable.Hash, true));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckMines(Player player)
+        {
+            foreach (var mine in Mines.Values)
+            {
+                if (player.Position.DistanceTo(mine.Position) <= 1250)
+                {
+                    if (!player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                    {
+                        player.Storage.InRangeMines.TryAdd(mine.Hash, mine);
+                        player.SendCommand(mine.GetMineCreateCommand());
+                    }
+                    else
+                    {
+                        if (mine.Active)
+                            if (mine.activationTime.AddSeconds(Mine.ACTIVATION_TIME) < DateTime.Now)
+                                if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
+                                {
+                                    mine.Remove();
+                                    mine.Explode();
+                                }
+                    }
+                }
+                else
+                {
+                    if (player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                    {
+                        var outMine = mine;
+                        player.Storage.InRangeMines.TryRemove(mine.Hash, out outMine);
+                        player.SendPacket("0|" + ServerCommands.REMOVE_ORE + "|" + mine.Hash);
+                    }
+                }
+            }
         }
 
         private bool CheckActivatables(Player Player)
@@ -234,22 +281,21 @@ namespace Ow.Game
                 }
             }
 
-            if (Player.IsInEquipZone != inEquipZone)
+            if (Player.Settings.InGameSettings.inEquipZone != inEquipZone)
             {
-                Player.IsInEquipZone = inEquipZone;
+                Player.Settings.InGameSettings.inEquipZone = inEquipZone;
+                QueryManager.SavePlayer.Settings(Player);
                 Player.SendCommand(EquipReadyCommand.write(inEquipZone));
 
-                if (Player.IsInEquipZone)
+                if (Player.Settings.InGameSettings.inEquipZone)
                     Player.SendPacket("0|A|STM|msg_equip_ready");
                 else
                     Player.SendPacket("0|A|STM|msg_equip_not_ready");
             }
 
-            //save 
-
-            if (Player.IsInDemilitarizedZone != isInSecureZone)
+            if (Player.Storage.IsInDemilitarizedZone != isInSecureZone)
             {
-                Player.IsInDemilitarizedZone = isInSecureZone;
+                Player.Storage.IsInDemilitarizedZone = isInSecureZone;
                 return true;
             }
             return false;
@@ -276,9 +322,9 @@ namespace Ow.Game
                 }
             }
 
-            if (Player.IsInRadiationZone != inRadiationZone)
+            if (Player.Storage.IsInRadiationZone != inRadiationZone)
             {
-                Player.IsInRadiationZone = inRadiationZone;
+                Player.Storage.IsInRadiationZone = inRadiationZone;
                 return true;
             }
             return false;
@@ -288,35 +334,24 @@ namespace Ow.Game
         {
             foreach (Activatable activatableStationary in Activatables.Values)
                 player.SendCommand(activatableStationary.GetAssetCreateCommand());
-            foreach (Collectable collectable in Collectables.Values)
-                if (collectable.ToPlayer == null)
-                    player.SendCommand(collectable.GetCollectableCreateCommand());
             foreach (var poi in POIs.Values)
                 player.SendCommand(poi.GetPOICreateCommand());
-            foreach (var mine in Mines.Values)
-                player.SendCommand(mine.GetMineCreateCommand());
         }
 
         public void SendPlayers(Player Player)
         {
-            Player.InRangeCharacters.Clear();
-            foreach (var character in Characters.Values)
+            foreach (var character in Player.InRangeCharacters.Values)
             {
-                if (Player.Position.DistanceTo(character.Position) <= VISIBILITY_RANGE)
-                {
-                    if (Player is Player)
-                        (Player as Player).AddInRangeCharacter(character);
-                    else
-                        Player.InRangeCharacters.TryAdd(character.Id, character);
-                }
+                Player.RemoveInRangeCharacter(character);
+                Player.AddInRangeCharacter(character);
             }
         }
 
         public void AddAndInitPlayer(Player player)
         {
             AddCharacter(player);
-            LoginRequestHandler.SendSettings(player, false);
-            LoginRequestHandler.SendPlayerItems(player);
+            LoginRequestHandler.SendSettings(player);
+            LoginRequestHandler.SendPlayerItems(player, false);
         }
 
         public Activatable GetActivatableMapEntity(int pAssetId)

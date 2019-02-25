@@ -27,7 +27,7 @@ namespace Ow.Game.Objects.Players.Skills
             {
                 if (cooldown.AddMilliseconds(TimeManager.VENOM_DURATION) < DateTime.Now)
                     Disable();
-                else if (Player.Selected == null || Player.Selected != Player.UnderVenomPlayer)
+                else if (Player.Selected == null || Player.Selected != Player.Storage.UnderVenomPlayer)
                     Disable();
                 else
                     ExecuteDamage();
@@ -37,7 +37,7 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime lastDamageTime = new DateTime();
         public void ExecuteDamage()
         {
-            var enemy = Player.UnderVenomPlayer;
+            var enemy = Player.Storage.UnderVenomPlayer;
             if (enemy == null) return;
             if (!Player.AttackManager.TargetDefinition(enemy)) return;
 
@@ -53,23 +53,20 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.VENOM_DURATION + TimeManager.VENOM_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.VENOM_DURATION + TimeManager.VENOM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 var enemy = Player.Selected;
                 if (enemy == null || !(enemy is Player)) return;
                 if (!Player.AttackManager.TargetDefinition(enemy as Player, false)) return;
 
+                Player.SkillManager.DisableAllSkills();
+
                 DAMAGE = 1500;
-                Player.Venom = true;
-                Player.UnderVenomPlayer = enemy as Player;
+                Player.Storage.Venom = true;
+                Player.Storage.UnderVenomPlayer = enemy as Player;
 
-                string packet = "0|SD|A|R|5|" + Player.Id + "";
-                Player.SendPacket(packet);
-                Player.SendPacketToInRangePlayers(packet);
-
-                string packetEnemy = "0|SD|A|R|5|" + enemy.Id + "";
-                Player.SendPacket(packetEnemy);
-                Player.SendPacketToInRangePlayers(packetEnemy);
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
+                (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
 
                 Player.SendCooldown(SkillManager.VENOM, TimeManager.VENOM_DURATION, true);
                 Active = true;
@@ -79,19 +76,14 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            var enemy = Player.UnderVenomPlayer;
+            var enemy = Player.Storage.UnderVenomPlayer;
             if (enemy == null) return;
 
-            Player.Venom = false;
-            Player.UnderVenomPlayer = null;
+            Player.Storage.Venom = false;
+            Player.Storage.UnderVenomPlayer = null;
 
-            string packet = "0|SD|D|R|5|" + Player.Id + "";
-            Player.SendPacket(packet);
-            Player.SendPacketToInRangePlayers(packet);
-
-            string packetEnemy = "0|SD|D|R|5|" + enemy.Id + "";
-            Player.SendPacket(packetEnemy);
-            Player.SendPacketToInRangePlayers(packetEnemy);
+            Player.RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
+            (enemy as Player).RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
 
             Player.SendCooldown(SkillManager.VENOM, TimeManager.VENOM_COOLDOWN);
             Active = false;

@@ -40,6 +40,8 @@ namespace Ow.Game.Objects
 
         public DateTime LastCombatTime { get; set; }
 
+        public int SeeRange = 2000;
+
         public virtual int AttackRange => 700;
 
         public bool Invisible { get; set; }
@@ -53,13 +55,5 @@ namespace Ow.Game.Objects
         public abstract void Tick();
 
         public abstract void Destroy(Character destroyer, DestructionType destructionType);
-
-        public bool InRange(Attackable attackable, int range = 2000)
-        {
-            if (attackable == null || attackable.Spacemap.Id != Spacemap.Id) return false;
-            if (range == -1 || attackable.Spacemap.VISIBILITY_RANGE > 2000) return true;
-            return attackable.Id != Id &&
-                   Position.DistanceTo(attackable.Position) <= range;
-        }
     }
 }

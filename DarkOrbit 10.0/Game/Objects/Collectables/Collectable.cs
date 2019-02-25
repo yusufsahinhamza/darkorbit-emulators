@@ -32,10 +32,6 @@ namespace Ow.Game.Objects.Collectables
             Respawnable = respawnable;
             ToPlayer = toPlayer;
             Spacemap.Collectables.TryAdd(Hash, this);
-            if (ToPlayer != null)
-                ToPlayer.SendCommand(GetCollectableCreateCommand());
-            else
-                GameManager.SendCommandToMap(Spacemap.Id, GetCollectableCreateCommand());
 
             var tickId = -1;
             Program.TickManager.AddTick(this, out tickId);
@@ -44,12 +40,14 @@ namespace Ow.Game.Objects.Collectables
 
         public void Tick()
         {
+            /*
             if (!Disposed)
                 foreach (var character in Spacemap.Characters.Values)
                 {
                     if (character.Position.X == Position.X && character.Position.Y == Position.Y && character is Pet)
                         Collect(character as Pet);
                 }
+                */
         }
 
         public async void Collect(Character character)
@@ -86,7 +84,6 @@ namespace Ow.Game.Objects.Collectables
             Position = newPos;
             Disposed = false;
             Spacemap.Collectables.TryAdd(Hash, this);
-            GameManager.SendCommandToMap(Spacemap.Id, GetCollectableCreateCommand());
         }
 
         public abstract void Reward(Player player);

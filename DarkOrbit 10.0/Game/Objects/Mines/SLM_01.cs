@@ -16,16 +16,14 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var players in Spacemap.Characters.Values)
+            foreach (var characters in Spacemap.Characters.Values)
             {
-                if (players is Player && players.Position.DistanceTo(Position) < RANGE)
+                if (characters is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    var player = players as Player;
-
                     if (player.Attackable())
                     {
-                        player.underSLM_01 = true;
-                        player.underSLM_01Time = DateTime.Now;
+                        player.Storage.underSLM_01 = true;
+                        player.Storage.underSLM_01Time = DateTime.Now;
                         player.SendPacket("0|n|fx|start|SABOTEUR_DEBUFF|" + player.Id + "");
                         player.SendPacketToInRangePlayers("0|n|fx|start|SABOTEUR_DEBUFF|" + player.Id + "");
                         player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));

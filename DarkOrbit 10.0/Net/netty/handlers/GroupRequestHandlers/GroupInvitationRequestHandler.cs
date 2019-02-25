@@ -34,17 +34,17 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
                     player.SendPacket("0|A|STM|msg_grp_inv_err_candidate_in_group");
                     return;
                 }
-                if (invited.Settings.InGameSettings.BlockedGroupInvites)
+                if (invited.Settings.InGameSettings.blockedGroupInvites)
                 {
                     player.SendPacket("0|A|STM|msg_grp_inv_err_candidate_blocking");
                     return;
                 }
-                if (invited.GroupInvites.ContainsKey(player.Id))
+                if (invited.Storage.GroupInvites.ContainsKey(player.Id) && GameManager.Groups.Contains(player.Group))
                 {
                     player.SendPacket("0|A|STM|msg_grp_inv_err_duplicate_invitation");
                     return;
                 }
-                invited.GroupInvites.Add(player.Id, player.Group);
+                invited.Storage.GroupInvites.Add(player.Id, player.Group);
 
                 player.SendCommand(GroupInviteCommand.write(player.Id, player.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL), invited.Id, invited.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL)));
                 invited.SendCommand(GroupInviteCommand.write(player.Id, player.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL), invited.Id, invited.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL)));

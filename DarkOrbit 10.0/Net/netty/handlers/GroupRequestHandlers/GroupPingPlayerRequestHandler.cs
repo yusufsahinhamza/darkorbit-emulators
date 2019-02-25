@@ -20,10 +20,11 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            var lockedPlayer = GameManager.GetPlayerById(read.userId);
+            var pingedPlayer = GameManager.GetPlayerById(read.userId);
 
-            if (lockedPlayer == null) return;
-            player.Group?.Ping(lockedPlayer.Position);
+            if (pingedPlayer == null) return;
+            if (pingedPlayer.Spacemap != player.Spacemap) return;
+            player.Group?.Ping(pingedPlayer.Position);
         }
     }
 }

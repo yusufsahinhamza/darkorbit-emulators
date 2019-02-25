@@ -14,7 +14,9 @@ namespace Ow.Net.netty.handlers
         public void execute(GameSession gameSession, byte[] bytes)
         {
             var player = gameSession.Player;
-            player.EnableAttack(player.SettingsManager.SelectedLaser);
+
+            if (player.Selected != null)
+                player.EnableAttack(player.Settings.InGameSettings.selectedLaser);
         }
     }
 }

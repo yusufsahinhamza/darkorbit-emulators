@@ -2,6 +2,7 @@
 using Ow.Game.Objects;
 using Ow.Game.Ticks;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net;
 using System;
 using System.Collections.Generic;
@@ -52,7 +53,8 @@ namespace Ow.Game
         private void PrepareForDisconnect()
         {
             Player.Pet.Deactivate();
-            Player.DisableAttack(Player.SettingsManager.SelectedLaser);
+            Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+            QueryManager.SavePlayer.Information(Player);
             QueryManager.SavePlayer.Settings(Player);
             Player.Spacemap.RemoveCharacter(Player);
             Program.TickManager.RemoveTick(Player);       
@@ -66,11 +68,32 @@ namespace Ow.Game
         public void Disconnect(DisconnectionType dcType)
         {
             InProcessOfDisconnection = true;
+            Player.UpdateCurrentCooldowns();
             if (dcType == DisconnectionType.SOCKET_CLOSED)
             {
                 EstDisconnectionTime = DateTime.Now.AddSeconds(30);
                 return;
             }
+
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 0 WHERE userID = {Player.Id}");
+            }
+
+            foreach (var gameSessions in GameManager.GameSessions.Values)
+            {
+                /*
+                 * //TODO
+                if (gameSessions != null)
+                {
+                    var player = gameSessions.Player;
+                    if (player.Storage.GroupInvites.ContainsKey(Player.Id))
+                        GroupSystem.Revoke(Player, player);
+                }
+                 */
+
+            }
+
             PrepareForDisconnect();
             Client.Disconnect();
             InProcessOfDisconnection = false;

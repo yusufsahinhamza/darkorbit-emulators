@@ -14,10 +14,7 @@ namespace Ow.Game.Objects.Players.Techs
 
         public bool Active = false;
 
-        public PrecisionTargeter(Player player)
-        {
-            Player = player;
-        }
+        public PrecisionTargeter(Player player) { Player = player; }
 
         public void Tick()
         {
@@ -29,9 +26,9 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.PRECISION_TARGETER_DURATION + TimeManager.PRECISION_TARGETER_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.PRECISION_TARGETER_DURATION + TimeManager.PRECISION_TARGETER_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                Player.PrecisionTargeter = true;
+                Player.Storage.PrecisionTargeter = true;
 
                 Player.SendCooldown(TechManager.TECH_PRECISION_TARGETER, TimeManager.PRECISION_TARGETER_DURATION, true);
                 Active = true;
@@ -42,7 +39,7 @@ namespace Ow.Game.Objects.Players.Techs
         public void Disable()
         {
             Active = false;
-            Player.PrecisionTargeter = false;
+            Player.Storage.PrecisionTargeter = false;
             Player.SendCooldown(TechManager.TECH_PRECISION_TARGETER, TimeManager.PRECISION_TARGETER_COOLDOWN);
         }
     }

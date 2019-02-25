@@ -56,7 +56,6 @@
     <Compile Include="Chat\ChatClient.cs" />
     <Compile Include="Chat\Room.cs" />
     <Compile Include="Game\Clans\Clan.cs" />
-    <Compile Include="Game\Clans\ClanMember.cs" />
     <Compile Include="Game\Enums.cs" />
     <Compile Include="Game\Events\Duel.cs" />
     <Compile Include="Game\Events\JackpotBattle.cs" />
@@ -67,6 +66,7 @@
     <Compile Include="Game\Objects\Character.cs" />
     <Compile Include="Game\Objects\Collectables\CargoBox.cs" />
     <Compile Include="Game\Objects\Players\Group.cs" />
+    <Compile Include="Game\Objects\Players\Storage.cs" />
     <Compile Include="Game\Objects\Spaceball.cs" />
     <Compile Include="Game\Objects\Stations\Activatable.cs" />
     <Compile Include="Game\Objects\Collectables\SilverBooty.cs" />
@@ -98,8 +98,6 @@
     <Compile Include="Game\Objects\Stations\RepairStation.cs" />
     <Compile Include="Game\Objects\Player.cs" />
     <Compile Include="Game\Objects\Players\Managers\CpuManager.cs" />
-    <Compile Include="Game\Objects\Players\Managers\EquipmentManager.cs" />
-    <Compile Include="Game\Objects\Players\Managers\MoveManager.cs" />
     <Compile Include="Game\Movements\Position.cs" />
     <Compile Include="Game\Objects\Players\Managers\SkillManager.cs" />
     <Compile Include="Game\Objects\Players\Managers\AmmunitionManager.cs" />
@@ -150,7 +148,10 @@
     <Compile Include="Net\netty\commands\8.4.5\LegacyModule845.cs" />
     <Compile Include="Net\netty\commands\8.4.5\ShipInitializationCommand845.cs" />
     <Compile Include="Net\netty\commands\8.4.5\VisualModifierCommand845.cs" />
+    <Compile Include="Net\netty\commands\GroupUpdateUICommand.cs" />
+    <Compile Include="Net\netty\commands\PetHitpointsUpdateCommand.cs" />
     <Compile Include="Net\netty\commands\PetShieldUpdateCommand.cs" />
+    <Compile Include="Net\netty\commands\PetExperiencePointsUpdateCommand.cs" />
     <Compile Include="Net\netty\commands\GroupUpdateBlockInvitationState.cs" />
     <Compile Include="Net\netty\commands\GroupChangeLeaderCommand.cs" />
     <Compile Include="Net\netty\commands\GroupRemoveCommand.cs" />
@@ -159,6 +160,7 @@
     <Compile Include="Net\netty\commands\LastVersion\ShipCreateCommandLast.cs" />
     <Compile Include="Net\netty\commands\LastVersion\ShipInitializationCommandLast.cs" />
     <Compile Include="Net\netty\commands\HeroMoveCommand.cs" />
+    <Compile Include="Net\netty\commands\ClanChangedCommand.cs" />
     <Compile Include="Net\netty\commands\UpdateWindowItemCommand.cs" />
     <Compile Include="Net\netty\commands\command_z3Q.cs" />
     <Compile Include="Net\netty\commands\CreateBoxCommand.cs" />
@@ -377,6 +379,7 @@
     <Compile Include="Net\netty\requests\WindowSettingsRequest.cs" />
     <Compile Include="Net\netty\ServerCommands.cs" />
     <Compile Include="Net\ServerManager.cs" />
+    <Compile Include="Net\SocketServer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Game\Ticks\Tick.cs" />
     <Compile Include="Game\Ticks\TickManager.cs" />

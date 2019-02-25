@@ -13,16 +13,15 @@ namespace Ow.Game.Objects.Players.Skills
     {
         public Player Player { get; set; }
 
-        public Solace(Player player)
-        {
-            Player = player;
-        }
+        public Solace(Player player) { Player = player; }
 
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
+                Player.SkillManager.DisableAllSkills();
+
                 ExecuteHeal();
 
                 string packet = "0|SD|A|R|1|" + Player.Id + "";
@@ -36,8 +35,21 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void ExecuteHeal()
         {
-            int damage = Maths.GetPercentage(Player.MaxHitPoints, 50);
-            Player.Heal(damage);
+            int heal = Maths.GetPercentage(Player.MaxHitPoints, 50);
+            if (Player.Group != null)
+            {
+                foreach (var player in Player.Group.Members.Values)
+                {
+                    if (player.Spacemap != Player.Spacemap) return;
+                    player.Heal(heal);
+                    if (player == Player) return;
+
+                    string packet = "0|SD|A|R|1|" + player.Id + "";
+                    player.SendPacket(packet);
+                    player.SendPacketToInRangePlayers(packet);
+                }
+            }
+            else Player.Heal(heal);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +12,9 @@ namespace Ow.Game.Objects.Players.Skills
     class Sentinel
     {
         public Player Player { get; set; }
-
         public bool Active = false;
 
-        public Sentinel(Player player)
-        {
-            Player = player;
-        }
+        public Sentinel(Player player) { Player = player; }
 
         public void Tick()
         {
@@ -29,13 +26,13 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION + TimeManager.SENTINEL_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION + TimeManager.SENTINEL_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                Player.Sentinel = true;
+                Player.SkillManager.DisableAllSkills();
 
-                string packet = "0|SD|A|R|4|" + Player.Id + "";
-                Player.SendPacket(packet);
-                Player.SendPacketToInRangePlayers(packet);
+                Player.Storage.Sentinel = true;
+
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.FORTRESS, 0, "", 0, true));
 
                 Player.SendCooldown(SkillManager.SENTINEL, TimeManager.SENTINEL_DURATION, true);
                 Active = true;
@@ -45,11 +42,9 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            Player.Sentinel = false;
+            Player.Storage.Sentinel = false;
 
-            string packet = "0|SD|D|R|4|" + Player.Id + "";
-            Player.SendPacket(packet);
-            Player.SendPacketToInRangePlayers(packet);
+            Player.RemoveVisualModifier(VisualModifierCommand.FORTRESS);
 
             Player.SendCooldown(SkillManager.SENTINEL, TimeManager.SENTINEL_COOLDOWN);
             Active = false;

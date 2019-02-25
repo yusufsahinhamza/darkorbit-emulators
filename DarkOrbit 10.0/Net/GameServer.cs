@@ -47,14 +47,14 @@ namespace Ow.Net
             try
             {
                 AllDone.Set();
-                var listener = (Socket) ar.AsyncState;
+                var listener = (Socket)ar.AsyncState;
                 var handler = listener.EndAccept(ar);
                 var gameClient = new GameClient(handler);
                 ServerManager.AddGameClient(gameClient);
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.Message, "ERROR");
+                Out.WriteLine(e.Message, "GameServer ERROR");
             }
         }
 

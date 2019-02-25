@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +12,9 @@ namespace Ow.Game.Objects.Players.Skills
     class Diminisher
     {
         public Player Player { get; set; }
-
         public bool Active = false;
 
-        public Diminisher(Player player)
-        {
-            Player = player;
-        }
+        public Diminisher(Player player) { Player = player; }
 
         public void Tick()
         {
@@ -25,7 +22,7 @@ namespace Ow.Game.Objects.Players.Skills
             {
                 if (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION) < DateTime.Now)
                     Disable();
-                if (Player.Selected == null || Player.Selected != Player.UnderDiminisherPlayer)
+                if (Player.Selected == null || Player.Selected != Player.Storage.UnderDiminisherPlayer)
                     Disable();
             }
         }
@@ -33,22 +30,19 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION + TimeManager.DIMINISHER_COOLDOWN) < DateTime.Now || Player.GodMode)
+            if (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION + TimeManager.DIMINISHER_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 var enemy = Player.Selected;
                 if (enemy == null || !(enemy is Player)) return;
                 if (!Player.AttackManager.TargetDefinition(enemy as Player, false)) return;
 
-                Player.Diminisher = true;
-                Player.UnderDiminisherPlayer = enemy as Player;
+                Player.SkillManager.DisableAllSkills();
 
-                string packet = "0|SD|A|R|2|" + Player.Id + "";
-                Player.SendPacket(packet);
-                Player.SendPacketToInRangePlayers(packet);
+                Player.Storage.Diminisher = true;
+                Player.Storage.UnderDiminisherPlayer = enemy as Player;
 
-                string packetEnemy = "0|SD|A|R|2|" + enemy.Id + "";
-                Player.SendPacket(packetEnemy);
-                Player.SendPacketToInRangePlayers(packetEnemy);
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
+                (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
 
                 Player.SendCooldown(SkillManager.DIMINISHER, TimeManager.DIMINISHER_DURATION, true);
                 Active = true;
@@ -58,19 +52,14 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void Disable()
         {
-            var enemy = Player.UnderDiminisherPlayer;
+            var enemy = Player.Storage.UnderDiminisherPlayer;
             if (enemy == null) return;
 
-            Player.Diminisher = false;
-            Player.UnderDiminisherPlayer = null;
+            Player.Storage.Diminisher = false;
+            Player.Storage.UnderDiminisherPlayer = null;
 
-            string packet = "0|SD|D|R|2|" + Player.Id + "";
-            Player.SendPacket(packet);
-            Player.SendPacketToInRangePlayers(packet);
-
-            string packetEnemy = "0|SD|D|R|2|" + enemy.Id + "";
-            Player.SendPacket(packetEnemy);
-            Player.SendPacketToInRangePlayers(packetEnemy);
+            Player.RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
+            (enemy as Player).RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
 
             Player.SendCooldown(SkillManager.DIMINISHER, TimeManager.DIMINISHER_COOLDOWN);
             Active = false;

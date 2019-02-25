@@ -19,7 +19,7 @@ namespace Ow.Net.netty.handlers
 
             foreach (var station in player.Spacemap.Activatables.Values)
             {
-                var inRangeStations = player.InRangeAssets;
+                var inRangeStations = player.Storage.InRangeAssets;
                 if (inRangeStations.ContainsKey(station.Id)) return;
 
                 if (station is RepairStation)

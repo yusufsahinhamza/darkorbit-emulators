@@ -24,7 +24,7 @@ namespace Ow.Net.netty.requests
             posY = parser.readInt();
             posY = posY >> 14 | posY << 18;
             targetID = parser.readInt();
-            targetID = targetID >> 14 | targetID << 18;
+            targetID = (int)(((uint)targetID) >> 14 | ((uint)targetID << 18));
             name_95 = parser.readInt();
             name_95 = name_95 >> 7 | name_95 << 25;
         }

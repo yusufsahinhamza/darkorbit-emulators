@@ -71,11 +71,6 @@ namespace Ow.Game.Objects
                         {
                             InitializeGroup(instance.Player);
                         }
-
-                        foreach (var _member in Members.Values)
-                        {
-                            UpdatePlayer(instance, _member);
-                        }
                     }
 
                     updateTime = DateTime.Now;
@@ -83,35 +78,15 @@ namespace Ow.Game.Objects
             }
         }
 
-        private void UpdatePlayer(GameSession instance, Player player)
+        public void UpdatePlayer(Player player, List<command_i3O> updates)
         {
-            /*
-            if (instance != null && player != null && Members.Count > 1 && Members.ContainsKey(player.Id))
-                instance.Player.SendCommand(GroupUpdateUICommand.write(player.Id, new List<command_i3O> { new GroupPlayerInformationsModule(0, 0, 0, 0, 0, 0) }));
+            foreach (var member in Members.Values)
+            {
+                if (member == player) continue;
 
-            Console.WriteLine("ok");
-            */
-        }
-
-        private XElement GetStats(Player player)
-        {
-            return new XElement("stats",
-                new XAttribute("hp", player.CurrentHitPoints),
-                new XAttribute("hpM", player.MaxHitPoints),
-                new XAttribute("nh", player.CurrentNanoHull),
-                new XAttribute("nhM", player.MaxNanoHull),
-                new XAttribute("sh", player.CurrentShieldPoints),
-                new XAttribute("shM", player.MaxShieldPoints),
-                new XAttribute("pos", $"{player.Position.X},{player.Position.Y}"),
-                new XAttribute("map", player.Spacemap.Id),
-                new XAttribute("lev", player.Level),
-                new XAttribute("fra", (int)player.FactionId),
-                new XAttribute("act", Convert.ToInt32(true)),
-                new XAttribute("clk", Convert.ToInt32(player.Invisible)),
-                new XAttribute("shp", Convert.ToInt32(player.Ship.Id)),
-                new XAttribute("fgt", Convert.ToInt32(player.AttackManager.Attacking || player.LastCombatTime.AddSeconds(3) > DateTime.Now)),
-                new XAttribute("lgo", Convert.ToInt32(GameManager.GetGameSession(player.Id) == null)),
-                new XAttribute("tgt", (player.Selected?.Id).ToString()));
+                if (member != null && player != null && Members.Count > 1 && Members.ContainsKey(player.Id))
+                    member.SendCommand(GroupUpdateUICommand.write(player.Id, updates));
+            }
         }
 
         private int FindId()
@@ -133,20 +108,18 @@ namespace Ow.Game.Objects
                 InitializeGroup(player.Value);
         }
 
-        private void InitializeGroup(Player player)
+        public void InitializeGroup(Player player)
         {
             try
             {
                 var groupMembers = new List<GroupPlayerModule>();
                 var nonSelected = new GroupPlayerTargetModule(new GroupPlayerShipModule(GroupPlayerShipModule.NONE), "", new GroupPlayerInformationsModule(0, 0, 0, 0, 0, 0));
 
-                foreach (var grpMember in player.Group.Members)
+                foreach (var groupMember in player.Group.Members.Values)
                 {
-                    var groupMember = grpMember.Value;
-
                     groupMembers.Add(new GroupPlayerModule(groupMember.Name, groupMember.Id, new GroupPlayerInformationsModule(groupMember.CurrentHitPoints, groupMember.MaxHitPoints, groupMember.CurrentShieldPoints, groupMember.MaxShieldPoints, groupMember.CurrentNanoHull, groupMember.MaxNanoHull), new GroupPlayerLocationModule(groupMember.Spacemap.Id, groupMember.Position.X, groupMember.Position.Y), groupMember.Level,
-                        true, groupMember.Invisible, groupMember.AttackManager.Attacking, !GameManager.GameSessions.ContainsKey(groupMember.Id), true, new GroupPlayerClanModule(groupMember.Clan.Id, groupMember.Clan.Tag), new GroupPlayerFactionModule((short)groupMember.FactionId), groupMember.Selected == null ? nonSelected : new GroupPlayerTargetModule(new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL), groupMember.SelectedCharacter.Name,
-                        new GroupPlayerInformationsModule(groupMember.Selected.CurrentHitPoints, groupMember.Selected.MaxHitPoints, groupMember.Selected.CurrentShieldPoints, groupMember.Selected.MaxShieldPoints, 0, 0)), new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL), new GroupPlayerHadesGateModule(false, 0)));
+                        true, groupMember.Invisible, groupMember.AttackManager.Attacking, !GameManager.GameSessions.ContainsKey(groupMember.Id), true, new GroupPlayerClanModule(groupMember.Clan.Id, groupMember.Clan.Tag), new GroupPlayerFactionModule((short)groupMember.FactionId), groupMember.Selected == null ? nonSelected : new GroupPlayerTargetModule(new GroupPlayerShipModule(groupMember.SelectedCharacter.Ship.GroupShipId), groupMember.SelectedCharacter.Name,
+                        new GroupPlayerInformationsModule(groupMember.Selected.CurrentHitPoints, groupMember.Selected.MaxHitPoints, groupMember.Selected.CurrentShieldPoints, groupMember.Selected.MaxShieldPoints, 0, 0)), new GroupPlayerShipModule(groupMember.Ship.GroupShipId), new GroupPlayerHadesGateModule(false, 0)));
                 }
 
                 player.SendCommand(GroupInitializationCommand.write(player.Id, 0, player.Group.Leader.Id, groupMembers, new GroupInvitationBehaviorModule(GroupInvitationBehaviorModule.OFF)));
@@ -240,9 +213,7 @@ namespace Ow.Game.Objects
             }
 
             if (Members.Count == 2)
-            {
                 Destroy();
-            }
             else
             {
                 player.Group = null;

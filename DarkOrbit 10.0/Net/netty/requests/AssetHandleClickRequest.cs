@@ -18,7 +18,7 @@ namespace Ow.Net.netty.requests
             var parser = new ByteParser(bytes);
             parser.readShort();
             AssetId = parser.readInt();
-            AssetId = AssetId << 15 | AssetId >> 17;
+            AssetId = (int)(((uint)AssetId) << 15 | ((uint)AssetId >> 17));
         }
     }
 }

@@ -6,6 +6,7 @@ using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
 using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
+using Ow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,7 @@ namespace Ow.Net.netty.handlers
             if (Player != null) GameSession = CreateSession(client, Player);
             else
             {
-                Console.WriteLine("Failed loading user ship / ShipInitializationHandler ERROR");
+                Out.WriteLine("Failed loading user ship / ShipInitializationHandler ERROR");
                 return;
             }
 
@@ -78,7 +79,10 @@ namespace Ow.Net.netty.handlers
                 GameManager.GameSessions[Player.Id] = GameSession;
             }
 
+            GameSession.InProcessOfDisconnection = false;
             LoadPlayer();
+
+            Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
         }
 
         private void SetShip()
@@ -90,6 +94,7 @@ namespace Ow.Net.netty.handlers
 
             if (player.RankId == 21)
             {
+                player.Premium = true;
                 //player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.GREEN_GLOW, 0, true));
             }
         }
@@ -97,7 +102,7 @@ namespace Ow.Net.netty.handlers
         private void SetSpacemap()
         {
             var player = GameSession.Player;
-            var mapId = player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15;
+            var mapId = 16;//player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15;
             player.Spacemap = GameManager.GetSpacemap(mapId);
         }
 
@@ -113,7 +118,7 @@ namespace Ow.Net.netty.handlers
 
         public static void SendPlayerItems(Player player, bool isLogin = true)
         {
-            player.SendPacket("0|t"); //TODO:: LAZIMSA GÖNDER
+            //player.SendPacket("0|t"); //TODO:: LAZIMSA GÖNDER
             player.SendCommand(player.GetShipInitializationCommand());
 
             if (player.Title != "")
@@ -127,14 +132,15 @@ namespace Ow.Net.netty.handlers
             {
                 player.SendPacket("0|A|BK|100"); //yeşil kutu miktarı
                 player.SendPacket("0|A|JV|100"); //atlama kuponu miktarı
+
+                player.Group?.InitializeGroup(player);
+
+                var spaceball = EventManager.Spaceball.Character;
+                if (EventManager.Spaceball.Active && spaceball != null)
+                    player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
+                else
+                    player.SendPacket($"0|n|ssi|0|0|0");
             }
-
-            var spaceball = EventManager.Spaceball.Character;
-            if (EventManager.Spaceball.Active && spaceball != null)
-                player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
-            else
-                player.SendPacket($"0|n|ssi|0|0|0");
-
             /*
             var priceList = new List<JumpCPUPriceMappingModule>();
             var price = new List<int>();
@@ -170,6 +176,7 @@ namespace Ow.Net.netty.handlers
 
 
             //player.SendCommand(command_e4W.write(1, "", new class_oS(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), "", new class_s16(1, class_s16.varC3p), 1));
+            /*
             player.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 0));
 
             var ht = new List<UbaHtModule>();
@@ -181,7 +188,7 @@ namespace Ow.Net.netty.handlers
             l4b.Add(new Ubal4bModule("sezon", 1));
 
             player.SendCommand(UbaCommand.write(new UbaG3FModule(1, 1, 1, 1552), new Uba64iModule("label_traininggrounds_season", 120000, ht), new UbahsModule(l4b)));
-
+            */
             //player.SendCommand(command_z3Q.write(command_z3Q.varC2f));
             /*
             var contacts = new List<class_i1d>();
@@ -220,29 +227,6 @@ namespace Ow.Net.netty.handlers
             */
 
 
-        }
-
-        public void CheckAbilities(Player player)
-        {
-            var sentinel = player.SkillManager.Sentinel;
-            var diminisher = player.SkillManager.Diminisher;
-            var spectrum = player.SkillManager.Spectrum;
-            var venom = player.SkillManager.Venom;
-            player.SendPacket($"0|SD|{(sentinel.Active ? "A" : "D")}|R|4|{player.Id}");
-            player.SendPacket($"0|SD|{(diminisher.Active ? "A" : "D")}|R|2|{player.Id}");
-            player.SendPacket($"0|SD|{(spectrum.Active ? "A" : "D")}|R|3|{player.Id}");
-            player.SendPacket($"0|SD|{(venom.Active ? "A" : "D")}|R|5|{player.Id}");
-        }
-
-        public static List<int> ShapeCordsToInts(List<Position> ShapeCords)
-        {
-            List<int> cords = new List<int>();
-            foreach (var cord in ShapeCords)
-            {
-                cords.Add(cord.X);
-                cords.Add(cord.Y);
-            }
-            return cords;
         }
 
         public static void SendSettings(Player player, bool isLogin = true)

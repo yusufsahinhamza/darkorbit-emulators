@@ -13,7 +13,7 @@ namespace Ow.Game.Objects.Mines
 {
     class DDM_01 : Mine
     {
-        public DDM_01(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(player, spacemap, position, mineTypeId, player.Settings.InGameSettings.selectedLaser == DroneManager.LANCE_FORMATION) { }
+        public DDM_01(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(player, spacemap, position, mineTypeId, player.Settings.InGameSettings.selectedFormation == DroneManager.LANCE_FORMATION) { }
 
         public override void Explode()
         {

@@ -22,10 +22,10 @@ namespace Ow.Net.netty.requests
             var parser = new ByteParser(bytes);
             parser.readShort();
             FromIndex = parser.readInt();
-            FromIndex = FromIndex >> 11 | FromIndex << 21;
+            FromIndex = (int)(((uint)FromIndex) >> 11 | ((uint)FromIndex << 21));
             ToSlotBarId = parser.readUTF();
             ToIndex = parser.readInt();
-            ToIndex = ToIndex >> 2 | ToIndex << 30;
+            ToIndex = (int)(((uint)ToIndex) >> 2 | ((uint)ToIndex << 30));
             ItemId = parser.readUTF();
             FromSlotBarId = parser.readUTF();
         }

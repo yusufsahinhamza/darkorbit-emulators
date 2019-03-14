@@ -23,6 +23,7 @@ namespace Ow.Game.Objects.Stations
         public override void Click(GameSession gameSession)
         {
             var player = gameSession.Player;
+            if (player.FactionId != FactionId) return;
             if (player.CurrentHitPoints == player.MaxHitPoints) return;
             if (player.AttackingOrUnderAttack()) return;
 

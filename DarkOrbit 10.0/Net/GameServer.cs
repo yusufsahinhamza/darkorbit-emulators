@@ -13,7 +13,7 @@ namespace Ow.Net
     class GameServer
     {
         private static ManualResetEvent AllDone = new ManualResetEvent(false);
-        private static int Port = 8080;
+        public static int Port = 8080;
 
         public static void StartListening()
         {
@@ -24,8 +24,6 @@ namespace Ow.Net
             {
                 listener.Bind(localEndPoint);
                 listener.Listen(100);
-
-                Out.WriteLine("Listening on port " + Port + ".", "Socket");
 
                 while (true)
                 {
@@ -49,8 +47,9 @@ namespace Ow.Net
                 AllDone.Set();
                 var listener = (Socket)ar.AsyncState;
                 var handler = listener.EndAccept(ar);
-                var gameClient = new GameClient(handler);
-                ServerManager.AddGameClient(gameClient);
+                handler.NoDelay = true;
+
+                new GameClient(handler);
             }
             catch (Exception e)
             {

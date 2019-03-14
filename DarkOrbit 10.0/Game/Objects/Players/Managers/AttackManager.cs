@@ -86,20 +86,20 @@ namespace Ow.Game.Objects.Players.Managers
             if (Player.Settings.InGameSettings.selectedRocket != AmmunitionManager.WIZ_X)
                 if (!TargetDefinition(enemy, true, true)) return;
 
-            switch (GetSelectedRocket())
+            if (lastRocketAttack.AddSeconds(Player.RocketSpeed) < DateTime.Now)
             {
-                case 6:
-                    WIZ_X();
-                    break;
-                case 10:
-                    DCR_250();
-                    break;
-                case 18:
-                    R_IC3();
-                    break;
-                default:
-                    if (lastRocketAttack.AddSeconds(Player.RocketSpeed) < DateTime.Now)
-                    {
+                switch (GetSelectedRocket())
+                {
+                    case 6:
+                        WIZ_X();
+                        break;
+                    case 10:
+                        DCR_250();
+                        break;
+                    case 18:
+                        R_IC3();
+                        break;
+                    default:
                         var damage = RandomizeDamage(Player.RocketDamage, Player.Storage.PrecisionTargeter ? 0 : 1);
                         Damage(Player, enemy, DamageType.ROCKET, damage, 0);
 
@@ -108,9 +108,10 @@ namespace Ow.Game.Objects.Players.Managers
                         Player.SendPacketToInRangePlayers(rocketRunPacket);
 
                         Player.SendCooldown(AmmunitionManager.R_310, Player.Premium ? 1000 : 3000);
-                        lastRocketAttack = DateTime.Now;
-                    }
-                    break;
+                        break;
+                }
+
+                lastRocketAttack = DateTime.Now;
             }
         }
 
@@ -148,24 +149,27 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void RefreshAttackers()
         {
-            foreach (var attacker in Player.Attackers)
+            if (Player.Attackers.Count >= 1)
             {
-                if (attacker.Value?.Player != null && attacker.Value.LastRefresh.AddSeconds(10) > DateTime.Now)
+                foreach (var attacker in Player.Attackers)
                 {
-                    if (attacker.Value.FadedToGray && Player.MainAttacker == attacker.Value.Player)
+                    if (attacker.Value?.Player != null && attacker.Value.LastRefresh.AddSeconds(10) > DateTime.Now)
                     {
-                        attacker.Value.Player.SendPacket($"0|n|USH|{Player.Id}");
-                        attacker.Value.FadedToGray = false;
+                        if (attacker.Value.FadedToGray && Player.MainAttacker == attacker.Value.Player)
+                        {
+                            attacker.Value.Player.SendPacket($"0|n|USH|{Player.Id}");
+                            attacker.Value.FadedToGray = false;
+                        }
+                        if (!attacker.Value.FadedToGray && Player.MainAttacker != attacker.Value.Player)
+                        {
+                            attacker.Value.Player.SendPacket($"0|n|LSH|{Player.Id}|{Player.Id}");
+                            attacker.Value.FadedToGray = true;
+                        }
+                        continue;
                     }
-                    if (!attacker.Value.FadedToGray && Player.MainAttacker != attacker.Value.Player)
-                    {
-                        attacker.Value.Player.SendPacket($"0|n|LSH|{Player.Id}|{Player.Id}");
-                        attacker.Value.FadedToGray = true;
-                    }
-                    continue;
+                    Attacker removedAttacker;
+                    Player.Attackers.TryRemove(attacker.Key, out removedAttacker);
                 }
-                Attacker removedAttacker;
-                Player.Attackers.TryRemove(attacker.Key, out removedAttacker);
             }
             if (Player.MainAttacker != null)
             {
@@ -199,9 +203,9 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.SendCooldown(AmmunitionManager.EMP_01, TimeManager.EMP_COOLDOWN);
                 EmpCooldown = DateTime.Now;
 
-                Player.DeactiveR_RIC3();
-                Player.DeactiveDCR_250();
-                Player.DeactiveSLM_01();
+                Player.Storage.DeactiveR_RIC3();
+                Player.Storage.DeactiveDCR_250();
+                Player.Storage.DeactiveSLM_01();
 
                 string empPacket = "0|n|EMP|" + Player.Id;
                 Player.SendPacket(empPacket);
@@ -210,21 +214,14 @@ namespace Ow.Game.Objects.Players.Managers
                 foreach (var otherPlayers in Player.Spacemap.Characters.Values)
                 {
                     if (otherPlayers is Player otherPlayer && otherPlayer.Selected == Player)
-                    {
-                        string empMessagePacket = "0|A|STM|msg_own_targeting_harmed";
-                        otherPlayer.SendPacket(empMessagePacket);
-                        otherPlayer.Selected = null;
-                        otherPlayer.DisableAttack(otherPlayer.Settings.InGameSettings.selectedLaser);
-                        otherPlayer.SendCommand(ShipDeselectionCommand.write());
-                        otherPlayer.SendPacket("0|UI|MM|NOISE");
-                    }
+                        otherPlayer.Deselection(true);
                 }
 
                 foreach (var otherPlayers in Player.InRangeCharacters.Values)
                 {
                     if (otherPlayers is Player otherPlayer)
                     {
-                        if (otherPlayer.Position.DistanceTo(Player.Position) > 700) return;
+                        if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
 
                         if (Player.RankId == 21)
                             otherPlayer.AddVisualModifier(new VisualModifierCommand(otherPlayer.Id, VisualModifierCommand.MIRRORED_CONTROLS, 0, "", 0, true));
@@ -377,9 +374,9 @@ namespace Ow.Game.Objects.Players.Managers
 
                 foreach (var otherPlayer in Player.InRangeCharacters.Values)
                 {
-                    if (otherPlayer == null || !(otherPlayer is Player)) return;
-                    if (!TargetDefinition(otherPlayer, false)) return;
-                    if (otherPlayer.Position.DistanceTo(Player.Position) > 700) return;
+                    if (otherPlayer == null || !(otherPlayer is Player)) continue;
+                    if (!TargetDefinition(otherPlayer, false)) continue;
+                    if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
 
                     int damage = Maths.GetPercentage(otherPlayer.CurrentHitPoints, 20);
 
@@ -420,7 +417,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             foreach (var target in targets.Values)
             {
-                if (target == null) return;
+                if (target == null) continue;
 
                 string eciPacket = "0|TX|ECI||" + Player.Id;
                 eciPacket += "|" + target.Id;
@@ -578,7 +575,7 @@ namespace Ow.Game.Objects.Players.Managers
         public void Absorbation(Player attacker, Character target, DamageType damageType, int damage)
         {
             if (attacker.Storage.invincibilityEffect)
-                attacker.DeactiveInvincibilityEffect();
+                attacker.Storage.DeactiveInvincibilityEffect();
 
             if (Player.Invisible)
                 Player.CpuManager.DisableCloak();
@@ -634,7 +631,7 @@ namespace Ow.Game.Objects.Players.Managers
             int damageShd = 0, damageHp = 0;
 
             if (attacker.Storage.invincibilityEffect)
-                attacker.DeactiveInvincibilityEffect();
+                attacker.Storage.DeactiveInvincibilityEffect();
 
             if (target is Spaceball)
             {
@@ -759,7 +756,7 @@ namespace Ow.Game.Objects.Players.Managers
             if (damageType == DamageType.MINE && target is Player && (target as Player).Storage.invincibilityEffect) return;
 
             if (attacker.Storage.invincibilityEffect && damageType != DamageType.RADIATION)
-                attacker.DeactiveInvincibilityEffect();
+                attacker.Storage.DeactiveInvincibilityEffect();
 
             if (target is Player && !(target as Player).Attackable())
             {
@@ -785,7 +782,7 @@ namespace Ow.Game.Objects.Players.Managers
                 else
                     target.Destroy(attacker, DestructionType.PLAYER);
             }
-            else target.CurrentHitPoints -= damage;
+            else if (toHp) target.CurrentHitPoints -= damage;
 
             if (toShd)
                 target.CurrentShieldPoints -= damage;

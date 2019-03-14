@@ -14,6 +14,17 @@ namespace Ow.Game.Movements
     {
         public static void Move(Character character, Position destination)
         {
+            if (character is Player player)
+            {
+                if (player.Speed <= 0)
+                {
+                    character.Moving = false;
+                    return;
+                }
+
+                player.Spacemap.OnPlayerMovement(player);
+            }
+
             character.MovementTime = GetTime(character, destination);
 
             character.MovementStartTime = DateTime.Now;
@@ -48,9 +59,6 @@ namespace Ow.Game.Movements
 
         public static Position ActualPosition(Character character)
         {
-            if (character is Player player)
-                player.Spacemap.OnPlayerMovement(player);
-
             Position actualPosition;
 
             if (character.Moving)

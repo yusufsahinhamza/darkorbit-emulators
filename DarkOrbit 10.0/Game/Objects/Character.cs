@@ -120,8 +120,10 @@ namespace Ow.Game.Objects
             {
                 var destroyerPlayer = destroyer as Player;
 
-                destroyerPlayer.Selected = null;
-                destroyerPlayer.DisableAttack(destroyerPlayer.Settings.InGameSettings.selectedLaser);
+                destroyerPlayer.Deselection();
+
+                //destroyerPlayer.Storage.KilledPlayerIds ölenin id ye göre grupla count 10 15 den falan büyükse ödül verme ve bir yere kaydet sonra işlem yap bi bok yap
+
 
                 //if (!(this is Pet) || (this is Pet && (this as Pet).Owner != destroyerPlayer))
                 int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
@@ -147,12 +149,16 @@ namespace Ow.Game.Objects
 
             if (this is Player thisPlayer)
             {
+                if (destroyer is Player destroyerPlayer)
+                    destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
+
                 if (EventManager.JackpotBattle.Active && thisPlayer.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id && EventManager.JackpotBattle.Players.ContainsKey(thisPlayer.Id))
                 {
                     EventManager.JackpotBattle.Players.TryRemove(thisPlayer.Id, out thisPlayer);
                     GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Players.Count);
                 }
 
+                thisPlayer.Deselection();
                 thisPlayer.SkillManager.DisableAllSkills();
                 thisPlayer.Pet.Deactivate(true);
                 thisPlayer.CurrentHitPoints = 0;
@@ -161,15 +167,36 @@ namespace Ow.Game.Objects
                 thisPlayer.CurrentInRangePortalId = -1;
                 thisPlayer.Storage.InRangeAssets.Clear();
                 thisPlayer.KillScreen(destroyer, destructionType);
+
+                Console.WriteLine($"{destroyer.Name} has destroyed {thisPlayer.Name}");
             }
 
-            Selected = null;
+            Deselection();
             InRangeCharacters.Clear();
             VisualModifiers.Clear();
             Spacemap.RemoveCharacter(this);
 
             if (this is Pet)
                 (this as Pet).Deactivate(true, true);
+        }
+
+        public void Deselection(bool emp = false)
+        {
+            Selected = null;
+
+            if (this is Player player)
+            {
+                player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+                player.Group?.UpdatePlayer(player, new List<command_i3O> { new GroupPlayerTargetModule(new GroupPlayerShipModule(GroupPlayerShipModule.NONE), "", new GroupPlayerInformationsModule(0, 0, 0, 0, 0, 0)) });
+
+                if (emp)
+                {
+                    string empMessagePacket = "0|A|STM|msg_own_targeting_harmed";
+                    player.SendPacket(empMessagePacket);
+                    player.SendCommand(ShipDeselectionCommand.write());
+                    player.SendPacket("0|UI|MM|NOISE");
+                }
+            }
         }
 
         public void SendPacketToInRangePlayers(string Packet)
@@ -202,8 +229,8 @@ namespace Ow.Game.Objects
 
                 if (this is Player player)
                 {
-                    short relationType = character.Clan != null && Clan != null ? Clan.GetRelation(character.Clan) : (short)0;
-                    bool sameClan = character.Clan != null && Clan != null ? Clan == character.Clan : false;
+                    short relationType = character.Clan != null && Clan != null && Clan.Id != 0 && character.Clan.Id != 0 ? Clan.GetRelation(character.Clan) : (short)0;
+                    bool sameClan = character.Clan != null && Clan != null ? (Clan.Id != 0 && character.Clan.Id != 0 && Clan == character.Clan) : false;
 
                     if (character is Player)
                     {
@@ -211,8 +238,8 @@ namespace Ow.Game.Objects
                         player.SendCommand(otherPlayer.GetShipCreateCommand(player.RankId == 21 ? true : false, relationType, sameClan, (EventManager.JackpotBattle.Active && player.Spacemap == EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap == EventManager.JackpotBattle.Spacemap)));
                         player.SendPacket($"0|n|INV|{otherPlayer.Id}|{Convert.ToInt32(otherPlayer.Invisible)}");
 
-                        if (!EventManager.JackpotBattle.Active && player.Spacemap != EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap != EventManager.JackpotBattle.Spacemap)
-                            player.SendPacket($"0|n|t|{otherPlayer.Id}|366|title_1");
+                        if (otherPlayer.Title != "" && !EventManager.JackpotBattle.Active && player.Spacemap != EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap != EventManager.JackpotBattle.Spacemap)
+                            player.SendPacket($"0|n|t|{otherPlayer.Id}|1|{otherPlayer.Title}");
 
                         player.CheckAbilities(otherPlayer);
                         player.SendPacket(otherPlayer.DroneManager.GetDronesPacket());
@@ -221,10 +248,10 @@ namespace Ow.Game.Objects
                     else if (character is Pet)
                     {
                         var pet = character as Pet;
-                        if (pet == player.Pet) player.SendCommand(PetHeroActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.GetClanId(), 15, pet.Owner.GetClanTag(), pet.Position.X, pet.Position.Y, pet.Speed, new class_11d(class_11d.DEFAULT)));
+                        if (pet == player.Pet) player.SendCommand(PetHeroActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.Clan.Id, 15, pet.Owner.Clan.Tag, pet.Position.X, pet.Position.Y, pet.Speed, new class_11d(class_11d.DEFAULT)));
                         else
                         {
-                            player.SendCommand(PetActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.GetClanId(), 15, pet.Owner.GetClanTag(), new ClanRelationModule(relationType), pet.Position.X, pet.Position.Y, pet.Speed, false, true, new class_11d(class_11d.DEFAULT)));
+                            player.SendCommand(PetActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.Clan.Id, 15, pet.Owner.Clan.Tag, new ClanRelationModule(relationType), pet.Position.X, pet.Position.Y, pet.Speed, false, true, new class_11d(class_11d.DEFAULT)));
                             player.SendPacket($"0|n|INV|{pet.Id}|{Convert.ToInt32(pet.Invisible)}");
                         }
                     }
@@ -251,10 +278,8 @@ namespace Ow.Game.Objects
                 if (this is Player player)
                 {
                     if (SelectedCharacter == character)
-                    {
-                        Selected = null;
-                        player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
-                    }
+                        player.Deselection();
+
                     var shipRemoveCommand = ShipRemoveCommand.write(character.Id);
                     player.SendCommand(shipRemoveCommand);
                 }
@@ -327,6 +352,7 @@ namespace Ow.Game.Objects
                 player.SendCommand(AttributeHitpointUpdateCommand.write(CurrentHitPoints, MaxHitPoints, CurrentNanoHull, MaxNanoHull));
                 player.SendCommand(AttributeShieldUpdateCommand.write(player.CurrentShieldPoints, player.MaxShieldPoints));
                 player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));
+                player.Group?.UpdatePlayer(player, new List<command_i3O> { new GroupPlayerInformationsModule(player.CurrentHitPoints, player.MaxHitPoints, player.CurrentShieldPoints, player.MaxShieldPoints, player.CurrentNanoHull, player.MaxNanoHull) });
             }
 
             if (this is Pet pet)
@@ -334,7 +360,7 @@ namespace Ow.Game.Objects
                 var gameSession = pet.Owner.GameSession;
                 if (gameSession == null) return;
 
-                //TODO: BUL gameSession.Player.SendCommand(PetHitpointsUpdateCommand.write(pet.CurrentHitPoints, pet.MaxHitPoints, false));
+                gameSession.Player.SendCommand(PetHitpointsUpdateCommand.write(pet.CurrentHitPoints, pet.MaxHitPoints, false));
                 gameSession.Player.SendCommand(PetShieldUpdateCommand.write(pet.CurrentShieldPoints, pet.MaxShieldPoints));
             }
 

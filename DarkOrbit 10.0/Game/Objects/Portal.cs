@@ -60,8 +60,7 @@ namespace Ow.Game.Objects
             player.Pet.Deactivate(true);
 
             player.CurrentInRangePortalId = -1;
-            player.Selected = null;
-            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+            player.Deselection();
             player.Spacemap.RemoveCharacter(player);
             player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();

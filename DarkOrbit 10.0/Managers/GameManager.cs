@@ -1,4 +1,5 @@
-﻿using Ow.Game;
+﻿using Ow.Chat;
+using Ow.Game;
 using Ow.Game.Clans;
 using Ow.Game.Events;
 using Ow.Game.Objects;
@@ -9,16 +10,36 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Ow.Game.GameSession;
 
 namespace Ow.Managers
 {
     class GameManager
     {
+        public static ConcurrentDictionary<int, ChatClient> ChatClients = new ConcurrentDictionary<int, ChatClient>();
         public static ConcurrentDictionary<int, GameSession> GameSessions = new ConcurrentDictionary<int, GameSession>();
         public static ConcurrentDictionary<int, Spacemap> Spacemaps = new ConcurrentDictionary<int, Spacemap>();
         public static ConcurrentDictionary<int, Ship> Ships = new ConcurrentDictionary<int, Ship>();
         public static ConcurrentDictionary<int, Clan> Clans = new ConcurrentDictionary<int, Clan>();
         public static List<Group> Groups = new List<Group>();
+
+        public async static void Restart(int seconds)
+        {
+            for (int i = seconds; i > 0; i--)
+            {
+                var packet = $"0|A|STM|server_restart_n_seconds|%!|{i}";
+                SendPacketToAll(packet);
+                await Task.Delay(1000);
+
+                if (i <= 1)
+                {
+                    foreach (var gameSession in GameManager.GameSessions.Values)
+                        gameSession.Disconnect(DisconnectionType.NORMAL);
+
+                    Environment.Exit(0);
+                }
+            }
+        }
 
         public static void SendCommandToMap(int mapId, byte[] command)
         {

@@ -23,8 +23,6 @@ namespace Ow.Net.netty.handlers
             windowSettings.barState = read.barStatesAsString;
             windowSettings.hideAllWindows = read.hideAllWindows;
             windowSettings.scale = read.scaleFactor;
-
-            QueryManager.SavePlayer.Settings(player);
         }
     }
 }

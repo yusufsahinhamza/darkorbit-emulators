@@ -83,8 +83,8 @@ namespace Ow.Net
                     return;
                 }
 
-                byte[] b = new byte[bytesRead];
-                Array.Copy(buffer, b, bytesRead);
+                byte[] bytes = new byte[bytesRead];
+                Buffer.BlockCopy(buffer, 0, bytes, 0, bytesRead);
 
                 var packet = Encoding.UTF8.GetString(buffer, 0, bytesRead).Replace("\n", "");
                 if (packet.StartsWith("<policy-file-request/>"))
@@ -99,10 +99,14 @@ namespace Ow.Net
                 }
                 else
                 {
-                    Handler.Execute(b, this);
+                    Handler.Execute(bytes, this);
                 }
 
-                Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
+                if (Socket != null && Socket.Connected && Socket.IsBound)
+                {
+                    Socket.BeginReceive(buffer, 0, buffer.Length, 0,
+                        ReadCallback, this);
+                }
             }
             catch
             {

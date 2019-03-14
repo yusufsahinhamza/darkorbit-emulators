@@ -18,7 +18,7 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            if (cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == 63 && cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SkillManager.DisableAllSkills();
 
@@ -35,14 +35,14 @@ namespace Ow.Game.Objects.Players.Skills
 
         public void ExecuteHeal()
         {
-            int heal = Maths.GetPercentage(Player.MaxHitPoints, 50);
+            int heal = Maths.GetPercentage(Player.MaxHitPoints, 25);
             if (Player.Group != null)
             {
                 foreach (var player in Player.Group.Members.Values)
                 {
-                    if (player.Spacemap != Player.Spacemap) return;
+                    if (player.Spacemap != Player.Spacemap) continue;
                     player.Heal(heal);
-                    if (player == Player) return;
+                    if (player == Player) continue;
 
                     string packet = "0|SD|A|R|1|" + player.Id + "";
                     player.SendPacket(packet);

@@ -88,8 +88,8 @@ namespace Ow.Net.netty
                 Commands[parser.CMD_ID].execute(gameSession, bytes);
                 gameSession.LastActiveTime = DateTime.Now;
             }
-            else
-                Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
+            //else
+                //Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
         }
     }
 }

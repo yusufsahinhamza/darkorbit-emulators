@@ -148,6 +148,8 @@
     <Compile Include="Net\netty\commands\8.4.5\LegacyModule845.cs" />
     <Compile Include="Net\netty\commands\8.4.5\ShipInitializationCommand845.cs" />
     <Compile Include="Net\netty\commands\8.4.5\VisualModifierCommand845.cs" />
+    <Compile Include="Net\netty\commands\GroupPlayerAttackingModule.cs" />
+    <Compile Include="Net\netty\commands\GroupPlayerActiveModule.cs" />
     <Compile Include="Net\netty\commands\GroupUpdateUICommand.cs" />
     <Compile Include="Net\netty\commands\PetHitpointsUpdateCommand.cs" />
     <Compile Include="Net\netty\commands\PetShieldUpdateCommand.cs" />
@@ -378,7 +380,6 @@
     <Compile Include="Net\netty\requests\LoginRequest.cs" />
     <Compile Include="Net\netty\requests\WindowSettingsRequest.cs" />
     <Compile Include="Net\netty\ServerCommands.cs" />
-    <Compile Include="Net\ServerManager.cs" />
     <Compile Include="Net\SocketServer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Game\Ticks\Tick.cs" />

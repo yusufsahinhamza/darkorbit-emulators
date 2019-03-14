@@ -93,6 +93,8 @@ namespace Ow.Game
 
         public void LoadObjects()
         {
+            /*
+             * TEK HARİTA SEBEBİ İLE KAPATILDI
             if (StationBase != null && StationBase.Count >= 1) {
                 foreach (var station in StationBase)
                 {
@@ -105,7 +107,17 @@ namespace Ow.Game
                     }
                 }
             }
+            */
 
+            if (Id == 16)
+            {
+                new HomeStation(this, 1, Position.MMOPosition, null);
+                new HomeStation(this, 2, Position.EICPosition, null);
+                new HomeStation(this, 3, Position.VRUPosition, null);
+            }
+
+            /*
+             * TEK HARİTA SEBEBİ İLE KAPATILDI
             if (PortalBase != null && PortalBase.Count >= 1)
             {
                 foreach (var portal in PortalBase)
@@ -115,6 +127,7 @@ namespace Ow.Game
                     new Portal(this, portalPosition, targetPosition, portal.TargetSpaceMapId, portal.GraphicId, portal.FactionId, portal.Visible, portal.Working);
                 }
             }
+            */
 
             /*
             if (Id == 14)
@@ -123,7 +136,8 @@ namespace Ow.Game
             }
             */
 
-            if (Id != 101 && Id != 121 && Id != 42)
+            //if (Id != 101 && Id != 121 && Id != 42)
+            if (Id == 16)
             {
                 for (int i = 0; i <= 85; i++)
                     new BonusBox(AssetTypeModule.BOXTYPE_BONUS_BOX, Position.Random(this, 1000, 19800, 1000, 11800), this, true);
@@ -225,6 +239,7 @@ namespace Ow.Game
         {
             bool isInSecureZone = false;
             bool inEquipZone = false;
+            bool onBlockedMinePosition = false;
 
             foreach (var entity in Activatables.Values)
             {
@@ -238,6 +253,7 @@ namespace Ow.Game
 
                     if (Player.Position.DistanceTo(homeStation.Position) <= HomeStation.SECURE_ZONE_RANGE)
                     {
+                        onBlockedMinePosition = true;
                         if (homeStation.FactionId == Player.FactionId)
                         {
                             if (!Player.LastAttackTime(3))
@@ -246,11 +262,11 @@ namespace Ow.Game
                                 inEquipZone = true;
                             }
                         }
-                    }
+                    } else onBlockedMinePosition = false;
                 }
                 else if (entity is RepairStation)
                 {
-                    if(Player.CurrentHitPoints == Player.MaxHitPoints)
+                    if(Player.CurrentHitPoints == Player.MaxHitPoints || Player.FactionId != entity.FactionId)
                         inRange = false;
                 }
 
@@ -280,6 +296,9 @@ namespace Ow.Game
                     Player.SendCommand(assetAction);
                 }
             }
+
+            
+            Player.Storage.OnBlockedMinePosition = onBlockedMinePosition;
 
             if (Player.Settings.InGameSettings.inEquipZone != inEquipZone)
             {

@@ -80,11 +80,11 @@ namespace Ow.Game.Objects
             AttackManager.RocketLauncher.Tick();
             Logout();
 
-            CheckUnderEffects();
+            Storage.Tick();
             DroneManager.Tick();
             TechManager.Tick();
             SkillManager.Tick();
-            // UpdateCurrentCooldowns();
+            
             /*
             if (MoveManager.Moving && Collecting)
             {
@@ -116,73 +116,6 @@ namespace Ow.Game.Objects
             UpdateStatus();
 
             lastShieldRepairTime = DateTime.Now;
-        }
-
-        public void CheckUnderEffects()
-        {
-            if (Storage.underR_IC3 && Storage.underR_IC3Time.AddMilliseconds(TimeManager.R_IC3_DURATION) < DateTime.Now)
-                DeactiveR_RIC3();
-            if (Storage.underDCR_250 && Storage.underDCR_250Time.AddMilliseconds(TimeManager.DCR_250_DURATION) < DateTime.Now)
-                DeactiveDCR_250();
-            if (Storage.underPLD8 && Storage.underPLD8Time.AddMilliseconds(TimeManager.PLD8_DURATION) < DateTime.Now)
-                DeactivePLD8();
-            if (Storage.underSLM_01 && Storage.underSLM_01Time.AddMilliseconds(TimeManager.SLM_01_DURATION) < DateTime.Now)
-                DeactiveSLM_01();
-            if (Storage.invincibilityEffect && Storage.invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
-                DeactiveInvincibilityEffect();
-            if (Storage.mirroredControlEffect && Storage.mirroredControlEffectTime.AddMilliseconds(TimeManager.MIRRORED_CONTROL_DURATION) < DateTime.Now)
-                DeactiveMirroredControlEffect();
-            if (Storage.wizardEffect && Storage.wizardEffectTime.AddMilliseconds(TimeManager.WIZARD_DURATION) < DateTime.Now)
-                DeactiveWizardEffect();
-        }
-
-        public void DeactivePLD8()
-        {
-            Storage.underPLD8 = false;
-            SendPacket("0|n|MAL|REM|" + Id + "");
-            SendPacketToInRangePlayers("0|n|MAL|REM|" + Id + "");
-
-        }
-        public void DeactiveR_RIC3()
-        {
-            Storage.underR_IC3 = false;
-            SendPacket("0|n|fx|end|ICY_CUBE|" + Id + "");
-            SendPacketToInRangePlayers("0|n|fx|end|ICY_CUBE|" + Id + "");
-            SendCommand(SetSpeedCommand.write(Speed, Speed));
-        }
-
-        public void DeactiveDCR_250()
-        {
-            Storage.underDCR_250 = false;
-            SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
-            SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
-            SendCommand(SetSpeedCommand.write(Speed, Speed));
-        }
-
-        public void DeactiveSLM_01()
-        {
-            Storage.underSLM_01 = false;
-            SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
-            SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Id + "");
-            SendCommand(SetSpeedCommand.write(Speed, Speed));
-        }
-
-        public void DeactiveInvincibilityEffect()
-        {
-            Storage.invincibilityEffect = false;
-            RemoveVisualModifier(VisualModifierCommand.INVINCIBILITY);
-        }
-
-        public void DeactiveMirroredControlEffect()
-        {
-            Storage.mirroredControlEffect = false;
-            RemoveVisualModifier(VisualModifierCommand.MIRRORED_CONTROLS);
-        }
-
-        public void DeactiveWizardEffect()
-        {
-            Storage.wizardEffect = false;
-            RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
         }
 
         public DateTime lastRadiationDamageTime = new DateTime();
@@ -501,7 +434,6 @@ namespace Ow.Game.Objects
                 SendPacket("0|S|CFG|" + LootID);
                 SetCurrentConfiguration(Convert.ToInt32(LootID));
                 ConfigCooldown = DateTime.Now;
-                QueryManager.SavePlayer.Settings(this);
             }
             else
             {
@@ -523,28 +455,18 @@ namespace Ow.Game.Objects
                          "equipment_extra_repbot_rep-4", Storage.IsInRadiationZone);
         }
 
-        public string GetClanTag()
-        {
-            return (Clan != null ? Clan.Tag : "");
-        }
-
-        public int GetClanId()
-        {
-            return (Clan != null ? Clan.Id : 0);
-        }
-
         public byte[] GetShipCreateCommand(bool fromAdmin, short relationType, bool sameClan, bool jackpotBattle = false)
         {
             return ShipCreateCommand.write(
                 Id,
                 Ship.LootId,
                 3,
-                jackpotBattle ? "" : GetClanTag(),
+                jackpotBattle ? "" : Clan.Tag,
                 jackpotBattle ? EventManager.JackpotBattle.Name : (Name + (fromAdmin ? " (" + Id + ")" : "")),
                 Position.X,
                 Position.Y,
                 FactionId,
-                GetClanId(),
+                Clan.Id,
                 RankId,
                 RankId == 21 ? true : false,
                 new ClanRelationModule((sameClan && Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id) ? ClanRelationModule.ALLIED : relationType),
@@ -577,7 +499,7 @@ namespace Ow.Game.Objects
                 Position.Y,
                 Spacemap.Id,
                 FactionId,
-                GetClanId(),
+                Clan.Id,
                 3,
                 Premium,
                 Data.experience,
@@ -587,7 +509,7 @@ namespace Ow.Game.Objects
                 Data.uridium,
                 0,
                 RankId,
-                GetClanTag(),
+                Clan.Tag,
                 100,
                 true,
                 Invisible,
@@ -738,8 +660,8 @@ namespace Ow.Game.Objects
                 foreach (var entry in InRangeCharacters.Values.Where(entry => entry.Id == targetId))
                 {
                     if (entry is Player && ((entry as Player).AttackManager.EmpCooldown.AddMilliseconds(TimeManager.EMP_DURATION) > DateTime.Now)) return;
-
                     Selected = entry;
+
                     SendCommand(ShipSelectionCommand.write(
                         entry.Id,
                         entry.Ship.Id,
@@ -750,6 +672,8 @@ namespace Ow.Game.Objects
                         0,
                         0,
                         entry is Player ? true : false));
+
+                    Group?.UpdatePlayer(this, new List<command_i3O> { new GroupPlayerTargetModule(new GroupPlayerShipModule(entry.Ship.GroupShipId), entry.Name, new GroupPlayerInformationsModule(entry.CurrentHitPoints, entry.MaxHitPoints, entry.CurrentShieldPoints, entry.MaxShieldPoints, entry.CurrentNanoHull, entry.MaxNanoHull)) });
                 }
             }
             catch (Exception e)
@@ -772,8 +696,7 @@ namespace Ow.Game.Objects
             player.SkillManager.DisableAllSkills();
             player.Ship = GameManager.GetShip(shipId);
             player.CurrentInRangePortalId = -1;
-            player.Selected = null;
-            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+            player.Deselection();
             player.Spacemap.RemoveCharacter(player);
             player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
@@ -799,8 +722,7 @@ namespace Ow.Game.Objects
             player.Pet.Deactivate(true);
 
             player.CurrentInRangePortalId = -1;
-            player.Selected = null;
-            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+            player.Deselection();
             player.Spacemap.RemoveCharacter(player);
             player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
@@ -858,7 +780,7 @@ namespace Ow.Game.Objects
 
             if (!killedLogin)
             {
-                if (Spacemap.Activatables.FirstOrDefault(x => x.Value is Portal).Value is Portal && Data.uridium >= portalRepairPrice)
+                if (Spacemap.Activatables.FirstOrDefault(x => x.Value is Portal).Value is Portal portal && portal.Working && Data.uridium >= portalRepairPrice)
                     killScreenOptionModules.Add(portalRepair);
 
                 if (Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id && Spacemap.Id != 121 && Data.uridium >= deathLocationRepairPrice)
@@ -888,13 +810,13 @@ namespace Ow.Game.Objects
             else if (deathLocation)
                 CurrentHitPoints = Maths.GetPercentage(MaxHitPoints, 10);
             else
+            {
+                CurrentHitPoints = Maths.GetPercentage(MaxHitPoints, 1);
                 SetPosition(FactionId == 1 ? Position.MMOPosition : FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
+            }
 
             if (basicRepair || fullRepair)
-            {
-                var mapId = FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
-                Spacemap = GameManager.GetSpacemap(mapId);
-            }
+                Spacemap = GameManager.GetSpacemap(GetBaseMapId());
 
             if (fullRepair)
             {
@@ -906,6 +828,12 @@ namespace Ow.Game.Objects
             Spacemap.AddAndInitPlayer(this);
 
             Destroyed = false;
+        }
+
+        public int GetBaseMapId()
+        {
+            //return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
+            return 16;
         }
 
         public void ChangeData(DataType dataType, int amount, ChangeType changeType = ChangeType.INCREASE)
@@ -980,12 +908,14 @@ namespace Ow.Game.Objects
         {
             AttackManager.Attacking = true;
             SendCommand(AddMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), itemId, new class_K18(class_K18.ACTIVE), new class_I1W(false, 0)));
+            Group?.UpdatePlayer(this, new List<command_i3O> { new GroupPlayerAttackingModule(true) });
         }
 
         public void DisableAttack(string itemId)
         {
             AttackManager.Attacking = false;
             SendCommand(RemoveMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), itemId, new class_K18(class_K18.ACTIVE)));
+            Group?.UpdatePlayer(this, new List<command_i3O> { new GroupPlayerAttackingModule(false) });
         }
 
         public Position GetNearestPortalPosition()
@@ -1007,6 +937,7 @@ namespace Ow.Game.Objects
                 if (!gameSession.Client.Socket.IsBound) return;
                 if (!gameSession.Client.Socket.Connected) return;
 
+                //Console.WriteLine("PACKET SENDED => " + Name);
                 gameSession.Client.Send(LegacyModule.write(packet));
             }
             catch (Exception e)
@@ -1026,6 +957,7 @@ namespace Ow.Game.Objects
                 if (!gameSession.Client.Socket.IsBound) return;
                 if (!gameSession.Client.Socket.Connected) return;
 
+                //Console.WriteLine("COMMAND SENDED => " + Name);
                 gameSession.Client.Send(command);
             }
             catch (Exception e)
@@ -1067,25 +999,6 @@ namespace Ow.Game.Objects
         {
             LoggingOut = false;
             SendPacket("0|t");
-        }
-
-        public short GetGroupShipId()
-        {
-            switch (Ship.Id)
-            {
-                case Ship.GOLIATH_SPECTRUM:
-                    return GroupPlayerShipModule.SPECTRUM;
-                case Ship.GOLIATH_SENTINEL:
-                    return GroupPlayerShipModule.SENTINEL;
-                case Ship.GOLIATH_DIMINISHER:
-                    return GroupPlayerShipModule.DIMINISHER;
-                case Ship.GOLIATH_SOLACE:
-                    return GroupPlayerShipModule.SOLACE;
-                case Ship.GOLIATH_VENOM:
-                    return GroupPlayerShipModule.VENOM;
-                default:
-                    return GroupPlayerShipModule.NONE;
-            }
         }
 
         public GameSession GameSession

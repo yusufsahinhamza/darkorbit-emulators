@@ -1,4 +1,5 @@
 ﻿using Ow.Managers;
+using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
 using System.Collections.Generic;
@@ -178,6 +179,31 @@ namespace Ow.Game
                     return pExperience += Maths.GetPercentage(pExperience, 15);
                 default:
                     return pExperience;
+            }
+        }
+
+        public short GroupShipId
+        {
+            get
+            {
+                switch (Id)
+                {
+                    case 22:
+                        return GroupPlayerShipModule.PET;
+                    case GOLIATH:
+                    case GOLIATH_ENFORCER:
+                    case GOLIATH_BASTION:
+                    case GOLIATH_VETERAN:
+                    case GOLIATH_EXALTED:
+                    case GOLIATH_SOLACE:
+                    case GOLIATH_DIMINISHER:
+                    case GOLIATH_SPECTRUM:
+                    case GOLIATH_SENTINEL:
+                    case GOLIATH_VENOM:
+                        return GroupPlayerShipModule.ENFORCER;
+                    default:
+                        return GroupPlayerShipModule.DEFAULT;
+                }
             }
         }
 

@@ -20,7 +20,7 @@ namespace Ow.Net.netty.commands
             this.clanTag = clanTag;
         }
 
-        public byte[] write()
+        public override byte[] write()
         {
             var param1 = new ByteArray(ID);
             super(param1);

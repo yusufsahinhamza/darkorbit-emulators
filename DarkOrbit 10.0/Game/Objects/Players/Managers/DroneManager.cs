@@ -176,10 +176,7 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.SendCommandToInRangePlayers(formationCommand);
 
                 Player.UpdateStatus();
-
                 Player.SettingsManager.SendNewItemStatus(NewFormationID);
-
-                QueryManager.SavePlayer.Settings(Player);
 
                 formationCooldown = DateTime.Now;
             }

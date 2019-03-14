@@ -1,4 +1,5 @@
-﻿using Ow.Utils;
+﻿using Ow.Chat;
+using Ow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace Ow.Net
     class ChatServer
     {
         private static ManualResetEvent AllDone = new ManualResetEvent(false);
-        private static int Port = 9338;
+        public static int Port = 9338;
 
         public static void StartListening()
         {
@@ -24,8 +25,6 @@ namespace Ow.Net
             {
                 listener.Bind(localEndPoint);
                 listener.Listen(100);
-
-                Out.WriteLine("Listening on port " + Port + ".", "ChatSocket");
 
                 while (true)
                 {
@@ -49,7 +48,7 @@ namespace Ow.Net
                 AllDone.Set();
                 var listener = (Socket)ar.AsyncState;
                 var handler = listener.EndAccept(ar);
-                var chatClient = new Chat.ChatClient(handler);
+                new ChatClient(handler);
             }
             catch (Exception e)
             {

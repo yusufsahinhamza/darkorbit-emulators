@@ -31,7 +31,7 @@ namespace Ow.Chat
         public bool SocketClosed { get; set; }
         private readonly byte[] buffer = new byte[2048];
 
-        public GameSession GameSession { get; set; }
+        public int UserId { get; set; }
         public string Clan { get; set; }
         public Permissions Permission { get; set; }
         public List<Int32> ChatsJoined = new List<Int32>();
@@ -47,6 +47,8 @@ namespace Ow.Chat
             this.Socket = Socket;
             try
             {
+                if (!Socket.IsBound && !Socket.Connected) throw new Exception("Unable to read. Socket is not bound or connected.");
+
                 this.Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
             }
             catch (Exception e)
@@ -62,7 +64,7 @@ namespace Ow.Chat
             {
                 case ChatConstants.CMD_USER_LOGIN:
                     var loginPacket = message.Replace("@", "%").Split('%');
-                    var userId = Convert.ToInt32(loginPacket[3]);
+                    UserId = Convert.ToInt32(loginPacket[3]);
 
                     /*
                     if (Program.IsUserBanned(Username))
@@ -74,25 +76,24 @@ namespace Ow.Chat
                     }
                     */
 
-                    GameSession = GameManager.GetGameSession(userId);
-                    Clan = loginPacket[7] == "noclan" ? "" : GameSession.Player.GetClanTag();
-                    Permission = (Permissions)QueryManager.GetChatPermission(GameSession.Player.Id);
+                    var gameSession = GameManager.GetGameSession(UserId);
 
-                    if (ServerManager.ChatClients.ContainsKey(GameSession.Player.Id))
+                    if (gameSession != null)
                     {
-                        ServerManager.ChatClients[GameSession.Player.Id].Socket.Shutdown(SocketShutdown.Both);
-                        ServerManager.ChatClients[GameSession.Player.Id].Socket.Close();
-                        ServerManager.ChatClients[GameSession.Player.Id].Socket = null;
-                        var chat = this;
-                        ServerManager.ChatClients.TryRemove(GameSession.Player.Id, out chat);
-                    }
-                    ServerManager.AddChatClient(this);
+                        Clan = loginPacket[7] == "noclan" ? "" : gameSession.Player.Clan.Tag;
+                        Permission = (Permissions)QueryManager.GetChatPermission(gameSession.Player.Id);
 
-                    Send("bv%" + GameSession.Player.Id + "#");
-                    var servers = Room.Rooms.Aggregate(String.Empty, (current, chat) => current + chat.Value.ToString());
-                    servers = servers.Remove(servers.Length - 1);
-                    Send("by%" + servers + "#");
-                    ChatsJoined.Add(Room.Rooms.FirstOrDefault().Value.Id);
+                        if (GameManager.ChatClients.ContainsKey(UserId))
+                            GameManager.ChatClients[gameSession.Player.Id]?.ShutdownConnection();
+
+                        GameManager.ChatClients.TryAdd(gameSession.Player.Id, this);
+
+                        Send("bv%" + gameSession.Player.Id + "#");
+                        var servers = Room.Rooms.Aggregate(String.Empty, (current, chat) => current + chat.Value.ToString());
+                        servers = servers.Remove(servers.Length - 1);
+                        Send("by%" + servers + "#");
+                        ChatsJoined.Add(Room.Rooms.FirstOrDefault().Value.Id);
+                    }
                     break;
                 case ChatConstants.CMD_USER_MSG:
                     SendMessage(message);
@@ -117,20 +118,21 @@ namespace Ow.Chat
 
         public void AcceptDuel(Player inviterPlayer)
         {
+            var gameSession = GameManager.GetGameSession(UserId);
             if (inviterPlayer != null)
             {
-                var roomId = inviterPlayer.Storage.DuelInvites.Keys.FirstOrDefault(x => inviterPlayer.Storage.DuelInvites.ContainsValue(GameSession.Player));
+                var roomId = inviterPlayer.Storage.DuelInvites.Keys.FirstOrDefault(x => inviterPlayer.Storage.DuelInvites.ContainsValue(gameSession.Player));
                 Send("fr%" + roomId + "#");
 
-                if (GameSession.Player.Settings.InGameSettings.inEquipZone && inviterPlayer.Settings.InGameSettings.inEquipZone)
+                if (gameSession.Player.Settings.InGameSettings.inEquipZone && inviterPlayer.Settings.InGameSettings.inEquipZone)
                 {
                     var position1 = new Position(3700, 3200);
                     var position2 = new Position(6400, 3200);
 
-                    GameSession.Player.Jump(101, position1);
+                    gameSession.Player.Jump(101, position1);
                     inviterPlayer.Jump(101, position2);
-                    var duel = new Duel(GameSession.Player, inviterPlayer);
-                    GameSession.Player.Storage.Duel = duel;
+                    var duel = new Duel(gameSession.Player, inviterPlayer);
+                    gameSession.Player.Storage.Duel = duel;
                     inviterPlayer.Storage.Duel = duel;
                 }
             }
@@ -138,7 +140,9 @@ namespace Ow.Chat
 
         public void SendMessage(string content)
         {
-            GameSession.LastActiveTime = DateTime.Now;
+            var gameSession = GameManager.GetGameSession(UserId);
+
+            gameSession.LastActiveTime = DateTime.Now;
 
             string messagePacket = "";
 
@@ -155,7 +159,7 @@ namespace Ow.Chat
             {
                 var userName = message.Split(' ')[1];
 
-                if (userName.ToLower() == GameSession.Player.Name.ToLower())
+                if (userName.ToLower() == gameSession.Player.Name.ToLower())
                 {
                     Send("fk%" + roomId + "@" + "Kendine fısıldayamazsın." + "#");
                     return;
@@ -167,18 +171,20 @@ namespace Ow.Chat
                     return;
                 }
 
-                foreach (var user in ServerManager.ChatClients.Values)
+                foreach (var user in GameManager.ChatClients.Values)
                 {
-                    if (string.Equals(user.GameSession.Player.Name.ToLower(), userName.ToLower(), StringComparison.CurrentCultureIgnoreCase) && user.ChatsJoined.Contains(Convert.ToInt32(roomId)))
+                    var userSession = GameManager.GetGameSession(user.UserId);
+                    if (string.Equals(userSession.Player.Name.ToLower(), userName.ToLower(), StringComparison.CurrentCultureIgnoreCase) && user.ChatsJoined.Contains(Convert.ToInt32(roomId)))
                     {
                         message = message.Remove(0, userName.Length + 4);
-                        user.Send("cv%" + GameSession.Player.Name + "@" + message + "#");
+                        user.Send("cv%" + gameSession.Player.Name + "@" + message + "#");
                         Send("cw%" + userName + "@" + message + "#");
                     }
                 }
             }
             else if (cmd == "/kick" && (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR))
             {
+                /*
                 var userName = message.Split(' ')[1];
                 var player = GameManager.GetPlayerByName(userName);
 
@@ -188,12 +194,14 @@ namespace Ow.Chat
                     if (chatClient != null)
                     {
                         chatClient.Send("as%#");
-                        ShutdownConnection();
+                        ShutdownConnection(chatClient);
                     }
                 }
+                */
             }
             else if (cmd == "/duel" && Permission == Permissions.ADMINISTRATOR)
             {
+                /*
                 var userName = message.Split(' ')[1];
                 var duelPlayer = GameManager.GetPlayerByName(userName);
 
@@ -206,6 +214,7 @@ namespace Ow.Chat
 
                 var chatClient = duelPlayer.GameSession.Chat;
                 chatClient.Send("cj%" + duelId + "@" + "Room" + "@" + GameSession.Player.Id + "@" + GameSession.Player.Name + "#");
+                */
             }
             else if (cmd == "/a" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -252,24 +261,24 @@ namespace Ow.Chat
                 var player = GameManager.GetPlayerByName(userName);
 
                 if (player != null)
-                    player.Destroy(GameSession.Player, Game.DestructionType.PLAYER);
+                    player.Destroy(gameSession.Player, Game.DestructionType.PLAYER);
             }
             else if (cmd == "/ship" && Permission == Permissions.ADMINISTRATOR)
             {
                 var shipId = Convert.ToInt32(message.Split(' ')[1]);
 
-                GameSession.Player.Ship = GameManager.GetShip(shipId);
-                GameSession.Player.Jump(GameSession.Player.Spacemap.Id, GameSession.Player.Position);
+                gameSession.Player.Ship = GameManager.GetShip(shipId);
+                gameSession.Player.Jump(gameSession.Player.Spacemap.Id, gameSession.Player.Position);
             }
             else if (cmd == "/jump" && Permission == Permissions.ADMINISTRATOR)
             {
                 var mapId = Convert.ToInt32(message.Split(' ')[1]);
-                GameSession.Player.Jump(mapId, new Position(0, 0));
+                gameSession.Player.Jump(mapId, new Position(0, 0));
             }
             else if (cmd == "/speed+" && Permission == Permissions.ADMINISTRATOR)
             {
                 var speed = Convert.ToInt32(message.Split(' ')[1]);
-                GameSession.Player.SetSpeedBoost(speed);
+                gameSession.Player.SetSpeedBoost(speed);
             }
             else if (cmd == "/god" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -277,10 +286,10 @@ namespace Ow.Chat
                 switch (mod)
                 {
                     case "on":
-                        GameSession.Player.Storage.GodMode = true;
+                        gameSession.Player.Storage.GodMode = true;
                         break;
                     case "off":
-                        GameSession.Player.Storage.GodMode = false;
+                        gameSession.Player.Storage.GodMode = false;
                         break;
                 }
             }
@@ -317,21 +326,21 @@ namespace Ow.Chat
                     if (player == null) return;
 
                     //player.SendPacket($"0|A|STD|{day} gün yasaklandın.");
-                    player.GameSession.Chat.ShutdownConnection();
-                    QueryManager.ChatFunctions.AddBan(player.Id, GameSession.Player.Id, reason, typeId, (DateTime.Now.AddDays(day)).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                    GameManager.ChatClients[player.Id]?.ShutdownConnection();
+                    QueryManager.ChatFunctions.AddBan(player.Id, gameSession.Player.Id, reason, typeId, (DateTime.Now.AddDays(day)).ToString("yyyy-MM-dd HH:mm:ss.fff"));
                 }
             }
             else if (cmd == "/restart" && Permission == Permissions.ADMINISTRATOR)
             {
                 var seconds = Convert.ToInt32(message.Split(' ')[1]);
-                Restart(seconds);
+                GameManager.Restart(seconds);
             }
             else if (cmd == "/users")
             {
-                var users = ServerManager.ChatClients.Values.Aggregate(String.Empty, (current, user) => current + user.GameSession.Player.Name + ", ");
+                var users = GameManager.GameSessions.Values.Aggregate(String.Empty, (current, user) => current + user.Player.Name + ", ");
                 users = users.Remove(users.Length - 2);
 
-                Send($"dq%Users online {ServerManager.ChatClients.Count}: {users}#");
+                Send($"dq%Users online {GameManager.GameSessions.Count}: {users}#");
             }
             else
             {
@@ -343,14 +352,14 @@ namespace Ow.Chat
                             Console.WriteLine("BAN, mesaj = " + m);
                     }
 
-                    foreach (var pair in ServerManager.ChatClients.Values)
+                    foreach (var pair in GameManager.ChatClients.Values)
                     {
                         if (pair.ChatsJoined.Contains(Convert.ToInt32(roomId)))
                         {
                             if (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR)
-                                messagePacket = "j%" + roomId + "@" + GameSession.Player.Name + "@" + message;
+                                messagePacket = "j%" + roomId + "@" + gameSession.Player.Name + "@" + message;
                             else
-                                messagePacket = "a%" + roomId + "@" + GameSession.Player.Name + "@" + message;
+                                messagePacket = "a%" + roomId + "@" + gameSession.Player.Name + "@" + message;
 
                             if (Clan != "")
                                 messagePacket += "@" + Clan;
@@ -362,24 +371,6 @@ namespace Ow.Chat
             }
         }
 
-        public async static void Restart(int seconds)
-        {
-            for (int i = seconds; i > 0; i--)
-            {
-                var packet = $"0|A|STM|server_restart_n_seconds|%!|{i}";
-                GameManager.SendPacketToAll(packet);
-                await Task.Delay(1000);
-
-                if (i <= 1)
-                {
-                    foreach (var gameSession in GameManager.GameSessions.Values)
-                        gameSession.Disconnect(DisconnectionType.NORMAL);
-
-                    Environment.Exit(0);
-                }
-            }
-        }
-
         #region Connection
 
         public void ShutdownConnection()
@@ -387,7 +378,8 @@ namespace Ow.Chat
             Socket.Shutdown(SocketShutdown.Both);
             Socket.Close();
             Socket = null;
-            ServerManager.RemoveChatClient(this);
+            var value = this;
+            GameManager.ChatClients.TryRemove(UserId, out value);
         }
 
         private void ReadCallback(IAsyncResult ar)
@@ -415,25 +407,15 @@ namespace Ow.Chat
                     Execute(content);
                 }
 
-                Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
+                if (Socket != null && Socket.Connected && Socket.IsBound)
+                {
+                    Socket.BeginReceive(buffer, 0, buffer.Length, 0,
+                        ReadCallback, this);
+                }
             }
             catch
             {
-                //ignore
-            }
-            finally
-            {
-                if (Socket != null && Socket.Connected)
-                {
-                    try
-                    {
-                        Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
-                    }
-                    catch
-                    {
-                        //ignore
-                    }
-                }
+                //ignore 
             }
         }
 

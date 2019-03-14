@@ -10,35 +10,18 @@ namespace Ow.Game.Ticks
 {
     class TickManager
     {
-        public static short TICKS_PER_SECOND = 64;
+        public static short TICKS_PER_SECOND = 84;
 
         public ConcurrentDictionary<int, Tick> Ticks = new ConcurrentDictionary<int, Tick>();
 
         private int GetNextTickId()
         {
-            using (var enumerator = Ticks.GetEnumerator())
+            var i = 0;
+            while (true)
             {
-                if (!enumerator.MoveNext())
-                    return 0;
-
-                var nextKeyInSequence = enumerator.Current.Key + 1;
-
-                if (nextKeyInSequence < 1)
-                    throw new InvalidOperationException("The dictionary contains keys less than 0");
-
-                if (nextKeyInSequence != 1)
-                    return 0;
-
-                while (enumerator.MoveNext())
-                {
-                    var key = enumerator.Current.Key;
-                    if (key > nextKeyInSequence)
-                        return nextKeyInSequence;
-
-                    ++nextKeyInSequence;
-                }
-
-                return nextKeyInSequence;
+                if (Ticks.ContainsKey(i))
+                    i++;
+                else return i;
             }
         }
 

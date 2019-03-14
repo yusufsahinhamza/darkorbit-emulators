@@ -22,9 +22,9 @@ namespace Ow.Game.Events
             GameManager.SendPacketToAll("0|A|STD|Spaceball started!");
             Character = new Objects.Spaceball(Randoms.CreateRandomID(), Type);
 
-            Portals.Add(new Portal(Character.Spacemap, Character.MMOPosition, null, 0, 62, 0, true, false));
-            Portals.Add(new Portal(Character.Spacemap, Character.EICPosition, null, 0, 61, 0, true, false));
-            Portals.Add(new Portal(Character.Spacemap, Character.VRUPosition, null, 0, 61, 0, true, false));
+            //Portals.Add(new Portal(Character.Spacemap, Character.MMOPosition, null, 0, 62, 0, true, false));
+            //Portals.Add(new Portal(Character.Spacemap, Character.EICPosition, null, 0, 61, 0, true, false));
+            //Portals.Add(new Portal(Character.Spacemap, Character.VRUPosition, null, 0, 61, 0, true, false));
 
             Active = true;
             foreach (var gameSession in GameManager.GameSessions.Values)
@@ -32,9 +32,9 @@ namespace Ow.Game.Events
                 var player = gameSession.Player;
                 player.SettingsManager.SendMenuBarsCommand();
 
-                if (player.Spacemap == Character.Spacemap)
-                    foreach (var portal in Portals)
-                        player.SendCommand(portal.GetAssetCreateCommand());
+                //if (player.Spacemap == Character.Spacemap)
+                    //foreach (var portal in Portals)
+                        //player.SendCommand(portal.GetAssetCreateCommand());
             }
             Character.Spacemap.AddCharacter(Character);
 
@@ -53,8 +53,8 @@ namespace Ow.Game.Events
                 player.SettingsManager.SendMenuBarsCommand();
             }
 
-            foreach (var portal in Portals)
-                portal.Remove();
+            //foreach (var portal in Portals)
+                //portal.Remove();
 
             Character.Spacemap.RemoveCharacter(Character);
             Program.TickManager.RemoveTick(Character);

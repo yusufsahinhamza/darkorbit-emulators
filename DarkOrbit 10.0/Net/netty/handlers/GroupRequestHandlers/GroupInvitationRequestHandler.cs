@@ -46,8 +46,8 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
                 }
                 invited.Storage.GroupInvites.Add(player.Id, player.Group);
 
-                player.SendCommand(GroupInviteCommand.write(player.Id, player.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL), invited.Id, invited.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL)));
-                invited.SendCommand(GroupInviteCommand.write(player.Id, player.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL), invited.Id, invited.Name, new GroupPlayerShipModule(GroupPlayerShipModule.SENTINEL)));
+                player.SendCommand(GroupInviteCommand.write(player.Id, player.Name, new GroupPlayerShipModule(player.Ship.GroupShipId), invited.Id, invited.Name, new GroupPlayerShipModule(player.Ship.GroupShipId)));
+                invited.SendCommand(GroupInviteCommand.write(player.Id, player.Name, new GroupPlayerShipModule(player.Ship.GroupShipId), invited.Id, invited.Name, new GroupPlayerShipModule(player.Ship.GroupShipId)));
             }
         }
 

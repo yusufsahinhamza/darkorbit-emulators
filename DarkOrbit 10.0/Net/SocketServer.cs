@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Ow.Game;
 using Ow.Game.Clans;
 using Ow.Game.Movements;
 using Ow.Game.Objects;
@@ -20,7 +21,7 @@ namespace Ow.Net
     class SocketServer
     {
         private static ManualResetEvent AllDone = new ManualResetEvent(false);
-        private static int Port = 4301;
+        public static int Port = 4301;
 
         public static void StartListening()
         {
@@ -60,27 +61,37 @@ namespace Ow.Net
 
                 if (ValidateJSON(String(json)))
                 {
-                    var player = GameManager.GetPlayerById(Int(Parse(json["Parameters"])["UserId"]));
-                    if (player.GameSession != null && player != null)
+                    var parameters = Parse(json["Parameters"]);
+                    
+                    switch (String(json["Action"]))
                     {
-                        switch (String(json["Action"]))
-                        {
-                            case "ChangeShip":
-                                ChangeShip(player, Int(Parse(json["Parameters"])["ShipId"]));
-                                break;
-                            case "ChangeCompany":
-                                ChangeCompany(player, Int(Parse(json["Parameters"])["FactionId"]));
-                                break;
-                            case "UpdateStatus":
-                                UpdateStatus(player, Parse(Parse(json["Parameters"])["Status"]));
-                                break;
-                            case "CreateClan":
-                                CreateClan(player, Int(Parse(json["Parameters"])["ClanId"]), Parse(json["Parameters"])["Name"], Parse(json["Parameters"])["Tag"]);
-                                break;
-                            case "DeleteClan":
-                                DeleteClan(player, Int(Parse(json["Parameters"])["ClanId"]));
-                                break;
-                        }
+                        case "ChangeShip":
+                            ChangeShip(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ShipId"]));
+                            break;
+                        case "ChangeCompany":
+                            ChangeCompany(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["FactionId"]), Int(parameters["UridiumPrice"]), Int(parameters["HonorPrice"]));
+                            break;
+                        case "UpdateStatus":
+                            UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])), Parse(parameters["Status"]));
+                            break;
+                        case "JoinToClan":
+                            JoinToClan(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetClan(Int(parameters["ClanId"])));
+                            break;
+                        case "LeaveFromClan":
+                            LeaveFromClan(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                            break;
+                        case "CreateClan":
+                            CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), parameters["Name"], parameters["Tag"]);
+                            break;
+                        case "DeleteClan":
+                            DeleteClan(GameManager.GetClan(Int(parameters["ClanId"])));
+                            break;
+                        case "StartDiplomacy":
+                            StartDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])), Short(parameters["DiplomacyType"]));
+                            break;
+                        case "EndDiplomacy":
+                            EndDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])));
+                            break;
                     }
                 }
             }
@@ -90,10 +101,45 @@ namespace Ow.Net
             }
         }
 
-        public static void DeleteClan(Player player, int clanId)
+        public static void JoinToClan(Player player, Clan clan)
         {
-            var deletedClan = GameManager.Clans[clanId];
+            if (player.GameSession == null || player == null || clan == null) return;
 
+            player.Clan = clan;
+            GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write(clan.Tag, clan.Id, player.Id));
+        }
+
+        public static void EndDiplomacy(Clan senderClan, Clan targetClan)
+        {
+            if (senderClan != null && targetClan != null)
+            {
+                senderClan.Diplomacies.Remove(targetClan.Id);
+                targetClan.Diplomacies.Remove(senderClan.Id);
+            }
+        }
+
+        public static void StartDiplomacy(Clan senderClan, Clan targetClan, short diplomacyType)
+        {
+            if (senderClan != null && targetClan != null && (diplomacyType == 1 || diplomacyType == 2 || diplomacyType == 3))
+            {
+                senderClan.Diplomacies.Add(targetClan.Id, (Diplomacy)diplomacyType);
+                targetClan.Diplomacies.Add(senderClan.Id, (Diplomacy)diplomacyType);
+            }
+        }
+
+        public static void LeaveFromClan(Player player)
+        {
+            if (player.GameSession == null || player == null) return;
+
+            if (player.Clan != null && player.Clan.Id != 0)
+            {
+                player.Clan = GameManager.GetClan(0);
+                GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write("", 0, player.Id));
+            }
+        }
+
+        public static void DeleteClan(Clan deletedClan)
+        {
             if (deletedClan != null)
             {
                 GameManager.Clans.TryRemove(deletedClan.Id, out deletedClan);
@@ -104,9 +150,8 @@ namespace Ow.Net
 
                     if (member.Clan == deletedClan)
                     {
-                        member.Clan = null;
+                        member.Clan = GameManager.GetClan(0);
                         GameManager.SendCommandToMap(member.Spacemap.Id, ClanChangedCommand.write("", 0, member.Id));
-                        member.SendPacket($"0|A|STD|Leader {player.Name} has deleted this clan!");
                     }
                 }
 
@@ -119,26 +164,39 @@ namespace Ow.Net
         {
             var clan = new Clan(clanId, name.ToString(), tag.ToString(), 0);
             GameManager.Clans.TryAdd(clan.Id, clan);
+
+            if (player.GameSession == null || player == null) return;
+
+            player.Clan = clan;
             GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write(clan.Tag, clan.Id, player.Id));
         }
 
-        public static void ChangeCompany(Player player, int factionId)
+        public static void ChangeCompany(Player player, int factionId, int uridiumPrice, int honorPrice)
         {
+            if (player.GameSession == null || player == null) return;
+
             if (player.Settings.InGameSettings.inEquipZone && !player.AttackingOrUnderAttack() && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
             {
+                player.ChangeData(DataType.URIDIUM, uridiumPrice, ChangeType.DECREASE);
+                player.ChangeData(DataType.HONOR, honorPrice, ChangeType.DECREASE);
+
                 player.FactionId = factionId;
-                player.Jump(factionId == 1 ? 13 : factionId == 2 ? 14 : 15, factionId == 1 ? Position.MMOPosition : factionId == 2 ? Position.EICPosition : Position.VRUPosition);
+                player.Jump(player.GetBaseMapId(), factionId == 1 ? Position.MMOPosition : factionId == 2 ? Position.EICPosition : Position.VRUPosition);
             }
         }
 
         public static void ChangeShip(Player player, int shipId)
         {
+            if (player.GameSession == null || player == null) return;
+
             if (GameManager.Ships.ContainsKey(shipId))
                 player.ChangeShip(shipId);
         }
 
         public static void UpdateStatus(Player player, JObject status)
         {
+            if (player.GameSession == null || player == null) return;
+
             player.Equipment.Config1Hitpoints = Int(status["Config1Hitpoints"]);
             player.Equipment.Config1Damage = Int(status["Config1Damage"]);
             player.Equipment.Config1Shield = Int(status["Config1Shield"]);
@@ -168,6 +226,11 @@ namespace Ow.Net
         public static int Int(object value)
         {
             return Convert.ToInt32(value.ToString());
+        }
+
+        public static short Short(object value)
+        {
+            return Convert.ToInt16(value.ToString());
         }
 
         public static string String(object value)

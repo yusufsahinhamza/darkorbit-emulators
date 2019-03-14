@@ -7,28 +7,15 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class command_i3O
+    abstract class command_i3O
     {
+        public abstract byte[] write();
 
-        public static byte[] super(ByteArray param1)
+        protected static byte[] super(ByteArray param1)
         {
             param1.writeShort(29809);
             param1.writeShort(15227);
             return param1.ToByteArray();
         }
-
-
-        public const short IDExtend = 32339;
-
-        public byte[] writeAsExtend()
-        {
-            var param1 = new ByteArray(IDExtend);
-            param1.writeShort(29809);
-            param1.writeShort(15227);
-            return param1.ToByteArray();
-        }
-
-
-
     }
 }

@@ -29,8 +29,6 @@ namespace Ow.Net.netty.handlers
             gameplaySettings.doubleclickAttackEnabled = read.DoubleClickAttackEnabled;
             gameplaySettings.quickSlotStopAttack = read.QuickSlotStopAttack;
             gameplaySettings.varE3N = read.varE3N;
-
-            QueryManager.SavePlayer.Settings(player);
         }
     }
 }

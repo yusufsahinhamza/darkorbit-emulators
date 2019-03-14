@@ -10,13 +10,15 @@ namespace Ow.Managers.MySQLManager
     static class SqlDatabaseManager
     {
         public static string SERVER = "127.0.0.1";
-        public static string UID = "root";
-        public static string PWD = "";
+        public static string UID = "r1s1n1g_b4ttl3";
+        public static string PWD = "xBGQ9tKbsYFZhuUS";
         public static string DB = "server";
+        public static bool Initialized = false;
 
         public static void Initialize()
         {
             GenerateConnectionString();
+            Initialized = true;
             using (var client = GetClient())
             {
                 client.ExecuteNonQuery("SELECT 1");

@@ -120,7 +120,7 @@ namespace Ow.Managers
                     var rankId = Convert.ToInt32(querySet["rankID"]);
                     var clan = GameManager.GetClan(Convert.ToInt32(querySet["clanID"]));
 
-                    player = new Player(playerId, name, clan, factionId, new Position(0, 0), GameManager.GetSpacemap(0), rankId, shipId);
+                    player = new Player(playerId, name, (clan != null ? clan : GameManager.GetClan(0)), factionId, new Position(0, 0), GameManager.GetSpacemap(0), rankId, shipId);
                     player.Pet.Name = Convert.ToString(querySet["petName"]);
                 }
 
@@ -173,6 +173,7 @@ namespace Ow.Managers
 
         public static void LoadClans()
         {
+            GameManager.Clans.TryAdd(0, new Clan(0, "", "", 0));
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
                 var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_clan");

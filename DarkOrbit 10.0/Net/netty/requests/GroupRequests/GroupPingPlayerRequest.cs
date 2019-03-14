@@ -17,7 +17,7 @@ namespace Ow.Net.netty.requests.GroupRequests
         {
             var parser = new ByteParser(bytes);
             userId = parser.readInt();
-            userId = userId << 12 | userId >> 20;
+            userId = (int)(((uint)userId) << 12 | ((uint)userId >> 20));
         }
     }
 }

@@ -18,9 +18,9 @@ namespace Ow.Net.netty.requests.GroupRequests
         {
             var parser = new ByteParser(bytes);
             x = parser.readInt();
-            x = x << 7 | x >> 25;
+            x = (int)(((uint)x) << 7 | ((uint)x >> 25));
             y = parser.readInt();
-            y = y >> 1 | y << 31;
+            y = (int)(((uint)y) >> 1 | ((uint)y << 31));
         }
     }
 }

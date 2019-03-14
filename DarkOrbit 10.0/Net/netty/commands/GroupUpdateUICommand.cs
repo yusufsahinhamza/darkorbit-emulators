@@ -19,7 +19,7 @@ namespace Ow.Net.netty.commands
             param1.writeInt(updates.Count);
             foreach(var _loc2_ in updates)
             {
-                param1.write(_loc2_.writeAsExtend());
+                param1.write(_loc2_.write());
             }
             return param1.ToByteArray();
         }

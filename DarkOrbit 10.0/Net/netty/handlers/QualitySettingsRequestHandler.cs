@@ -31,8 +31,6 @@ namespace Ow.Net.netty.handlers
             qualitySettings.qualityPoizone = read.qualityPoizone;
             qualitySettings.qualityPresetting = read.qualityPresetting;
             qualitySettings.qualityShip = read.qualityShip;
-
-            QueryManager.SavePlayer.Settings(player);
         }
     }
 }

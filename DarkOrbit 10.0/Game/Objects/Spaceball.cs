@@ -21,11 +21,11 @@ namespace Ow.Game.Objects
 
         public static Position CurrentPosition = new Position(21000, 13200);
         private int MMODamage = 0;
-        public Position MMOPosition = new Position(7000, 13500);
+        public Position MMOPosition = new Position(10000, 13500); //= new Position(7000, 13500);
         private int EICDamage = 0;
-        public Position EICPosition = new Position(28000, 1200);
+        public Position EICPosition = new Position(27000, 4000); //= new Position(28000, 1200);
         private int VRUDamage = 0;
-        public Position VRUPosition = new Position(28000, 25000);
+        public Position VRUPosition = new Position(27500, 22000); //= new Position(28000, 25000);
 
         public DateTime LastDamagedTime = new DateTime();
 
@@ -39,6 +39,7 @@ namespace Ow.Game.Objects
         {
             if (EventManager.Spaceball.Active)
             {
+                Movement.ActualPosition(this);
                 CheckDamage();
                 CheckSpeed();
                 if ((Position.DistanceTo(MMOPosition) <= 100) || (Position.DistanceTo(EICPosition) <= 100) || (Position.DistanceTo(VRUPosition) <= 100))
@@ -48,7 +49,7 @@ namespace Ow.Game.Objects
 
         public void CheckDamage()
         {
-            if (LastDamagedTime.AddSeconds(10) < DateTime.Now && Position != CurrentPosition)
+            if (LastDamagedTime.AddSeconds(10) < DateTime.Now && Position != CurrentPosition && SelectedFactionId != 0)
             {
                 GameManager.SendPacketToAll("0|n|sss|1|0");
                 GameManager.SendPacketToAll("0|n|sss|2|0");
@@ -58,58 +59,63 @@ namespace Ow.Game.Objects
             }
         }
 
+        public DateTime lastCheckSpeedTime = new DateTime();
         public void CheckSpeed()
         {
-            switch (SelectedFactionId)
+            if (lastCheckSpeedTime.AddSeconds(5) < DateTime.Now)
             {
-                case 1:
-                    if (MMODamage < 500000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|1|1");
-                    }
-                    else if (MMODamage < 1000000 && MMODamage > 500000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|1|2");
-                        Speed = 150;
-                    }
-                    else if (MMODamage < 10000000 && MMODamage > 1000000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|1|3");
-                        Speed = 200;
-                    }
-                    break;
-                case 2:
-                    if (EICDamage < 500000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|2|1");
-                    }
-                    else if (EICDamage < 1000000 && EICDamage > 500000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|2|2");
-                        Speed = 150;
-                    }
-                    else if (EICDamage < 10000000 && EICDamage > 1000000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|2|3");
-                        Speed = 200;
-                    }
-                    break;
-                case 3:
-                    if (VRUDamage < 500000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|3|1");
-                    }
-                    else if (VRUDamage < 1000000 && VRUDamage > 500000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|3|2");
-                        Speed = 150;
-                    }
-                    else if (VRUDamage < 10000000 && VRUDamage > 1000000)
-                    {
-                        GameManager.SendPacketToAll("0|n|sss|3|3");
-                        Speed = 200;
-                    }
-                    break;
+                switch (SelectedFactionId)
+                {
+                    case 1:
+                        if (MMODamage < 500000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|1|1");
+                        }
+                        else if (MMODamage < 1000000 && MMODamage > 500000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|1|2");
+                            Speed = 125;
+                        }
+                        else if (MMODamage < 10000000 && MMODamage > 1000000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|1|3");
+                            Speed = 175;
+                        }
+                        break;
+                    case 2:
+                        if (EICDamage < 500000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|2|1");
+                        }
+                        else if (EICDamage < 1000000 && EICDamage > 500000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|2|2");
+                            Speed = 125;
+                        }
+                        else if (EICDamage < 10000000 && EICDamage > 1000000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|2|3");
+                            Speed = 175;
+                        }
+                        break;
+                    case 3:
+                        if (VRUDamage < 500000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|3|1");
+                        }
+                        else if (VRUDamage < 1000000 && VRUDamage > 500000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|3|2");
+                            Speed = 125;
+                        }
+                        else if (VRUDamage < 10000000 && VRUDamage > 1000000)
+                        {
+                            GameManager.SendPacketToAll("0|n|sss|3|3");
+                            Speed = 175;
+                        }
+                        break;
+                }
+                lastCheckSpeedTime = DateTime.Now;
             }
         }
 
@@ -190,11 +196,6 @@ namespace Ow.Game.Objects
             {
                 SelectedFactionId = 3;
                 Movement.Move(this, VRUPosition);
-            }
-            else
-            {
-                SelectedFactionId = 0;
-                Movement.Move(this, CurrentPosition);
             }
         }
 

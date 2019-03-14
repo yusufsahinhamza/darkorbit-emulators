@@ -34,33 +34,34 @@ namespace Ow
             while (true)
             {
                 var l = Console.ReadLine();
-                if (l != "")
-                {
-                    if (l.StartsWith("/")) ExecuteCommand(l);
-                }
+                if (l != "" && l.StartsWith("/"))
+                    ExecuteCommand(l);
             }
         }
 
         public static bool CheckMySQLConnection()
         {
-            int tries = 0;
-            TRY:
-            try
+            if (!SqlDatabaseManager.Initialized)
             {
-                SqlDatabaseManager.Initialize();
-                Out.WriteLine("DarkOrbit is started..", "EMU");
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("MYSQL Connection failed: " + e);
-                Out.WriteLine("MYSQL Connection failed!");
-                if (tries < 6)
+                int tries = 0;
+                TRY:
+                try
                 {
-                    Out.WriteLine("Trying to reconnect in .. " + tries + " seconds.");
-                    Thread.Sleep(tries * 1000);
-                    tries++;
-                    goto TRY;
+                    SqlDatabaseManager.Initialize();
+                    Out.WriteLine("DarkOrbit is started..", "EMU");
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("MYSQL Connection failed: " + e);
+                    Out.WriteLine("MYSQL Connection failed!");
+                    if (tries < 6)
+                    {
+                        Out.WriteLine("Trying to reconnect in .. " + tries + " seconds.");
+                        Thread.Sleep(tries * 1000);
+                        tries++;
+                        goto TRY;
+                    }
                 }
             }
             return false;
@@ -77,8 +78,20 @@ namespace Ow
         {
             Handler.AddCommands();
             Room.AddRooms();
-            ServerManager.Start();
-            TickManager.Tick();
+            EventManager.InitiateEvents();
+            StartListening();
+        }
+
+        public static void StartListening()
+        {
+            Task.Factory.StartNew(GameServer.StartListening);
+            Out.WriteLine("Listening on port " + GameServer.Port + ".", "GameServer");
+            Task.Factory.StartNew(ChatServer.StartListening);
+            Out.WriteLine("Listening on port " + ChatServer.Port + ".", "ChatServer");
+            Task.Factory.StartNew(SocketServer.StartListening);
+            Out.WriteLine("Listening on port " + SocketServer.Port + ".", "SocketServer");
+
+            Task.Factory.StartNew(TickManager.Tick);
         }
 
         public static void ExecuteCommand(string txt)
@@ -86,17 +99,14 @@ namespace Ow
             var packet = txt.Replace("/", "");
             var splitted = packet.Split(' ');
 
-            /*
+            
             switch (splitted[0])
             {
-                case "destroy":
-                    var player = GameManager.GetPlayerById(Convert.ToInt32(splitted[1]));
-
-                    if (player != null)
-                        player.Destroy(player, Game.DestructionType.PLAYER);
+                case "restart":
+                    GameManager.Restart(Convert.ToInt32(splitted[1]));
                     break;
             }
-            */
+            
         }
     }
 }

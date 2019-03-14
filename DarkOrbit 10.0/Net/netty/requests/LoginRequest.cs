@@ -21,9 +21,9 @@ namespace Ow.Net.netty.requests
         {
             var parser = new ByteParser(bytes);
             instanceId = parser.readInt();
-            instanceId = instanceId << 8 | instanceId >> 24;
+            instanceId = (int)(((uint)instanceId << 8) | ((uint)instanceId >> 24));
             userID = parser.readInt();
-            userID = userID << 8 | userID >> 24;
+            userID = (int)(((uint)userID) << 8 | ((uint)userID >> 24));
             factionID = parser.readShort();
             sessionID = parser.readUTF();
             version = parser.readUTF();

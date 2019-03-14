@@ -334,12 +334,15 @@ namespace Ow.Game.Objects.Players.Managers
 
         public static string[] AbilitiesCategory =
         {
+            SkillManager.SPECTRUM, SkillManager.VENOM, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.DIMINISHER
+            /*
                 SkillManager.AEGIS_HP_REPAIR,
                 SkillManager.AEGIS_REPAIR_POD, SkillManager.AEGIS_SHIELD_REPAIR, SkillManager.CITADEL_DRAW_FIRE,
                 SkillManager.CITADEL_FORTIFY, SkillManager.CITADEL_PROTECTION, SkillManager.CITADEL_TRAVEL, SkillManager.DIMINISHER,
                 SkillManager.LIGHTNING, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.SPEARHEAD_DOUBLE_MINIMAP,
                 SkillManager.SPEARHEAD_JAM_X, SkillManager.SPEARHEAD_TARGET_MARKER, SkillManager.SPEARHEAD_ULTIMATE_CLOAK,
-                SkillManager.SPECTRUM, SkillManager.VENOM
+                SkillManager.SPECTRUM, SkillManager.VENOM*/
+
         };
 
         public static string[] FormationsCategory =
@@ -407,7 +410,7 @@ namespace Ow.Game.Objects.Players.Managers
                 leftItems.Add("spaceball", "title_spaceball");
             //leftItems.Add("contacts", "title_contactlist");
             //leftItems.Add("booster", "title_booster");
-            leftItems.Add("traininggrounds", "title_traininggrounds");
+            //leftItems.Add("traininggrounds", "title_traininggrounds");
             //leftItems.Add("jackpot_status_ui", "title_jackpot_status_ui");
 
             var topLeftMenuBarItems = new List<ClientUIMenuBarItemModule>();
@@ -470,7 +473,7 @@ namespace Ow.Game.Objects.Players.Managers
             slotBars.Add(GetStandardSlotBar());
             slotBars.Add(GetPremiumSlotBar());
 
-            if(Player.Settings.Display.proActionBarEnabled)
+            if(Player.Settings.Display.proActionBarEnabled && Player.RankId == 21)
                 slotBars.Add(GetProActionSlotBar());
 
             var categories = new List<ClientUISlotBarCategoryModule>();
@@ -773,11 +776,11 @@ namespace Ow.Game.Objects.Players.Managers
         {
             var abilityItems = new List<ClientUISlotBarCategoryItemModule>();
 
-            var skills = new List<string>();
+           // var skills = new List<string>();
 
-            AddSkills(skills);
+           // TODO: ÇÖZ AddSkills(skills);
 
-            foreach (string itemLootId in skills)
+            foreach (string itemLootId in AbilitiesCategory)
             {
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
@@ -1554,19 +1557,19 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (LaserCategory.Contains(itemId))
             {
-                Player.SendCommand(GetNewItemStatus(itemId, "ttip_laser", itemId, true, true, false));
+                Player.SendCommand(GetNewItemStatus(itemId, "ttip_laser", true, true, false));
             }
             else if (RocketsCategory.Contains(itemId))
             {
-                Player.SendCommand(GetNewItemStatus(itemId, "ttip_rocket", itemId, true, true, false));
+                Player.SendCommand(GetNewItemStatus(itemId, "ttip_rocket", true, true, false));
             }
             else if (CpusCategory.Contains(itemId))
             {
-                Player.SendCommand(GetNewItemStatus(itemId, GetCpuTtip(itemId), itemId, false, false, false));
+                Player.SendCommand(GetNewItemStatus(itemId, GetCpuTtip(itemId), false, false, false));
             }
             else if (FormationsCategory.Contains(itemId))
             {
-                Player.SendCommand(GetNewItemStatus(itemId, GetFormationTtip(itemId), itemId, false, false, false));
+                Player.SendCommand(GetNewItemStatus(itemId, GetFormationTtip(itemId), false, false, false));
             }
             else if (RocketLauncherCategory.Contains(itemId))
             {
@@ -1686,15 +1689,12 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (Player.Settings.InGameSettings.selectedLaser.Equals(pSelectedLaserItem))
             {
-                if (Player.Settings.Gameplay.quickSlotStopAttack)
+                if (Player.Settings.Gameplay.quickSlotStopAttack && Player.Selected != null)
                 {
-                    if (Player.Selected != null)
-                    {
-                        if (Player.AttackManager.Attacking)
-                            Player.DisableAttack(pSelectedLaserItem);
-                        else
-                            Player.EnableAttack(pSelectedLaserItem);
-                    }
+                    if (Player.AttackManager.Attacking)
+                        Player.DisableAttack(pSelectedLaserItem);
+                    else
+                        Player.EnableAttack(pSelectedLaserItem);
                 }
             }
             else
@@ -1704,13 +1704,14 @@ namespace Ow.Game.Objects.Players.Managers
                 SendNewItemStatus(oldSelectedItem);
                 SendNewItemStatus(pSelectedLaserItem);
 
-                if (Player.AttackManager.Attacking)
+                if (Player.Settings.Gameplay.quickSlotStopAttack && Player.Selected != null)
                 {
-                    Player.SendCommand(RemoveMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), oldSelectedItem, new class_K18(class_K18.ACTIVE)));
-                    Player.SendCommand(AddMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), pSelectedLaserItem, new class_K18(class_K18.ACTIVE), new class_I1W(true, 0)));
+                    if (Player.AttackManager.Attacking)
+                    {
+                        Player.SendCommand(RemoveMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), oldSelectedItem, new class_K18(class_K18.ACTIVE)));
+                        Player.SendCommand(AddMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), pSelectedLaserItem, new class_K18(class_K18.ACTIVE), new class_I1W(true, 0)));
+                    } else Player.EnableAttack(pSelectedLaserItem);
                 }
-
-                QueryManager.SavePlayer.Settings(Player);
             }
         }
 
@@ -1718,10 +1719,8 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (Player.Settings.InGameSettings.selectedRocket.Equals(pSelectedRocketItem))
             {
-                if (Player.Settings.Gameplay.quickSlotStopAttack)
-                {
+                if (Player.Settings.Gameplay.quickSlotStopAttack && Player.Selected != null)
                     Player.AttackManager.RocketAttack();
-                }
             }
             else
             {
@@ -1729,8 +1728,6 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.Settings.InGameSettings.selectedRocket = pSelectedRocketItem;
                 SendNewItemStatus(oldSelectedItem);
                 SendNewItemStatus(pSelectedRocketItem);
-
-                QueryManager.SavePlayer.Settings(Player);
             }
         }
 
@@ -1746,13 +1743,11 @@ namespace Ow.Game.Objects.Players.Managers
                     SendNewItemStatus(pSelectedRocketLauncherItem);
 
                     Player.AttackManager.RocketLauncher.ChangeLoad(Player.Settings.InGameSettings.selectedRocketLauncher);
-
-                    QueryManager.SavePlayer.Settings(Player);
                 }
             }
         }
 
-        public byte[] GetNewItemStatus(string pItemId, string pTooltipId, string selectedItemId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false)
+        public byte[] GetNewItemStatus(string pItemId, string pTooltipId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false)
         {
 
             ClientUITooltipsCommand itemBarStatusTootip = new ClientUITooltipsCommand(GetItemBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled, doubleClickToFire));
@@ -1761,10 +1756,10 @@ namespace Ow.Game.Objects.Players.Managers
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
                                                                ClientUISlotBarCategoryItemStatusModule.BLUE, pItemId,
                                                                0, false, true,
-                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(selectedItemId) : 
-                                                                                                               RocketsCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(selectedItemId) : 
-                                                                                                               CpusCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedCpus.Contains(selectedItemId) :
-                                                                                                               FormationsCategory.Contains(selectedItemId) ? Player.Settings.InGameSettings.selectedFormation.Equals(selectedItemId) :
+                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(pItemId) : 
+                                                                                                               RocketsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(pItemId) : 
+                                                                                                               CpusCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedCpus.Contains(pItemId) :
+                                                                                                               FormationsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedFormation.Equals(pItemId) :
                                                                                                                false,
                                                                0).writeCommand();
         }
@@ -1782,12 +1777,7 @@ namespace Ow.Game.Objects.Players.Managers
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
                                                                counterColor, pItemId,
                                                                count, false, true,
-                                                               slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(pItemId) :
-                                                                                                               RocketsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(pItemId) :
-                                                                                                               RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) :
-                                                                                                               FormationsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedFormation.Equals(pItemId) :
-                                                                                                               CpusCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedCpus.Contains(pItemId) :
-                                                                                                               false,
+                                                               slotBarStatusTooltip, buyEnable ? true : false, RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) : false,
                                                                5).writeCommand();
         }
     }

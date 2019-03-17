@@ -2,6 +2,7 @@
 using Ow.Game.Objects.Collectables;
 using Ow.Game.Objects.Mines;
 using Ow.Game.Objects.Players.Managers;
+using Ow.Game.Objects.Players.Skills;
 using Ow.Game.Objects.Stations;
 using Ow.Net.netty.commands;
 using System;
@@ -21,12 +22,13 @@ namespace Ow.Game.Objects.Players
         public ConcurrentDictionary<string, Mine> InRangeMines = new ConcurrentDictionary<string, Mine>();
         public Dictionary<int, Group> GroupInvites = new Dictionary<int, Group>();
         public ConcurrentDictionary<int, Activatable> InRangeAssets = new ConcurrentDictionary<int, Activatable>();
-        public Dictionary<int, Player> DuelInvites = new Dictionary<int, Player>();
+        public ConcurrentDictionary<int, Player> DuelInvites = new ConcurrentDictionary<int, Player>();
         public List<int> KilledPlayerIds = new List<int>();
+        public Dictionary<string, Skill> Skills = new Dictionary<string, Skill>();
 
         public bool UbaMatchmakingAccepted = false;
         public Player UbaOpponent = null;
-        public Duel Duel { get; set; }
+        public Player DuelOpponent { get; set; }
 
         public DateTime KillscreenPortalRepairTime = new DateTime();
         public DateTime KillscreenDeathLocationRepairTime = new DateTime();
@@ -123,8 +125,13 @@ namespace Ow.Game.Objects.Players
             if (underDCR_250)
             {
                 underDCR_250 = false;
-                Player.SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
-                Player.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+
+                if (underDCR_250Time < underSLM_01Time || !underSLM_01)
+                {
+                    Player.SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+                    Player.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+                }
+
                 Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
             }
         }
@@ -134,8 +141,13 @@ namespace Ow.Game.Objects.Players
             if (underSLM_01)
             {
                 underSLM_01 = false;
-                Player.SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
-                Player.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+
+                if (underSLM_01Time < underDCR_250Time || !underDCR_250)
+                {
+                    Player.SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+                    Player.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+                }
+
                 Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
             }
         }

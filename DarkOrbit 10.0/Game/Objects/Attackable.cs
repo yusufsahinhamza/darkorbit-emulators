@@ -1,4 +1,5 @@
-﻿using Ow.Game.Movements;
+﻿using Ow.Game.Events;
+using Ow.Game.Movements;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Game.Ticks;
 using System;
@@ -40,9 +41,9 @@ namespace Ow.Game.Objects
 
         public DateTime LastCombatTime { get; set; }
 
-        public int SeeRange = 2000;
-
         public virtual int AttackRange => 700;
+
+        public virtual int RenderRange => 2000;
 
         public bool Invisible { get; set; }
 
@@ -53,6 +54,25 @@ namespace Ow.Game.Objects
         }
 
         public abstract void Tick();
+
+        public bool InRange(Attackable attackable, int range = 2000)
+        {
+            if (attackable == null || attackable.Spacemap.Id != Spacemap.Id) return false;
+            if (attackable is Character character)
+            {
+                if (character == null || character.Destroyed) return false;
+
+                if (this is Player thisPlayer && character is Player otherPlayer)
+                {
+                    if (thisPlayer.Spacemap.Id == Duel.Spacemap.Id)
+                        if (thisPlayer.Storage.DuelOpponent != otherPlayer)
+                            return false;
+                }
+
+            }
+            if (range == -1 || attackable.Spacemap.Options.RangeDisabled) return true;
+            return attackable.Id != Id && Position.DistanceTo(attackable.Position) <= range;
+        }
 
         public abstract void Destroy(Character destroyer, DestructionType destructionType);
     }

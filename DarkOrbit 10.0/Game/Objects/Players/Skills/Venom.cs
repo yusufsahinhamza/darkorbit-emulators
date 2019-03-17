@@ -1,5 +1,4 @@
-﻿using Ow.Game.Objects;
-using Ow.Game.Objects.Players.Managers;
+﻿using Ow.Game.Objects.Players.Managers;
 using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
@@ -9,19 +8,19 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Skills
 {
-    class Venom
+    class Venom : Skill
     {
-        public Player Player { get; set; }
+        public override string LootId { get => SkillManager.VENOM; }
+        public override int Id { get => 5; }
 
-        public static int DAMAGE = 1500;
-        public bool Active = false;
+        public override int Duration { get => TimeManager.VENOM_DURATION; }
+        public override int Cooldown { get => TimeManager.VENOM_COOLDOWN; }
 
-        public Venom(Player player)
-        {
-            Player = player;
-        }
+        public int Damage = 1500;
 
-        public void Tick()
+        public Venom(Player player) : base(player) { }
+
+        public override void Tick()
         {
             if (Active)
             {
@@ -34,24 +33,7 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public DateTime lastDamageTime = new DateTime();
-        public void ExecuteDamage()
-        {
-            var enemy = Player.Storage.UnderVenomPlayer;
-            if (enemy == null) return;
-            if (!Player.AttackManager.TargetDefinition(enemy)) return;
-
-            if (lastDamageTime.AddSeconds(1) < DateTime.Now)
-            {
-                AttackManager.Damage(Player, enemy, DamageType.SL, DAMAGE, true, true, false, false);
-                DAMAGE += 200;
-
-                lastDamageTime = DateTime.Now;
-            }
-        }
-
-        public DateTime cooldown = new DateTime();
-        public void Send()
+        public override void Send()
         {
             if (Player.Ship.Id == 67 && cooldown.AddMilliseconds(TimeManager.VENOM_DURATION + TimeManager.VENOM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -61,7 +43,7 @@ namespace Ow.Game.Objects.Players.Skills
 
                 Player.SkillManager.DisableAllSkills();
 
-                DAMAGE = 1500;
+                Damage = 1500;
                 Player.Storage.Venom = true;
                 Player.Storage.UnderVenomPlayer = enemy as Player;
 
@@ -74,7 +56,7 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public void Disable()
+        public override void Disable()
         {
             var enemy = Player.Storage.UnderVenomPlayer;
             if (enemy == null) return;
@@ -87,6 +69,22 @@ namespace Ow.Game.Objects.Players.Skills
 
             Player.SendCooldown(SkillManager.VENOM, TimeManager.VENOM_COOLDOWN);
             Active = false;
+        }
+
+        public DateTime lastDamageTime = new DateTime();
+        public void ExecuteDamage()
+        {
+            var enemy = Player.Storage.UnderVenomPlayer;
+            if (enemy == null) return;
+            if (!Player.AttackManager.TargetDefinition(enemy)) return;
+
+            if (lastDamageTime.AddSeconds(1) < DateTime.Now)
+            {
+                AttackManager.Damage(Player, enemy, DamageType.SL, Damage, true, true, false, false);
+                Damage += 200;
+
+                lastDamageTime = DateTime.Now;
+            }
         }
     }
 }

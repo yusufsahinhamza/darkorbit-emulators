@@ -7,19 +7,14 @@ using System.Threading.Tasks;
 
 namespace Ow.Net.netty.commands
 {
-    class Ubaj3sModule
+    abstract class command_j3s
     {
-        public const short ID = 12173;
+        public abstract byte[] write();
 
-        public Ubaj3sModule()
+        protected static byte[] super(ByteArray param1)
         {
-        }
-
-        public byte[] write()
-        {
-            var param1 = new ByteArray(ID);
             param1.writeShort(18611);
-            return param1.Message.ToArray();
+            return param1.ToByteArray();
         }
     }
 }

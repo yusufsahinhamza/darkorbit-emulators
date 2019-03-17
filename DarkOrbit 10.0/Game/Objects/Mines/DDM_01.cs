@@ -17,16 +17,19 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var characters in Spacemap.Characters.Values)
+            foreach (var character in Spacemap.Characters.Values)
             {
-                if (characters is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
+                if (character is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    var damage = Maths.GetPercentage(player.MaxHitPoints, 20);
+                    if (Player == player || player.Storage.DuelOpponent == null || (player.Storage.DuelOpponent != null && Player == player.Storage.DuelOpponent))
+                    {
+                        var damage = Maths.GetPercentage(player.MaxHitPoints, 20);
 
-                    if (Lance)
-                        damage *= 2;
+                        if (Lance)
+                            damage *= 2;
 
-                    AttackManager.Damage(Player, player as Player, DamageType.MINE, damage, true, true, false, false);
+                        AttackManager.Damage(Player, player as Player, DamageType.MINE, damage, true, true, false, false);
+                    }
                 }
             }
         }

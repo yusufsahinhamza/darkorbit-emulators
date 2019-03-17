@@ -25,6 +25,8 @@ namespace Ow.Net.netty.handlers
             audioSettings.sound = read.sound;
             audioSettings.voice = read.voice;
             audioSettings.playCombatMusic = read.playCombatMusic;
+
+            QueryManager.SavePlayer.Settings(player, "audio", audioSettings);
         }
     }
 }

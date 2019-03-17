@@ -24,6 +24,7 @@ namespace Ow.Game.Events
 
         public void Tick()
         {
+            /*
             if (WaitingPlayers.Count >= 2)
             {
                 foreach (var thisPlayer in WaitingPlayers)
@@ -32,17 +33,18 @@ namespace Ow.Game.Events
                     {
                         if (!thisPlayer.Equals(otherPlayer))
                         {
-                            if (thisPlayer.UbaOpponent == null && otherPlayer.UbaOpponent == null)
+                            if (thisPlayer.Storage.UbaOpponent == null && otherPlayer.Storage.UbaOpponent == null)
                             {
-                                thisPlayer.UbaOpponent = otherPlayer;
-                                otherPlayer.UbaOpponent = thisPlayer;
-                                thisPlayer.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 3));
-                                thisPlayer.UbaOpponent.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 3));
+                                thisPlayer.Storage.UbaOpponent = otherPlayer;
+                                otherPlayer.Storage.UbaOpponent = thisPlayer;
+                                thisPlayer.SendCommand(UbaWindowInitializationCommand.write(new command_NQ(), 3));
+                                thisPlayer.Storage.UbaOpponent.SendCommand(UbaWindowInitializationCommand.write(new command_NQ(), 3));
                             }
                         }
                     }
                 }
             }
+            */
         }
 
         public void AddPlayer(Player player)
@@ -116,10 +118,10 @@ namespace Ow.Game.Events
             rewarded = true;
             Program.TickManager.RemoveTick(this);
 
-            player.UbaMatchmakingAccepted = false;
-            player.UbaOpponent = null;
-            OtherPlayer.UbaMatchmakingAccepted = false;
-            OtherPlayer.UbaOpponent = null;
+            player.Storage.UbaMatchmakingAccepted = false;
+            player.Storage.UbaOpponent = null;
+            OtherPlayer.Storage.UbaMatchmakingAccepted = false;
+            OtherPlayer.Storage.UbaOpponent = null;
 
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);

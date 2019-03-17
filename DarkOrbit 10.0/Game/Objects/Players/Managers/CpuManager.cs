@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Managers
 {
-    class CpuManager
+    class CpuManager : AbstractManager
     {
         public const String CLK_XL = "equipment_extra_cpu_cl04k-xl";
         public const String AUTO_ROCKET_CPU = "equipment_extra_cpu_arol-x";
@@ -17,26 +17,31 @@ namespace Ow.Game.Objects.Players.Managers
         public const String ROCKET_LAUNCHER = "equipment_weapon_rocketlauncher_hst-2";
         public const String GALAXY_JUMP_CPU = "equipment_extra_cpu_jp-02";
 
-        private const int PREMIUM_CLOAK_COOLDOWN = 10000;
-        private const int CLOAK_COOLDOWN = 20000;
-        private const int CLOAK_PRICE = -256;
+        public int CLOAK_COOLDOWN
+        {
+            get { return Player.Premium ? 10000 : 20000; }
+        }
 
-        public Player Player { get; set; }
+        private const int CLOAK_PRICE = 256;
 
-        public CpuManager(Player player) { Player = player; }
+        public CpuManager(Player player) : base(player) { }
 
         public DateTime cloakCooldown = new DateTime();
         public void Cloak()
         {
-            if (cloakCooldown.AddMilliseconds(Player.Premium ? PREMIUM_CLOAK_COOLDOWN : CLOAK_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Data.uridium >= CLOAK_PRICE)
             {
-                if (Player.Spacemap.Id != 42 && Player.Spacemap.Id != 121)
-                    if (!Player.Invisible)
-                        EnableCloak();
+                if (cloakCooldown.AddMilliseconds(CLOAK_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+                {
+                    if (Player.Spacemap.Options.CloakBlocked || Player.Invisible) return;
 
-                cloakCooldown = DateTime.Now;
+                    Player.ChangeData(DataType.URIDIUM, CLOAK_PRICE, ChangeType.DECREASE);
+                    EnableCloak();
+
+                    Player.SendCooldown(CLK_XL, CLOAK_COOLDOWN);
+                    cloakCooldown = DateTime.Now;
+                }
             }
-            else Player.SendPacket("0|A|STD|Cloak cooldown:" + ((Player.Premium ? PREMIUM_CLOAK_COOLDOWN : CLOAK_COOLDOWN) / 1000 - ((DateTime.Now - cloakCooldown).TotalSeconds)));
         }
 
         public void ArolX()
@@ -57,6 +62,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void EnableCloak()
         {
+            AddSelectedCpu(CLK_XL);
             Player.Invisible = true;
             string cloakPacket = "0|n|INV|" + Player.Id + "|1";
             Player.SendPacket(cloakPacket);
@@ -70,51 +76,45 @@ namespace Ow.Game.Objects.Players.Managers
                 pet.SendPacketToInRangePlayers(petCloakPacket);
             }
 
-            AddSelectedCpu(CLK_XL);
-
             Player.SettingsManager.SendNewItemStatus(CLK_XL);
         }
 
         public void DisableCloak()
         {
+            RemoveSelectedCpu(CLK_XL);
             Player.Invisible = false;
             string cloakPacket = "0|n|INV|" + Player.Id + "|0";
             Player.SendPacket("0|A|STM|msg_uncloaked");
             Player.SendPacket(cloakPacket);
             Player.SendPacketToInRangePlayers(cloakPacket);
-            RemoveSelectedCpu(CLK_XL);
             Player.SettingsManager.SendNewItemStatus(CLK_XL);
         }
 
         public void EnableArolX()
         {
-            Player.Storage.AutoRocket = true;
-
             AddSelectedCpu(AUTO_ROCKET_CPU);
-
+            Player.Storage.AutoRocket = true;
             Player.SettingsManager.SendNewItemStatus(AUTO_ROCKET_CPU);
         }
 
         public void DisableArolX()
         {
-            Player.Storage.AutoRocket = false;
             RemoveSelectedCpu(AUTO_ROCKET_CPU);
+            Player.Storage.AutoRocket = false;
             Player.SettingsManager.SendNewItemStatus(AUTO_ROCKET_CPU);
         }
 
         public void EnableRllbX()
         {
-            Player.Storage.AutoRocketLauncher = true;
-
             AddSelectedCpu(AUTO_HELLSTROM_CPU);
-
+            Player.Storage.AutoRocketLauncher = true;
             Player.SettingsManager.SendNewItemStatus(AUTO_HELLSTROM_CPU);
         }
 
         public void DisableRllbX()
         {
-            Player.Storage.AutoRocketLauncher = false;
             RemoveSelectedCpu(AUTO_HELLSTROM_CPU);
+            Player.Storage.AutoRocketLauncher = false;
             Player.SettingsManager.SendNewItemStatus(AUTO_HELLSTROM_CPU);
         }
 

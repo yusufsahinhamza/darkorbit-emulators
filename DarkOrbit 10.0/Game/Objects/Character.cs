@@ -16,7 +16,7 @@ using static Ow.Game.Spacemap;
 
 namespace Ow.Game.Objects
 {
-    class Character : Attackable
+    abstract class Character : Attackable
     {
         public ConcurrentDictionary<int, Character> InRangeCharacters = new ConcurrentDictionary<int, Character>();
         public ConcurrentDictionary<int, VisualModifierCommand> VisualModifiers = new ConcurrentDictionary<int, VisualModifierCommand>();
@@ -79,20 +79,7 @@ namespace Ow.Game.Objects
         public override void Tick()
         {
             if (!Destroyed)
-            {
-                if (this is Player)
-                {
-                    ((Player)this).Tick();
-                }
-                else if (this is Pet)
-                {
-                    ((Pet)this).Tick();
-                }
-                else if (this is Spaceball)
-                {
-                    ((Spaceball)this).Tick();
-                }
-            }
+                Tick();
         }
 
         public void SetPosition(Position targetPosition)
@@ -124,20 +111,21 @@ namespace Ow.Game.Objects
 
                 //destroyerPlayer.Storage.KilledPlayerIds ölenin id ye göre grupla count 10 15 den falan büyükse ödül verme ve bir yere kaydet sonra işlem yap bi bok yap
 
+                if (destroyerPlayer.Storage.DuelOpponent == null)
+                {
+                    int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
+                    int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost(Ship.Rewards.Honor));
+                    int uridium = Ship.Rewards.Uridium;
+                    var changeType = ChangeType.INCREASE;
 
-                //if (!(this is Pet) || (this is Pet && (this as Pet).Owner != destroyerPlayer))
-                int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
-                int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost(Ship.Rewards.Honor));
-                int uridium = Ship.Rewards.Uridium;
-                var changeType = ChangeType.INCREASE;
+                    short relationType = destroyerPlayer.Clan != null && Clan != null ? Clan.GetRelation(destroyerPlayer.Clan) : (short)0;
+                    if ((destroyerPlayer.FactionId == FactionId && relationType != ClanRelationModule.AT_WAR && (this is Player player && !(EventManager.JackpotBattle.InActiveEvent(player))) || (this is Pet thisPet && destroyerPlayer.Pet == thisPet)))
+                        changeType = ChangeType.DECREASE;
 
-                short relationType = destroyerPlayer.Clan != null && Clan != null ? Clan.GetRelation(destroyerPlayer.Clan) : (short)0;
-                if (destroyerPlayer.FactionId == FactionId && relationType != ClanRelationModule.AT_WAR && !(EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(Id)))
-                    changeType = ChangeType.DECREASE;
-
-                destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
-                destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
-                destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                    destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
+                    destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
+                    destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                }
 
                 if (!(this is Pet))
                     new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position, Spacemap, false, false, destroyerPlayer);
@@ -152,12 +140,6 @@ namespace Ow.Game.Objects
                 if (destroyer is Player destroyerPlayer)
                     destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
 
-                if (EventManager.JackpotBattle.Active && thisPlayer.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id && EventManager.JackpotBattle.Players.ContainsKey(thisPlayer.Id))
-                {
-                    EventManager.JackpotBattle.Players.TryRemove(thisPlayer.Id, out thisPlayer);
-                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Players.Count);
-                }
-
                 thisPlayer.Deselection();
                 thisPlayer.SkillManager.DisableAllSkills();
                 thisPlayer.Pet.Deactivate(true);
@@ -167,8 +149,6 @@ namespace Ow.Game.Objects
                 thisPlayer.CurrentInRangePortalId = -1;
                 thisPlayer.Storage.InRangeAssets.Clear();
                 thisPlayer.KillScreen(destroyer, destructionType);
-
-                Console.WriteLine($"{destroyer.Name} has destroyed {thisPlayer.Name}");
             }
 
             Deselection();
@@ -199,18 +179,18 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void SendPacketToInRangePlayers(string Packet)
+        public void SendPacketToInRangePlayers(string packet)
         {
-            foreach (var otherPlayers in Spacemap.Characters.Values)
-                if (otherPlayers is Player otherPlayer && (InRangeCharacters.ContainsKey(otherPlayer.Id) || otherPlayer.Selected == this))
-                    otherPlayer.SendPacket(Packet);
+            foreach (var character in InRangeCharacters.Values)
+                if (character is Player player)
+                    player.SendPacket(packet);
         }
 
-        public void SendCommandToInRangePlayers(byte[] Command)
+        public void SendCommandToInRangePlayers(byte[] command)
         {
-            foreach (var otherPlayers in Spacemap.Characters.Values)
-                if (otherPlayers is Player otherPlayer && (InRangeCharacters.ContainsKey(otherPlayer.Id) || otherPlayer.Selected == this))
-                    otherPlayer.SendCommand(Command);
+            foreach (var character in InRangeCharacters.Values)
+                if (character is Player player)
+                    player.SendCommand(command);
         }
 
         public event EventHandler<CharacterArgs> InRangeCharacterRemoved;
@@ -218,8 +198,7 @@ namespace Ow.Game.Objects
 
         public bool AddInRangeCharacter(Character character)
         {
-            if (IsInRangeCharacter(character) || character.Destroyed) return false;
-            if (character == this) return false;
+            if (character == null || InRangeCharacters.ContainsKey(character.Id) || character.Destroyed || character.Id == Id || character.Spacemap.Id != Spacemap.Id) return false;
 
             var success = InRangeCharacters.TryAdd(character.Id, character);
 
@@ -236,12 +215,11 @@ namespace Ow.Game.Objects
                     {
                         var otherPlayer = character as Player;
                         player.SendCommand(otherPlayer.GetShipCreateCommand(player.RankId == 21 ? true : false, relationType, sameClan, (EventManager.JackpotBattle.Active && player.Spacemap == EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap == EventManager.JackpotBattle.Spacemap)));
-                        player.SendPacket($"0|n|INV|{otherPlayer.Id}|{Convert.ToInt32(otherPlayer.Invisible)}");
 
                         if (otherPlayer.Title != "" && !EventManager.JackpotBattle.Active && player.Spacemap != EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap != EventManager.JackpotBattle.Spacemap)
                             player.SendPacket($"0|n|t|{otherPlayer.Id}|1|{otherPlayer.Title}");
 
-                        player.CheckAbilities(otherPlayer);
+                        player.CheckEffects(otherPlayer);
                         player.SendPacket(otherPlayer.DroneManager.GetDronesPacket());
                         player.SendCommand(DroneFormationChangeCommand.write(otherPlayer.Id, DroneManager.GetSelectedFormationId(otherPlayer.Settings.InGameSettings.selectedFormation)));
                     }
@@ -249,17 +227,13 @@ namespace Ow.Game.Objects
                     {
                         var pet = character as Pet;
                         if (pet == player.Pet) player.SendCommand(PetHeroActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.Clan.Id, 15, pet.Owner.Clan.Tag, pet.Position.X, pet.Position.Y, pet.Speed, new class_11d(class_11d.DEFAULT)));
-                        else
-                        {
-                            player.SendCommand(PetActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.Clan.Id, 15, pet.Owner.Clan.Tag, new ClanRelationModule(relationType), pet.Position.X, pet.Position.Y, pet.Speed, false, true, new class_11d(class_11d.DEFAULT)));
-                            player.SendPacket($"0|n|INV|{pet.Id}|{Convert.ToInt32(pet.Invisible)}");
-                        }
+                        else player.SendCommand(PetActivationCommand.write(pet.Owner.Id, pet.Id, 22, 3, pet.Name, (short)pet.Owner.FactionId, pet.Owner.Clan.Id, 15, pet.Owner.Clan.Tag, new ClanRelationModule(relationType), pet.Position.X, pet.Position.Y, pet.Speed, false, true, new class_11d(class_11d.DEFAULT)));
                     }
-                    else if (character is Spaceball)
-                    {
-                        var spaceball = character as Spaceball;
-                        player.SendCommand(spaceball.GetShipCreateCommand());
-                    }
+                    else player.SendCommand(character.GetShipCreateCommand());
+
+                    player.SendPacket($"0|n|INV|{character.Id}|{Convert.ToInt32(character.Invisible)}");
+                    var timeElapsed = (DateTime.Now - character.MovementStartTime).TotalMilliseconds;
+                    player.SendCommand(MoveCommand.write(character.Id, character.Destination.X, character.Destination.Y, (int)(character.MovementTime - timeElapsed)));
                 }
             }
 
@@ -268,7 +242,7 @@ namespace Ow.Game.Objects
 
         public bool RemoveInRangeCharacter(Character character)
         {
-            if (character.Spacemap != Spacemap || !IsInRangeCharacter(character)) return false;
+            if (character.Spacemap != Spacemap || !InRangeCharacters.ContainsKey(character.Id)) return false;
 
             var success = InRangeCharacters.TryRemove(character.Id, out character);
             if (success)
@@ -287,18 +261,20 @@ namespace Ow.Game.Objects
             return success;
         }
 
-        public void CheckAbilities(Player otherPlayer)
+        public void CheckEffects(Player otherPlayer)
         {
             var player = this as Player;
 
-            var sentinel = otherPlayer.SkillManager.Sentinel;
-            var diminisher = otherPlayer.SkillManager.Diminisher;
-            var spectrum = otherPlayer.SkillManager.Spectrum;
-            var venom = otherPlayer.SkillManager.Venom;
-            player.SendPacket($"0|SD|{(sentinel.Active ? "A" : "D")}|R|4|{otherPlayer.Id}");
-            player.SendPacket($"0|SD|{(diminisher.Active ? "A" : "D")}|R|2|{otherPlayer.Id}");
-            player.SendPacket($"0|SD|{(spectrum.Active ? "A" : "D")}|R|3|{otherPlayer.Id}");
-            player.SendPacket($"0|SD|{(venom.Active ? "A" : "D")}|R|5|{otherPlayer.Id}");
+            foreach (var skill in otherPlayer.Storage.Skills.Values)
+                player.SendPacket($"0|SD|{(skill.Active ? "A" : "D")}|R|{skill.Id}|{otherPlayer.Id}");
+
+            player.SendPacket($"0|n|MAL|{(otherPlayer.Storage.underPLD8 ? "SET" : "REM")}|{otherPlayer.Id}");
+            player.SendPacket($"0|n|fx|{(otherPlayer.Storage.underR_IC3 ? "start" : "end")}|ICY_CUBE|{otherPlayer.Id}");
+
+            if (otherPlayer.Storage.underDCR_250Time < otherPlayer.Storage.underSLM_01Time || !otherPlayer.Storage.underSLM_01)
+                player.SendPacket($"0|n|fx|{(otherPlayer.Storage.underDCR_250 ? "start" : "end")}|SABOTEUR_DEBUFF|{otherPlayer.Id}");
+            else if (otherPlayer.Storage.underSLM_01Time < otherPlayer.Storage.underDCR_250Time || !otherPlayer.Storage.underDCR_250)
+                player.SendPacket($"0|n|fx|{(otherPlayer.Storage.underSLM_01 ? "start" : "end")}|SABOTEUR_DEBUFF|{otherPlayer.Id}");
         }
 
         public void Heal(int amount, int healerId = 0, HealType healType = HealType.HEALTH)
@@ -336,7 +312,6 @@ namespace Ow.Game.Objects
             }
 
             UpdateStatus();
-
         }
 
         public void UpdateStatus()
@@ -414,9 +389,6 @@ namespace Ow.Game.Objects
             }
         }
 
-        public bool IsInRangeCharacter(Character character)
-        {
-            return InRangeCharacters.ContainsKey(character.Id);
-        }
+        public abstract byte[] GetShipCreateCommand();
     }
 }

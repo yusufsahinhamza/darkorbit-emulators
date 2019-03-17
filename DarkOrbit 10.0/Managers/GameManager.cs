@@ -41,6 +41,12 @@ namespace Ow.Managers
             }
         }
 
+        public static void SendChatSystemMessage(string message)
+        {
+            foreach (var chat in ChatClients.Values)
+                chat.Send($"dq%{message}#");
+        }
+
         public static void SendCommandToMap(int mapId, byte[] command)
         {
             var spacemap = GetSpacemap(mapId);

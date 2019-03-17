@@ -25,10 +25,9 @@ namespace Ow.Net
             this.Socket = Socket;
             try
             {
-                if (!Socket.IsBound && !Socket.Connected) throw new Exception("Unable to read. Socket is not bound or connected.");
+                if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to read. Socket is not bound or connected.");
 
-                this.Socket.BeginReceive(buffer, 0, buffer.Length, 0,
-                    ReadCallback, this);
+                this.Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
             }
             catch (Exception e)
             {
@@ -75,6 +74,8 @@ namespace Ow.Net
         {
             try
             {
+                if (Socket == null || !Socket.Connected || !Socket.IsBound) return;
+
                 var bytesRead = Socket.EndReceive(ar);
 
                 if (bytesRead <= 0)
@@ -102,11 +103,7 @@ namespace Ow.Net
                     Handler.Execute(bytes, this);
                 }
 
-                if (Socket != null && Socket.Connected && Socket.IsBound)
-                {
-                    Socket.BeginReceive(buffer, 0, buffer.Length, 0,
-                        ReadCallback, this);
-                }
+                Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
             }
             catch
             {
@@ -122,7 +119,7 @@ namespace Ow.Net
                 if (gameSession != null)
                 {
                     if (gameSession.InProcessOfDisconnection) return;
-                    if (!Socket.IsBound && !Socket.Connected) throw new Exception("Unable to write. Socket is not bound or connected.");
+                    if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
 
                     try
                     {
@@ -130,7 +127,7 @@ namespace Ow.Net
                     }
                     catch (Exception e)
                     {
-                        throw new Exception("Something went wrong writting on the socket.\n" + e.Message);
+                        new Exception("Something went wrong writting on the socket.\n" + e.Message);
                     }
                 }
             }
@@ -142,14 +139,14 @@ namespace Ow.Net
 
         private void Write(byte[] byteArray)
         {
-            if (!Socket.IsBound && !Socket.Connected) throw new Exception("Unable to write. Socket is not bound or connected.");
+            if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
             try
             {
                 Socket.BeginSend(byteArray, 0, byteArray.Length, SocketFlags.None, null, null);
             }
             catch (Exception e)
             {
-                throw new Exception("Something went wrong writting on the socket.\n" + e.Message);
+                new Exception("Something went wrong writting on the socket.\n" + e.Message);
             }
         }
 

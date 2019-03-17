@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Net.netty
+namespace Ow.Chat
 {
     class ChatConstants
     {

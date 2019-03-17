@@ -23,7 +23,7 @@ namespace Ow.Net
             try
             {
                 listener.Bind(localEndPoint);
-                listener.Listen(100);
+                listener.Listen(40);
 
                 while (true)
                 {

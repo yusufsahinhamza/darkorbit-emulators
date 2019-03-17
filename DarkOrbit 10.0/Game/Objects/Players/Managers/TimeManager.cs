@@ -33,7 +33,7 @@ namespace Ow.Game.Objects.Players.Managers
         public const int PLD8_COOLDOWN = 60000;
 
         public const int SLM_01_DURATION = 5000;
-        public const int MINE_COOLDOWN = 60000;
+        public const int MINE_COOLDOWN = 25000;
 
         public const int SOLACE_COOLDOWN = 900000;
 

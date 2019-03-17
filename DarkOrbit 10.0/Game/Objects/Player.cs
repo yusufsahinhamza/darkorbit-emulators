@@ -22,15 +22,12 @@ namespace Ow.Game.Objects
         public string Title { get; set; }
         public int Level { get; set; }
 
-        public bool UbaMatchmakingAccepted = false;
-        public Player UbaOpponent = null;
-
         public int CurrentInRangePortalId = -1;
         public int CurrentShieldConfig1 { get; set; }
         public int CurrentShieldConfig2 { get; set; }
         public int CurrentConfig { get; set; }
 
-        public PlayerSettings Settings { get; set; }
+        public Settings Settings = new Settings();
         public EquipmentBase Equipment { get; set; }
         public DataBase Data { get; set; }
         public Group Group { get; set; }
@@ -70,7 +67,7 @@ namespace Ow.Game.Objects
             Pet = new Pet(this);
         }
 
-        public new void Tick()
+        public override void Tick()
         {
             Movement.ActualPosition(this);
             CheckHitpointsRepair();
@@ -84,7 +81,10 @@ namespace Ow.Game.Objects
             DroneManager.Tick();
             TechManager.Tick();
             SkillManager.Tick();
-            
+
+            if (Moving || AttackManager.mineCooldown.AddSeconds(3) > DateTime.Now)
+                Spacemap.OnPlayerMovement(this);
+
             /*
             if (MoveManager.Moving && Collecting)
             {
@@ -543,6 +543,16 @@ namespace Ow.Game.Objects
             int mineCooldown = (int)(TimeManager.MINE_COOLDOWN - (DateTime.Now - AttackManager.mineCooldown).TotalMilliseconds);
             int dcrCooldown = (int)(TimeManager.DCR_250_COOLDOWN - (DateTime.Now - AttackManager.dcr_250Cooldown).TotalMilliseconds);
             int pldCooldown = (int)(TimeManager.PLD8_COOLDOWN - (DateTime.Now - AttackManager.pld8Cooldown).TotalMilliseconds);
+            int r_ic3Cooldown = (int)(TimeManager.R_IC3_COOLDOWN - (DateTime.Now - AttackManager.r_ic3Cooldown).TotalMilliseconds);
+
+            if (smbCooldown >= 0) Settings.Cooldowns[AmmunitionManager.SMB_01] = smbCooldown;
+            if (ishCooldown >= 0) Settings.Cooldowns[AmmunitionManager.ISH_01] = ishCooldown;
+            if (empCooldown >= 0) Settings.Cooldowns[AmmunitionManager.EMP_01] = empCooldown;
+            if (mineCooldown >= 0) Settings.Cooldowns[AmmunitionManager.ACM_01] = mineCooldown;
+            if (dcrCooldown >= 0) Settings.Cooldowns[AmmunitionManager.DCR_250] = dcrCooldown;
+            if (pldCooldown >= 0) Settings.Cooldowns[AmmunitionManager.PLD_8] = pldCooldown;
+            if (r_ic3Cooldown >= 0) Settings.Cooldowns[AmmunitionManager.R_IC3] = r_ic3Cooldown;
+
             /*
             int energyLeechCooldown = (int)(TimeManager.ENERGY_LEECH_COOLDOWN - (DateTime.Now - TechManager.EnergyLeech.cooldown).TotalMilliseconds);
             int chainImpulseCooldown = (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - (DateTime.Now - TechManager.ChainImpulse.cooldown).TotalMilliseconds);
@@ -550,18 +560,7 @@ namespace Ow.Game.Objects
             int backupShieldsCooldown = (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - (DateTime.Now - TechManager.BackupShields.cooldown).TotalMilliseconds);
             int battleRepairBotCooldown = (int)(TimeManager.BATTLE_REPAIR_BOT_COOLDOWN - (DateTime.Now - TechManager.BattleRepairBot.cooldown).TotalMilliseconds);
             */
-            int sentinelCooldown = (int)(TimeManager.SENTINEL_COOLDOWN - (DateTime.Now - SkillManager.Sentinel.cooldown).TotalMilliseconds);
-            int diminisherCooldown = (int)(TimeManager.DIMINISHER_COOLDOWN - (DateTime.Now - SkillManager.Diminisher.cooldown).TotalMilliseconds);
-            int venomCooldown = (int)(TimeManager.VENOM_COOLDOWN - (DateTime.Now - SkillManager.Venom.cooldown).TotalMilliseconds);
-            int spectrumCooldown = (int)(TimeManager.SPECTRUM_COOLDOWN - (DateTime.Now - SkillManager.Spectrum.cooldown).TotalMilliseconds);
-            int solaceCooldown = (int)(TimeManager.SOLACE_COOLDOWN - (DateTime.Now - SkillManager.Solace.cooldown).TotalMilliseconds);
 
-            if (empCooldown >= 0) Settings.CurrentCooldowns.smbCooldown = smbCooldown;
-            if (ishCooldown >= 0) Settings.CurrentCooldowns.ishCooldown = ishCooldown;
-            if (empCooldown >= 0) Settings.CurrentCooldowns.empCooldown = empCooldown;
-            if (mineCooldown >= 0) Settings.CurrentCooldowns.mineCooldown = mineCooldown;
-            if (dcrCooldown >= 0) Settings.CurrentCooldowns.dcrCooldown = dcrCooldown;
-            if (pldCooldown >= 0) Settings.CurrentCooldowns.pldCooldown = pldCooldown;
             /*
             if (energyLeechCooldown >= 0)  Settings.CurrentCooldowns.energyLeechCooldown = energyLeechCooldown;
             if (chainImpulseCooldown >= 0)  Settings.CurrentCooldowns.chainImpulseCooldown = chainImpulseCooldown;
@@ -569,22 +568,25 @@ namespace Ow.Game.Objects
             if (backupShieldsCooldown >= 0)  Settings.CurrentCooldowns.backupShieldsCooldown = backupShieldsCooldown;
             if (battleRepairBotCooldown >= 0)  Settings.CurrentCooldowns.battleRepairBotCooldown = battleRepairBotCooldown;
             */
-            if (sentinelCooldown >= 0) Settings.CurrentCooldowns.sentinelCooldown = sentinelCooldown;
-            if (diminisherCooldown >= 0) Settings.CurrentCooldowns.diminisherCooldown = diminisherCooldown;
-            if (venomCooldown >= 0) Settings.CurrentCooldowns.venomCooldown = venomCooldown;
-            if (spectrumCooldown >= 0) Settings.CurrentCooldowns.spectrumCooldown = spectrumCooldown;
-            if (solaceCooldown >= 0) Settings.CurrentCooldowns.solaceCooldown = solaceCooldown;
-            QueryManager.SavePlayer.Settings(this);
+
+            foreach (var skill in Storage.Skills.Values)
+            {
+                int cooldown = (int)(skill.Cooldown - (DateTime.Now - skill.cooldown).TotalMilliseconds);
+                if (cooldown >= 0) Settings.Cooldowns[skill.LootId] = cooldown;
+            }
+
+            QueryManager.SavePlayer.Settings(this, "cooldowns", Settings.Cooldowns);
         }
 
         public void SetCurrentCooldowns()
         {
-            if (Settings.CurrentCooldowns.smbCooldown > 0) AttackManager.SmbCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SMB_COOLDOWN - Settings.CurrentCooldowns.smbCooldown));
-            if (Settings.CurrentCooldowns.ishCooldown > 0) AttackManager.IshCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.ISH_COOLDOWN - Settings.CurrentCooldowns.ishCooldown));
-            if (Settings.CurrentCooldowns.empCooldown > 0) AttackManager.EmpCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.EMP_COOLDOWN - Settings.CurrentCooldowns.empCooldown));
-            if (Settings.CurrentCooldowns.mineCooldown > 0) AttackManager.mineCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.MINE_COOLDOWN - Settings.CurrentCooldowns.mineCooldown));
-            if (Settings.CurrentCooldowns.dcrCooldown > 0) AttackManager.dcr_250Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.DCR_250_COOLDOWN - Settings.CurrentCooldowns.dcrCooldown));
-            if (Settings.CurrentCooldowns.pldCooldown > 0) AttackManager.pld8Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.PLD8_COOLDOWN - Settings.CurrentCooldowns.pldCooldown));
+            if (Settings.Cooldowns[AmmunitionManager.SMB_01] > 0) AttackManager.SmbCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SMB_COOLDOWN - Settings.Cooldowns[AmmunitionManager.SMB_01]));
+            if (Settings.Cooldowns[AmmunitionManager.ISH_01] > 0) AttackManager.IshCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.ISH_COOLDOWN - Settings.Cooldowns[AmmunitionManager.ISH_01]));
+            if (Settings.Cooldowns[AmmunitionManager.EMP_01] > 0) AttackManager.EmpCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.EMP_COOLDOWN - Settings.Cooldowns[AmmunitionManager.EMP_01]));
+            if (Settings.Cooldowns[AmmunitionManager.ACM_01] > 0) AttackManager.mineCooldown = DateTime.Now.AddMilliseconds(-(TimeManager.MINE_COOLDOWN - Settings.Cooldowns[AmmunitionManager.ACM_01]));
+            if (Settings.Cooldowns[AmmunitionManager.DCR_250] > 0) AttackManager.dcr_250Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.DCR_250_COOLDOWN - Settings.Cooldowns[AmmunitionManager.DCR_250]));
+            if (Settings.Cooldowns[AmmunitionManager.PLD_8] > 0) AttackManager.pld8Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.PLD8_COOLDOWN - Settings.Cooldowns[AmmunitionManager.PLD_8]));
+            if (Settings.Cooldowns[AmmunitionManager.R_IC3] > 0) AttackManager.r_ic3Cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.R_IC3_COOLDOWN - Settings.Cooldowns[AmmunitionManager.R_IC3]));
             /*
             TechManager.EnergyLeech.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.ENERGY_LEECH_COOLDOWN - Settings.CurrentCooldowns.energyLeechCooldown));
             TechManager.ChainImpulse.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.CHAIN_IMPULSE_COOLDOWN - Settings.CurrentCooldowns.chainImpulseCooldown));
@@ -592,62 +594,12 @@ namespace Ow.Game.Objects
             TechManager.BackupShields.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.BACKUP_SHIELD_COOLDOWN - Settings.CurrentCooldowns.backupShieldsCooldown));
             TechManager.BattleRepairBot.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.BATTLE_REPAIR_BOT_COOLDOWN - Settings.CurrentCooldowns.battleRepairBotCooldown));
             */
-            if (Settings.CurrentCooldowns.sentinelCooldown > 0) SkillManager.Sentinel.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SENTINEL_COOLDOWN - Settings.CurrentCooldowns.sentinelCooldown));
-            if (Settings.CurrentCooldowns.diminisherCooldown > 0) SkillManager.Diminisher.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.DIMINISHER_COOLDOWN - Settings.CurrentCooldowns.diminisherCooldown));
-            if (Settings.CurrentCooldowns.venomCooldown > 0) SkillManager.Venom.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.VENOM_COOLDOWN - Settings.CurrentCooldowns.venomCooldown));
-            if (Settings.CurrentCooldowns.spectrumCooldown > 0) SkillManager.Spectrum.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SPECTRUM_COOLDOWN - Settings.CurrentCooldowns.spectrumCooldown));
-            if (Settings.CurrentCooldowns.solaceCooldown > 0) SkillManager.Solace.cooldown = DateTime.Now.AddMilliseconds(-(TimeManager.SOLACE_COOLDOWN - Settings.CurrentCooldowns.solaceCooldown));
-        }
 
-        public void SendCurrentCooldowns()
-        {
-            var smbCooldown = (DateTime.Now - AttackManager.SmbCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.SMB_01, (int)(TimeManager.SMB_COOLDOWN - smbCooldown));
+            foreach (var skill in Storage.Skills.Values)
+            {
+                if (Settings.Cooldowns[skill.LootId] > 0) skill.cooldown = DateTime.Now.AddMilliseconds(-(skill.Cooldown - Settings.Cooldowns[skill.LootId]));
+            }
 
-            var ishCooldown = (DateTime.Now - AttackManager.IshCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.ISH_01, (int)(TimeManager.ISH_COOLDOWN - ishCooldown));
-
-            var empCooldown = (DateTime.Now - AttackManager.EmpCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.EMP_01, (int)(TimeManager.EMP_COOLDOWN - empCooldown));
-
-            var mineCooldown = (DateTime.Now - AttackManager.mineCooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.DCR_250, (int)(TimeManager.MINE_COOLDOWN - mineCooldown));
-
-            var dcrCooldown = (DateTime.Now - AttackManager.dcr_250Cooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.DCR_250, (int)(TimeManager.DCR_250_COOLDOWN - dcrCooldown));
-
-            var pldCooldown = (DateTime.Now - AttackManager.pld8Cooldown).TotalMilliseconds;
-            SendCooldown(AmmunitionManager.PLD_8, (int)(TimeManager.PLD8_COOLDOWN - pldCooldown));
-         
-            var energyLeechCooldown = (DateTime.Now - TechManager.EnergyLeech.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_ENERGY_LEECH, (int)((TechManager.EnergyLeech.Active ? TimeManager.ENERGY_LEECH_DURATION : TimeManager.ENERGY_LEECH_COOLDOWN) - energyLeechCooldown), TechManager.EnergyLeech.Active);
-
-            var chainImpulseCooldown = (DateTime.Now - TechManager.ChainImpulse.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_CHAIN_IMPULSE, (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - chainImpulseCooldown));
-
-            var precisionTargeterCooldown = (DateTime.Now - TechManager.PrecisionTargeter.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_PRECISION_TARGETER, (int)((TechManager.PrecisionTargeter.Active ? TimeManager.PRECISION_TARGETER_DURATION : TimeManager.PRECISION_TARGETER_COOLDOWN) - precisionTargeterCooldown), TechManager.PrecisionTargeter.Active);
-
-            var backupShieldsCooldown = (DateTime.Now - TechManager.BackupShields.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_BACKUP_SHIELDS, (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - backupShieldsCooldown));
-
-            var battleRepairBotCooldown = (DateTime.Now - TechManager.BattleRepairBot.cooldown).TotalMilliseconds;
-            SendCooldown(TechManager.TECH_BATTLE_REPAIR_BOT, (int)((TechManager.BattleRepairBot.Active ? TimeManager.BATTLE_REPAIR_BOT_DURATION : TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) - battleRepairBotCooldown), TechManager.BattleRepairBot.Active);       
-
-            var sentinelCooldown = (DateTime.Now - SkillManager.Sentinel.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.SENTINEL, (int)((SkillManager.Sentinel.Active ? TimeManager.SENTINEL_DURATION : TimeManager.SENTINEL_COOLDOWN) - sentinelCooldown), SkillManager.Sentinel.Active);
-
-            var diminisherCooldown = (DateTime.Now - SkillManager.Diminisher.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.DIMINISHER, (int)((SkillManager.Diminisher.Active ? TimeManager.DIMINISHER_DURATION : TimeManager.DIMINISHER_COOLDOWN) - diminisherCooldown), SkillManager.Diminisher.Active);
-
-            var venomCooldown = (DateTime.Now - SkillManager.Venom.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.VENOM, (int)((SkillManager.Venom.Active ? TimeManager.VENOM_DURATION : TimeManager.VENOM_COOLDOWN) - venomCooldown), SkillManager.Venom.Active);
-
-            var spectrumCooldown = (DateTime.Now - SkillManager.Spectrum.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.SPECTRUM, (int)((SkillManager.Spectrum.Active ? TimeManager.SPECTRUM_DURATION : TimeManager.SPECTRUM_COOLDOWN) - spectrumCooldown), SkillManager.Spectrum.Active);
-
-            var solaceCooldown = (DateTime.Now - SkillManager.Solace.cooldown).TotalMilliseconds;
-            SendCooldown(SkillManager.SOLACE, (int)(TimeManager.SOLACE_COOLDOWN - solaceCooldown));
         }
 
         public void SelectShip(int targetId)
@@ -695,6 +647,7 @@ namespace Ow.Game.Objects
 
             player.SkillManager.DisableAllSkills();
             player.Ship = GameManager.GetShip(shipId);
+            player.SkillManager.InitiateSkills();
             player.CurrentInRangePortalId = -1;
             player.Deselection();
             player.Spacemap.RemoveCharacter(player);
@@ -783,7 +736,7 @@ namespace Ow.Game.Objects
                 if (Spacemap.Activatables.FirstOrDefault(x => x.Value is Portal).Value is Portal portal && portal.Working && Data.uridium >= portalRepairPrice)
                     killScreenOptionModules.Add(portalRepair);
 
-                if (Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id && Spacemap.Id != 121 && Data.uridium >= deathLocationRepairPrice)
+                if (Spacemap.Options.DeathLocationRepair && Data.uridium >= deathLocationRepairPrice)
                     killScreenOptionModules.Add(deathLocationRepair);
 
                 //killScreenOptionModules.Add(fullRepair);
@@ -926,6 +879,22 @@ namespace Ow.Game.Objects
             return nearestPortal.Position;
         }
 
+        public void SaveSettings()
+        {
+            QueryManager.SavePlayer.Settings(this, "audio", Settings.Audio);
+            QueryManager.SavePlayer.Settings(this, "quality", Settings.Quality);
+            QueryManager.SavePlayer.Settings(this, "classY2T", Settings.ClassY2T);
+            QueryManager.SavePlayer.Settings(this, "display", Settings.Display);
+            QueryManager.SavePlayer.Settings(this, "gameplay", Settings.Gameplay);
+            QueryManager.SavePlayer.Settings(this, "window", Settings.Window);
+            QueryManager.SavePlayer.Settings(this, "boundKeys", Settings.BoundKeys);
+            QueryManager.SavePlayer.Settings(this, "inGameSettings", Settings.InGameSettings);
+            QueryManager.SavePlayer.Settings(this, "cooldowns", Settings.Cooldowns);
+            QueryManager.SavePlayer.Settings(this, "slotbarItems", Settings.SlotBarItems);
+            QueryManager.SavePlayer.Settings(this, "premiumSlotbarItems", Settings.PremiumSlotBarItems);
+            QueryManager.SavePlayer.Settings(this, "proActionBarItems", Settings.ProActionBarItems);
+        }
+
         public void SendPacket(string packet)
         {
             try
@@ -980,7 +949,7 @@ namespace Ow.Game.Objects
 
             if (!LoggingOut) return;
 
-            if (AttackingOrUnderAttack() || Moving || Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id)
+            if (AttackingOrUnderAttack() || Moving || Spacemap.Options.LogoutBlocked)
             {
                 AbortLogout();
                 return;
@@ -1008,5 +977,7 @@ namespace Ow.Game.Objects
                 return GameManager.GetGameSession(Id);
             }
         }
+
+        public override byte[] GetShipCreateCommand() { return null; }
     }
 }

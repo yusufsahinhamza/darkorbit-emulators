@@ -22,30 +22,39 @@ namespace Ow.Net.netty.handlers
 
         public LoginRequestHandler(GameClient client, int userId)
         {
-            client.UserId = userId;
-
-            var gameSession = GameManager.GetGameSession(userId);
-            if (gameSession != null)
+            try
             {
-                Player = gameSession.Player;
-                gameSession.Disconnect();
+                client.UserId = userId;
+                var firstLogin = true;
+
+                var gameSession = GameManager.GetGameSession(userId);
+                if (gameSession != null)
+                {
+                    firstLogin = false;
+                    Player = gameSession.Player;
+                    gameSession.Disconnect(GameSession.DisconnectionType.NORMAL);
+                }
+                else Player = QueryManager.GetPlayer(userId);
+
+                if (Player != null) GameSession = CreateSession(client, Player);
+                else
+                {
+                    Out.WriteLine("Failed loading user ship / ShipInitializationHandler ERROR");
+                    return;
+                }
+
+                Execute(firstLogin);
+
+                if (Player.Destroyed) Player.KillScreen(null, DestructionType.MISC, true);
+                else
+                {
+                    SendSettings(Player);
+                    SendPlayerItems(Player);
+                }
             }
-            else Player = QueryManager.GetPlayer(userId);
-
-            if (Player != null) GameSession = CreateSession(client, Player);
-            else
+            catch (Exception e)
             {
-                Out.WriteLine("Failed loading user ship / ShipInitializationHandler ERROR");
-                return;
-            }
-
-            Execute();
-
-            if (Player.Destroyed) Player.KillScreen(null, DestructionType.MISC, true);
-            else
-            {
-                SendSettings(Player);
-                SendPlayerItems(Player);
+                Out.WriteLine("Exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
@@ -58,7 +67,7 @@ namespace Ow.Net.netty.handlers
             };
         }
 
-        public void Execute()
+        public void Execute(bool firstLogin)
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
@@ -68,48 +77,36 @@ namespace Ow.Net.netty.handlers
             if (GameSession == null) return;
 
             if (!GameManager.GameSessions.ContainsKey(Player.Id))
-            {
-                SetShip();
-                SetSpacemap();
                 GameManager.GameSessions.TryAdd(Player.Id, GameSession);
-            }
             else
             {
                 GameManager.GameSessions[Player.Id].Disconnect(GameSession.DisconnectionType.NORMAL);
                 GameManager.GameSessions[Player.Id] = GameSession;
             }
 
-            GameSession.InProcessOfDisconnection = false;
-            LoadPlayer();
+            LoadPlayer(firstLogin);
+        }
 
+        private void LoadPlayer(bool firstLogin = true)
+        {
             Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
-        }
+            GameSession.InProcessOfDisconnection = false;
 
-        private void SetShip()
-        {
-            var player = GameSession.Player;
-            player.CurrentHitPoints = player.MaxHitPoints;
-            player.CurrentShieldConfig1 = player.Equipment.Config1Shield;
-            player.CurrentShieldConfig2 = player.Equipment.Config2Shield;
-
-            if (player.RankId == 21)
+            if (firstLogin || EventManager.JackpotBattle.InActiveEvent(Player) || Player.Storage.DuelOpponent != null)
             {
-                player.Premium = true;
-                //player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.GREEN_GLOW, 0, true));
+                Player.CurrentHitPoints = Player.MaxHitPoints;
+                Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;
+                Player.CurrentShieldConfig2 = Player.Equipment.Config2Shield;
+
+                if (Player.RankId == 21)
+                    Player.Premium = true;
+
+                var mapId = 16;//player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15;
+                Player.Spacemap = GameManager.GetSpacemap(mapId);
+                Player.SetPosition(Player.FactionId == 1 ? Position.MMOPosition : Player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
             }
-        }
 
-        private void SetSpacemap()
-        {
-            var player = GameSession.Player;
-            var mapId = 16;//player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15;
-            player.Spacemap = GameManager.GetSpacemap(mapId);
-        }
-
-        private void LoadPlayer()
-        {
             Player.Spacemap.AddCharacter(Player);
-            Player.SetPosition(Player.FactionId == 1 ? Position.MMOPosition : Player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
 
             var tickId = -1;
             Program.TickManager.AddTick(GameSession.Player, out tickId);
@@ -118,7 +115,6 @@ namespace Ow.Net.netty.handlers
 
         public static void SendPlayerItems(Player player, bool isLogin = true)
         {
-            //player.SendPacket("0|t"); //TODO:: LAZIMSA GÖNDER
             player.SendCommand(player.GetShipInitializationCommand());
 
             if (player.Title != "")
@@ -134,13 +130,13 @@ namespace Ow.Net.netty.handlers
                 player.SendPacket("0|A|JV|100"); //atlama kuponu miktarı
 
                 player.Group?.InitializeGroup(player);
-
-                var spaceball = EventManager.Spaceball.Character;
-                if (EventManager.Spaceball.Active && spaceball != null)
-                    player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
-                else
-                    player.SendPacket($"0|n|ssi|0|0|0");
             }
+
+            var spaceball = EventManager.Spaceball.Character;
+            if (EventManager.Spaceball.Active && spaceball != null)
+                player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
+            else
+                player.SendPacket($"0|n|ssi|0|0|0");
             /*
             var priceList = new List<JumpCPUPriceMappingModule>();
             var price = new List<int>();
@@ -156,19 +152,10 @@ namespace Ow.Net.netty.handlers
             //player.BoosterManager.Initiate();
             //player.SendPacket("0|A|JCPU|S|20|1"); //ATLAMA GERİ SAYIM
 
-            /* TODO:: GEREK VARSA YAP
-            if (!player.Premium)
-                player.SendCommand(PetBlockUICommand.write(true));
-                */
-
             player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));
-
             player.Spacemap.SendObjects(player);
-
-            if (isLogin)
-                player.Spacemap.SendPlayers(player);
-
-            player.CheckAbilities(player);
+            player.Spacemap.SendPlayers(player);
+            player.CheckEffects(player);
 
             //player.SendCommand(VideoWindowCreateCommand.write(1, "l", true, new List<string> { "start_head", "tutorial_video_msg_reward_premium_intro" }, 1, 1));    
 
@@ -176,19 +163,7 @@ namespace Ow.Net.netty.handlers
 
 
             //player.SendCommand(command_e4W.write(1, "", new class_oS(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), "", new class_s16(1, class_s16.varC3p), 1));
-            /*
-            player.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 0));
 
-            var ht = new List<UbaHtModule>();
-            var j3s = new List<Ubaj3sModule>();
-            j3s.Add(new Ubaj3sModule());
-            ht.Add(new UbaHtModule("currency_uridium", j3s));
-
-            var l4b = new List<Ubal4bModule>();
-            l4b.Add(new Ubal4bModule("sezon", 1));
-
-            player.SendCommand(UbaCommand.write(new UbaG3FModule(1, 1, 1, 1552), new Uba64iModule("label_traininggrounds_season", 120000, ht), new UbahsModule(l4b)));
-            */
             //player.SendCommand(command_z3Q.write(command_z3Q.varC2f));
             /*
             var contacts = new List<class_i1d>();
@@ -211,33 +186,42 @@ namespace Ow.Net.netty.handlers
             {
                 player.SendCommand(PetInitializationCommand.write(true, true, true));
                 player.UpdateStatus();
+
+
+
+                var ht = new List<UbaHtModule>();
+                var j3s = new List<command_j3s>();
+                j3s.Add(new Ubaf3kModule("currency_uridium", 250000));
+                ht.Add(new UbaHtModule("asddas", j3s));
+
+
+
+                var l4b = new List<Ubal4bModule>();
+                l4b.Add(new Ubal4bModule("Bilmemne Sezonu", 2));
+
+                player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(55, 60, 5, 333443), new Uba64iModule("Yaz Sezonu", 1, ht), new UbahsModule(l4b)), 0));
+
+
+
             }
 
+
+
+
+            player.Spacemap.OnPlayerMovement(player);
+            player.SendCommand(player.GetBeaconCommand());
             QueryManager.SavePlayer.Information(player);
-            /*
-            var ht = new List<UbaHtModule>();
-            var j3s = new List<Ubaj3sModule>();
-            j3s.Add(new Ubaj3sModule());
-            ht.Add(new UbaHtModule("test", j3s));
-
-            var l4b = new List<Ubal4bModule>();
-            l4b.Add(new Ubal4bModule("test", 1));
-
-            player.SendCommand(UbaCommand.write(new UbaRankModule(1,1,1,1), new Uba64iModule("test",1, ht), new UbahsModule(l4b)));
-            */
-
-
         }
 
-        public static void SendSettings(Player player, bool isLogin = true)
+        public static void SendSettings(Player player)
         {
+            player.UpdateCurrentCooldowns();
+            player.SetCurrentCooldowns();
             player.SettingsManager.SendUserKeyBindingsUpdateCommand();
             player.SettingsManager.SendUserSettingsCommand();
             player.SettingsManager.SendMenuBarsCommand();
             player.SettingsManager.SendSlotBarCommand();
             player.SettingsManager.SendHelpWindows();
-            player.SetCurrentCooldowns();
-            player.SendCurrentCooldowns();
         }
     }
 }

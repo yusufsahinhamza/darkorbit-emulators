@@ -5,6 +5,7 @@ using Ow.Managers;
 using Ow.Managers.MySQLManager;
 using Ow.Net;
 using Ow.Net.netty.commands;
+using Ow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace Ow.Game
 
         public void Tick()
         {
-            if (LastActiveTime.AddMinutes(3) < DateTime.Now && Player.AttackingOrUnderAttack(10))
+            if (LastActiveTime.AddMinutes(5) < DateTime.Now && Player.AttackingOrUnderAttack(10))
                 Disconnect(DisconnectionType.INACTIVITY);
             if (EstDisconnectionTime < DateTime.Now && InProcessOfDisconnection)
                 Disconnect(DisconnectionType.NORMAL);
@@ -56,59 +57,58 @@ namespace Ow.Game
             Player.Pet.Deactivate();
             Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
             QueryManager.SavePlayer.Information(Player);
-            QueryManager.SavePlayer.Settings(Player);
+            Player.SaveSettings();
             Player.Spacemap.RemoveCharacter(Player);
             Program.TickManager.RemoveTick(Player);       
         }
 
-        public void Disconnect()
-        {
-            Client.Disconnect();
-        }
-
         public void Disconnect(DisconnectionType dcType)
         {
-            if (EventManager.JackpotBattle.Active && Player.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id && EventManager.JackpotBattle.Players.ContainsKey(Player.Id))
+            try
             {
-                var thisPlayer = Player;
-                EventManager.JackpotBattle.Players.TryRemove(Player.Id, out thisPlayer);
-                GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Players.Count);
-            }
+                if (GameManager.ChatClients.ContainsKey(Player.Id))
+                    GameManager.ChatClients[Player.Id]?.ShutdownConnection();
 
-            InProcessOfDisconnection = true;
-            Player.UpdateCurrentCooldowns();
-            if (dcType == DisconnectionType.SOCKET_CLOSED)
-            {
-                EstDisconnectionTime = DateTime.Now.AddSeconds(60);
-                return;
-            }
+                InProcessOfDisconnection = true;
+                Player.UpdateCurrentCooldowns();
 
-            using (var mySqlClient = SqlDatabaseManager.GetClient())
-            {
-                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 0 WHERE userID = {Player.Id}");
-            }
-
-            foreach (var gameSessions in GameManager.GameSessions.Values)
-            {           
-                if (gameSessions != null)
+                if (dcType == DisconnectionType.SOCKET_CLOSED)
                 {
-                    var player = gameSessions.Player;
-                    if (player.Storage.GroupInvites.ContainsKey(Player.Id))
+                    EstDisconnectionTime = DateTime.Now.AddMinutes(2);
+                    return;
+                }
+
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 0 WHERE userID = {Player.Id}");
+                }
+
+                foreach (var session in GameManager.GameSessions.Values)
+                {
+                    if (session != null)
                     {
-                        player.Storage.GroupInvites.Remove(Player.Id);
-                        player.SendCommand(GroupRemoveInvitationCommand.write(Player.Id, player.Id, GroupRemoveInvitationCommand.REVOKE));
+                        var player = session.Player;
+                        if (player.Storage.GroupInvites.ContainsKey(Player.Id))
+                        {
+                            player.Storage.GroupInvites.Remove(Player.Id);
+                            player.SendCommand(GroupRemoveInvitationCommand.write(Player.Id, player.Id, GroupRemoveInvitationCommand.REVOKE));
+                        }
                     }
-                }               
+                }
+
+                PrepareForDisconnect();
+                Client.Disconnect();
+                InProcessOfDisconnection = false;
+                var gameSession = this;
+                Program.TickManager.RemoveTick(this);
+                GameManager.GameSessions.TryRemove(Player.Id, out gameSession);
+
+                Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
             }
-
-            PrepareForDisconnect();
-            Client.Disconnect();
-            InProcessOfDisconnection = false;
-            var gameSession = this;
-            GameManager.GameSessions.TryRemove(Player.Id, out gameSession);
-            Program.TickManager.RemoveTick(this);
-
-            Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
+            catch (Exception e)
+            {
+                Out.WriteLine("Exception: " + e, "GameSession.cs");
+            }
         }
     }
 }

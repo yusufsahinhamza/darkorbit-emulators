@@ -7,7 +7,7 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class command_z3Q : class_NQ
+    class Ubaz3QModule : command_NQ
     {
         public const short ID = 27641;
 
@@ -15,12 +15,19 @@ namespace Ow.Net.netty.commands
         public const short varC2f = 2;
         public const short varE1L = 1;
 
-        public static byte[] write(short type)
+        public short type { get; set; }
+
+        public Ubaz3QModule(short type)
+        {
+            this.type = type;
+        }
+
+        public override byte[] write()
         {
             var param1 = new ByteArray(ID);
-            writeExtend(param1);
+            super(param1);
             param1.writeShort(type);
-            return param1.ToByteArray();
+            return param1.Message.ToArray();
         }
     }
 }

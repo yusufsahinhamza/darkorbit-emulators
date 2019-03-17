@@ -19,7 +19,7 @@ namespace Ow.Net.netty.commands
         public const short var6J = 5;      
         public const short var61X = 0;
 
-        public static byte[] write(class_NQ varxV, short varx6)
+        public static byte[] write(command_NQ varxV, short varx6)
         {
             var param1 = new ByteArray(ID);
             param1.writeShort(-11683);

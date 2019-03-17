@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Managers
 {
-    class TechManager
+    class TechManager : AbstractManager
     {
-        public Player Player { get; set; }
-
         public const String TECH_ENERGY_LEECH = "tech_energy-leech";
         public const String TECH_CHAIN_IMPULSE = "tech_chain-impulse";
         public const String TECH_PRECISION_TARGETER = "tech_precision-targeter";
@@ -23,7 +21,7 @@ namespace Ow.Game.Objects.Players.Managers
         public EnergyLeech EnergyLeech { get; set; }
         public ChainImpulse ChainImpulse { get; set; }
 
-        public TechManager(Player player) { Player = player; InitiateTechs(); }
+        public TechManager(Player player) : base(player) { InitiateTechs(); }
 
         public void InitiateTechs()
         {

@@ -22,11 +22,11 @@ namespace Ow.Net.netty.requests
             playCombatMusic = parser.readBoolean();
             parser.readShort();
             voice = parser.readInt();
-            voice = voice << 2 | voice >> 30;
+            voice = (int)(((uint)voice << 2) | ((uint)voice >> 30));
             music = parser.readInt();
-            music = music << 1 | music >> 31;
+            music = (int)(((uint)music << 1) | ((uint)music >> 31));
             sound = parser.readInt();
-            sound = sound << 10 | sound >> 22;
+            sound = (int)(((uint)sound << 10) | ((uint)sound >> 22));
         }
     }
 }

@@ -12,9 +12,9 @@ namespace Ow.Net.netty.commands
         public const short ID = 28373;
 
         public string range = "";
-        public List<Ubaj3sModule> items;
+        public List<command_j3s> items;
 
-        public UbaHtModule(string param1, List<Ubaj3sModule> param2)
+        public UbaHtModule(string param1, List<command_j3s> param2)
         {
             this.range = param1;
             this.items = param2;

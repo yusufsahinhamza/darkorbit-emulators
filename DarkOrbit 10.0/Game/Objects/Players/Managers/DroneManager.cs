@@ -12,15 +12,14 @@ using Ow.Utils;
 
 namespace Ow.Game.Objects.Players.Managers
 {
-    class DroneManager
+    class DroneManager : AbstractManager
     {
-        public Player Player { get; set; }
         public List<int> Config1Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         public List<int> Config2Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         public bool Apis = false;
         public bool Zeus = false;
 
-        public DroneManager(Player player) { Player = player; SetDroneDesigns(); }
+        public DroneManager(Player player) : base(player) { SetDroneDesigns(); }
 
         private const int DRONE_CHANGE_COOLDOWN_TIME = 3000;
 

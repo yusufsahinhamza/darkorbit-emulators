@@ -22,7 +22,7 @@ namespace Ow.Net.netty.handlers
 
             displaySettings.proActionBarOpened = read.opened;
 
-            QueryManager.SavePlayer.Settings(player);
+            QueryManager.SavePlayer.Settings(player, "display", player.Settings.Display);
         }
     }
 }

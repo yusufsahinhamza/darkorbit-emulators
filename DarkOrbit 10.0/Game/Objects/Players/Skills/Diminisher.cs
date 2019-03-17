@@ -1,5 +1,4 @@
-﻿using Ow.Game.Objects;
-using Ow.Game.Objects.Players.Managers;
+﻿using Ow.Game.Objects.Players.Managers;
 using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
@@ -9,14 +8,17 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Skills
 {
-    class Diminisher
+    class Diminisher : Skill
     {
-        public Player Player { get; set; }
-        public bool Active = false;
+        public override string LootId { get => SkillManager.DIMINISHER; }
+        public override int Id { get => 2; }
 
-        public Diminisher(Player player) { Player = player; }
+        public override int Duration { get => TimeManager.DIMINISHER_DURATION; }
+        public override int Cooldown { get => TimeManager.DIMINISHER_COOLDOWN; }
 
-        public void Tick()
+        public Diminisher(Player player) : base(player) { }
+
+        public override void Tick()
         {
             if (Active)
             {
@@ -27,8 +29,7 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public DateTime cooldown = new DateTime();
-        public void Send()
+        public override void Send()
         {
             if (Player.Ship.Id == 64 && cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION + TimeManager.DIMINISHER_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -50,7 +51,7 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public void Disable()
+        public override void Disable()
         {
             var enemy = Player.Storage.UnderDiminisherPlayer;
             if (enemy == null) return;

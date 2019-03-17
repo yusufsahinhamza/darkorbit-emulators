@@ -1,5 +1,5 @@
-﻿using Ow.Game.Objects;
-using Ow.Game.Objects.Players.Managers;
+﻿using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
 using System.Collections.Generic;
@@ -9,14 +9,22 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Skills
 {
-    class Solace
+    class Solace : Skill
     {
-        public Player Player { get; set; }
+        public override string LootId { get => SkillManager.SOLACE; }
+        public override int Id { get => 2; }
 
-        public Solace(Player player) { Player = player; }
+        public override int Duration { get => -1; }
+        public override int Cooldown { get => TimeManager.SOLACE_COOLDOWN; }
 
-        public DateTime cooldown = new DateTime();
-        public void Send()
+        public Solace(Player player) : base(player) { }
+
+        public override void Tick()
+        {
+
+        }
+
+        public override void Send()
         {
             if (Player.Ship.Id == 63 && cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -33,14 +41,23 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
+        public override void Disable()
+        {
+
+        }
+
         public void ExecuteHeal()
         {
-            int heal = Maths.GetPercentage(Player.MaxHitPoints, 25);
+            int heal = Maths.GetPercentage(Player.MaxHitPoints, 35);
             if (Player.Group != null)
             {
                 foreach (var player in Player.Group.Members.Values)
                 {
                     if (player.Spacemap != Player.Spacemap) continue;
+
+                    if (player != Player)
+                        heal = Maths.GetPercentage(Player.MaxHitPoints, 15);
+
                     player.Heal(heal);
                     if (player == Player) continue;
 

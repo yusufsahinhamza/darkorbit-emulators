@@ -16,12 +16,15 @@ namespace Ow.Game.Objects.Mines
 
         public override void Explode()
         {
-            foreach (var characters in Spacemap.Characters.Values)
+            foreach (var character in Spacemap.Characters.Values)
             {
-                if (characters is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
+                if (character is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    if (player.Invisible && player.Attackable())
-                        player.CpuManager.DisableCloak();
+                    if (Player == player || player.Storage.DuelOpponent == null || (player.Storage.DuelOpponent != null && Player == player.Storage.DuelOpponent))
+                    {
+                        if (player.Invisible && player.Attackable())
+                            player.CpuManager.DisableCloak();
+                    }
                 }
             }
         }

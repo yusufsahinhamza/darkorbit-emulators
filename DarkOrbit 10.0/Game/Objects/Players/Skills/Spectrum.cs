@@ -1,5 +1,4 @@
-﻿using Ow.Game.Objects;
-using Ow.Game.Objects.Players.Managers;
+﻿using Ow.Game.Objects.Players.Managers;
 using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
@@ -9,15 +8,17 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Skills
 {
-    class Spectrum
+    class Spectrum : Skill
     {
-        public Player Player { get; set; }
+        public override string LootId { get => SkillManager.SPECTRUM; }
+        public override int Id { get => 3; }
 
-        public bool Active = false;
+        public override int Duration { get => TimeManager.SPECTRUM_DURATION; }
+        public override int Cooldown { get => TimeManager.SPECTRUM_COOLDOWN; }
 
-        public Spectrum(Player player) { Player = player; }
+        public Spectrum(Player player) : base(player) { }
 
-        public void Tick()
+        public override void Tick()
         {
             if (Active)
             {
@@ -26,8 +27,7 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public DateTime cooldown = new DateTime();
-        public void Send()
+        public override void Send()
         {
             if (Player.Ship.Id == 65 && cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION + TimeManager.SPECTRUM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -43,11 +43,11 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public void Disable()
+        public override void Disable()
         {
             Player.Storage.Spectrum = false;
 
-            Player.RemoveVisualModifier(VisualModifierCommand.FORTRESS);
+            Player.RemoveVisualModifier(VisualModifierCommand.PRISMATIC_SHIELD);
 
             Player.SendCooldown(SkillManager.SPECTRUM, TimeManager.SPECTRUM_COOLDOWN);
             Active = false;

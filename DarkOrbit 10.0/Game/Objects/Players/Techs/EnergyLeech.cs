@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
 using System.Collections.Generic;
@@ -35,9 +36,7 @@ namespace Ow.Game.Objects.Players.Techs
         {
             if (cooldown.AddMilliseconds(TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                string packet = "0|TX|A|S|ELA|" + Player.Id;
-                Player.SendPacket(packet);
-                Player.SendPacketToInRangePlayers(packet);
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.ENERGY_LEECH_ARRAY, 0, "", 0, true));
 
                 Player.SendCooldown(TechManager.TECH_ENERGY_LEECH, TimeManager.ENERGY_LEECH_DURATION, true);
                 Player.Storage.EnergyLeech = true;
@@ -48,9 +47,7 @@ namespace Ow.Game.Objects.Players.Techs
 
         public void Disable()
         {
-            string packet = "0|TX|D|S|ELA|" + Player.Id;
-            Player.SendPacket(packet);
-            Player.SendPacketToInRangePlayers(packet);
+            Player.RemoveVisualModifier(VisualModifierCommand.ENERGY_LEECH_ARRAY);
 
             Player.SendCooldown(TechManager.TECH_ENERGY_LEECH, TimeManager.ENERGY_LEECH_COOLDOWN);
             Player.Storage.EnergyLeech = false;

@@ -20,7 +20,7 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
 
             player.Settings.InGameSettings.blockedGroupInvites = player.Settings.InGameSettings.blockedGroupInvites ? false : true;
             player.SendCommand(GroupUpdateBlockInvitationState.write(player.Settings.InGameSettings.blockedGroupInvites));
-            QueryManager.SavePlayer.Settings(player);
+            QueryManager.SavePlayer.Settings(player, "inGameSettings", player.Settings.InGameSettings);
         }
     }
 }

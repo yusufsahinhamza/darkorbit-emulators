@@ -1,4 +1,5 @@
 ﻿using Ow.Game.Objects.Players.Skills;
+using Ow.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +8,8 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Managers
 {
-    class SkillManager
+    class SkillManager : AbstractManager
     {
-        public Player Player { get; set; }
-
         public const String SENTINEL = "ability_sentinel";
         public const String DIMINISHER = "ability_diminisher";
         public const String VENOM = "ability_venom";
@@ -29,59 +28,41 @@ namespace Ow.Game.Objects.Players.Managers
         public const String SPEARHEAD_ULTIMATE_CLOAK = "ability_spearhead_ultimate-cloak";
         public const String LIGHTNING = "ability_lightning";
 
-        public Sentinel Sentinel { get; set; }
-        public Solace Solace { get; set; }
-        public Diminisher Diminisher { get; set; }
-        public Spectrum Spectrum { get; set; }
-        public Venom Venom { get; set; }
-
-        public SkillManager(Player player) { Player = player; InitiateSkills(); }
+        public SkillManager(Player player) : base(player) { InitiateSkills(); }
 
         public void InitiateSkills()
         {
-            Sentinel = new Sentinel(Player);
-            Solace = new Solace(Player);
-            Diminisher = new Diminisher(Player);
-            Spectrum = new Spectrum(Player);
-            Venom = new Venom(Player);
+            Player.Storage.Skills.Clear();
+            switch (Player.Ship.Id)
+            {
+                case Ship.GOLIATH_SENTINEL:
+                    Player.Storage.Skills.Add(SkillManager.SENTINEL, new Sentinel(Player));
+                    break;
+                case Ship.GOLIATH_DIMINISHER:
+                    Player.Storage.Skills.Add(SkillManager.DIMINISHER, new Diminisher(Player));
+                    break;
+                case Ship.GOLIATH_SOLACE:
+                    Player.Storage.Skills.Add(SkillManager.SOLACE, new Solace(Player));
+                    break;
+                case Ship.GOLIATH_SPECTRUM:
+                    Player.Storage.Skills.Add(SkillManager.SPECTRUM, new Spectrum(Player));
+                    break;
+                case Ship.GOLIATH_VENOM:
+                    Player.Storage.Skills.Add(SkillManager.VENOM, new Venom(Player));
+                    break;
+            }
         }
 
         public void Tick()
         {
-            Sentinel.Tick();
-            Diminisher.Tick();
-            Spectrum.Tick();
-            Venom.Tick();
+            foreach (var skill in Player.Storage.Skills.Values)
+                skill.Tick();
         }
 
         public void DisableAllSkills()
         {
-            Sentinel.Disable();
-            Diminisher.Disable();
-            Spectrum.Disable();
-            Venom.Disable();
-        }
-
-        public void AssembleSkillCategoryRequest(string pTechItem)
-        {
-            switch (pTechItem)
-            {
-                case SENTINEL:
-                    Sentinel.Send();
-                    break;
-                case SOLACE:
-                    Solace.Send();
-                    break;
-                case DIMINISHER:
-                    Diminisher.Send();
-                    break;
-                case SPECTRUM:
-                    Spectrum.Send();
-                    break;
-                case VENOM:
-                    Venom.Send();
-                    break;
-            }
+            foreach (var skill in Player.Storage.Skills.Values)
+                skill.Disable();
         }
     }
 }

@@ -38,8 +38,8 @@ namespace Ow.Utils
         }
         public void writeUTF(string String)
         {
-            writeShort((short)String.Length);
-            write(Encoding.Default.GetBytes(String), false);
+            writeShort((short)Encoding.UTF8.GetByteCount(String));
+            write(Encoding.UTF8.GetBytes(String), false);
         }
 
         public void writeBoolean(bool Bool)

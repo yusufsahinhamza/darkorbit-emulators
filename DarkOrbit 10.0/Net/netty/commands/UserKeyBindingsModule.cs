@@ -11,6 +11,21 @@ namespace Ow.Net.netty.commands
     {
         public const short ID = 423;
 
+        public const short JUMP = 0;
+        public const short CHANGE_CONFIG = 1;
+        public const short ACTIVATE_LASER = 2;
+        public const short LAUNCH_ROCKET = 3;
+        public const short PET_ACTIVATE = 4;
+        public const short PET_GUARD_MODE = 5;
+        public const short LOGOUT = 6;
+        public const short QUICKSLOT = 7;
+        public const short QUICKSLOT_PREMIUM = 8;
+        public const short TOGGLE_WINDOWS = 9;
+        public const short PERFORMANCE_MONITORING = 10;
+        public const short ZOOM_IN = 11;
+        public const short ZOOM_OUT = 12;
+        public const short PET_REPAIR_SHIP = 13;
+
         public short actionType = 0;
         public int charCode = 0;
         public List<int> keyCodes = new List<int>();
@@ -22,6 +37,26 @@ namespace Ow.Net.netty.commands
             keyCodes = param2;
             parameter = param3;
             charCode = param4;
+        }
+
+        public UserKeyBindingsModule() { }
+
+        public void read(ByteParser parser)
+        {
+            actionType = parser.readShort();
+            charCode = parser.readShort();
+            parser.readShort();
+            int i = 0;
+            int length = parser.readInt();
+            while (i < length)
+            {
+                int keyCode = parser.readInt();
+                keyCode = (int)(((uint)keyCode << 5) | ((uint)keyCode >> 27));
+                this.keyCodes.Add(keyCode);
+                i++;
+            }
+            parameter = parser.readInt();
+            parameter = (int)(((uint)parameter >> 13) | ((uint)parameter << 19));
         }
 
         public byte[] write()

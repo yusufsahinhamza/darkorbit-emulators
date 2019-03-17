@@ -16,7 +16,6 @@ using Ow.Game.Objects;
 using Ow.Game.Objects.Collectables;
 using Ow.Managers.MySQLManager;
 using Ow.Game.Movements;
-using static Ow.Game.Objects.Players.Managers.PlayerSettings;
 using Newtonsoft.Json.Linq;
 using Ow.Net;
 
@@ -26,12 +25,12 @@ namespace Ow.Managers
     {
         public class SavePlayer
         {
-            public static void Settings(Player player)
+            public static void Settings(Player player, string target, object settings)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    if (SocketServer.ValidateJSON(JsonConvert.SerializeObject(player.Settings)))
-                        mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET settings = '{JsonConvert.SerializeObject(player.Settings)}' WHERE userID = {player.Id}");
+                    if (SocketServer.ValidateJSON(JsonConvert.SerializeObject(settings)))
+                        mySqlClient.ExecuteNonQuery($"UPDATE player_settings SET {target} = '{JsonConvert.SerializeObject(settings)}' WHERE userId = {player.Id}");
                 }
             }
 
@@ -55,7 +54,7 @@ namespace Ow.Managers
                 }
             }
 
-            public static bool CheckBanned(int userId)
+            public static bool Banned(int userId)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
@@ -89,8 +88,23 @@ namespace Ow.Managers
                         Player.Clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
                         Player.Ship = GameManager.GetShip(Convert.ToInt32(row["shipID"]));
                         Player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
-                        Player.Settings = (row["settings"].ToString() == "" ? new PlayerSettings() : JsonConvert.DeserializeObject<PlayerSettings>(row["settings"].ToString()));
                     }
+
+                    string settingsSql = $"SELECT * FROM player_settings WHERE userId = {Player.Id} ";
+                    var settingsResult = mySqlClient.ExecuteQueryRow(settingsSql);
+
+                    if (settingsResult["audio"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["audio"].ToString())) Player.Settings.Audio = JsonConvert.DeserializeObject<AudioBase>(settingsResult["audio"].ToString());
+                    if (settingsResult["quality"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["quality"].ToString())) Player.Settings.Quality = JsonConvert.DeserializeObject<QualityBase>(settingsResult["quality"].ToString());
+                    if (settingsResult["classY2T"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["classY2T"].ToString())) Player.Settings.ClassY2T = JsonConvert.DeserializeObject<ClassY2TBase>(settingsResult["classY2T"].ToString());
+                    if (settingsResult["display"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["display"].ToString())) Player.Settings.Display = JsonConvert.DeserializeObject<DisplayBase>(settingsResult["display"].ToString());
+                    if (settingsResult["gameplay"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["gameplay"].ToString())) Player.Settings.Gameplay = JsonConvert.DeserializeObject<GameplayBase>(settingsResult["gameplay"].ToString());
+                    if (settingsResult["window"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["window"].ToString())) Player.Settings.Window = JsonConvert.DeserializeObject<WindowBase>(settingsResult["window"].ToString());
+                    if (settingsResult["inGameSettings"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["inGameSettings"].ToString())) Player.Settings.InGameSettings = JsonConvert.DeserializeObject<InGameSettingsBase>(settingsResult["inGameSettings"].ToString());
+                    if (settingsResult["cooldowns"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["cooldowns"].ToString())) Player.Settings.Cooldowns = JsonConvert.DeserializeObject<Dictionary<string, int>>(settingsResult["cooldowns"].ToString());
+                    if (settingsResult["boundKeys"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["boundKeys"].ToString())) Player.Settings.BoundKeys = JsonConvert.DeserializeObject<List<BoundKeysBase>>(settingsResult["boundKeys"].ToString());
+                    if (settingsResult["slotbarItems"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["slotbarItems"].ToString())) Player.Settings.SlotBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["slotbarItems"].ToString());
+                    if (settingsResult["premiumSlotbarItems"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["premiumSlotbarItems"].ToString())) Player.Settings.PremiumSlotBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["premiumSlotbarItems"].ToString());
+                    if (settingsResult["proActionBarItems"].ToString() != "" && SocketServer.ValidateJSON(settingsResult["proActionBarItems"].ToString())) Player.Settings.ProActionBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["proActionBarItems"].ToString());
 
                     string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
                     var querySet = mySqlClient.ExecuteQueryRow(sql);
@@ -139,14 +153,13 @@ namespace Ow.Managers
                 var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_maps");
                 foreach (DataRow row in data.Rows)
                 {
-                    int MapID = Convert.ToInt32(row["mapID"]);
-                    string Name = Convert.ToString(row["name"]);
-                    int FactionID = Convert.ToInt32(row["factionID"]);
-                    bool PvpMap = Convert.ToBoolean(row["isPvp"]);
-                    bool StarterMap = Convert.ToBoolean(row["isStartedMap"]);
-                    var Portals = JsonConvert.DeserializeObject<List<PortalBase>>(row["portals"].ToString());
-                    var Stations = JsonConvert.DeserializeObject<List<StationBase>>(row["stations"].ToString());
-                    var spacemap = new Spacemap(MapID, Name, FactionID, StarterMap, PvpMap, Portals, Stations);
+                    int mapId = Convert.ToInt32(row["mapID"]);
+                    string name = Convert.ToString(row["name"]);
+                    int factionId = Convert.ToInt32(row["factionID"]);
+                    var portals = JsonConvert.DeserializeObject<List<PortalBase>>(row["portals"].ToString());
+                    var stations = JsonConvert.DeserializeObject<List<StationBase>>(row["stations"].ToString());
+                    var options = JsonConvert.DeserializeObject<OptionsBase>(row["options"].ToString());
+                    var spacemap = new Spacemap(mapId, name, factionId, portals, stations, options);
                     GameManager.Spacemaps.TryAdd(spacemap.Id, spacemap);
                 }
             }

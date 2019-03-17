@@ -14,15 +14,10 @@ namespace Ow.Game.Movements
     {
         public static void Move(Character character, Position destination)
         {
-            if (character is Player player)
+            if (character.Speed <= 0)
             {
-                if (player.Speed <= 0)
-                {
-                    character.Moving = false;
-                    return;
-                }
-
-                player.Spacemap.OnPlayerMovement(player);
+                character.Moving = false;
+                return;
             }
 
             character.MovementTime = GetTime(character, destination);

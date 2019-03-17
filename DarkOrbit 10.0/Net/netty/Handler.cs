@@ -44,6 +44,13 @@ namespace Ow.Net.netty
             //   Commands.Add(WindowSettingsRequest.ID, new WindowSettingsRequestHandler());
             Commands.Add(CollectBoxRequest.ID, new CollectBoxRequestHandler());
             Commands.Add(PetGearActivationRequest.ID, new PetGearActivationRequestHandler());
+            Commands.Add(GroupRevokeInvitationRequest.ID, new GroupRevokeInvitationRequestHandler());
+            Commands.Add(GroupRejectInvitationRequest.ID, new GroupRejectInvitationRequestHandler());
+            Commands.Add(GroupChangeLeaderRequest.ID, new GroupChangeLeaderRequestHandler());
+            Commands.Add(GroupPingPlayerRequest.ID, new GroupPingPlayerRequestHandler());
+            Commands.Add(GroupPingPositionRequest.ID, new GroupPingPositionRequestHandler());
+            Commands.Add(GroupFollowPlayerRequest.ID, new GroupFollowPlayerRequestHandler());
+            Commands.Add(GroupKickPlayerRequest.ID, new GroupKickPlayerRequestHandler());
             Commands.Add(2244, new RepairStationRequestHandler());
             Commands.Add(10343, new LogoutCancelRequestHandler());
             Commands.Add(31106, new AttackLaserRequestHandler());
@@ -56,13 +63,6 @@ namespace Ow.Net.netty
             Commands.Add(9103, new GroupLeaveRequestHandler());
             Commands.Add(28685, new GroupChangeGroupBehaviourRequestHandler());
             Commands.Add(26571, new GroupUpdateBlockInvitationStateRequestHandler());
-            Commands.Add(GroupRevokeInvitationRequest.ID, new GroupRevokeInvitationRequestHandler());
-            Commands.Add(GroupRejectInvitationRequest.ID, new GroupRejectInvitationRequestHandler());
-            Commands.Add(GroupChangeLeaderRequest.ID, new GroupChangeLeaderRequestHandler());
-            Commands.Add(GroupPingPlayerRequest.ID, new GroupPingPlayerRequestHandler());
-            Commands.Add(GroupPingPositionRequest.ID, new GroupPingPositionRequestHandler());
-            Commands.Add(GroupFollowPlayerRequest.ID, new GroupFollowPlayerRequestHandler());
-            Commands.Add(GroupKickPlayerRequest.ID, new GroupKickPlayerRequestHandler());
         }
 
         public static void Execute(byte[] bytes, GameClient client)

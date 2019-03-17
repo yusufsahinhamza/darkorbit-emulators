@@ -24,6 +24,16 @@ using Ow.Game.Ticks;
 
 namespace Ow.Game
 {
+    class OptionsBase
+    {
+        public bool StarterMap { get; set; }
+        public bool PvpMap { get; set; }
+        public bool RangeDisabled { get; set; }
+        public bool CloakBlocked { get; set; }
+        public bool LogoutBlocked { get; set; }
+        public bool DeathLocationRepair { get; set; }
+    }
+
     class Spacemap : Tick
     {
         public ConcurrentDictionary<int, Character> Characters = new ConcurrentDictionary<int, Character>();
@@ -36,23 +46,21 @@ namespace Ow.Game
         public int Id { get; set; }
         public string Name { get; set; }
         public int FactionId { get; set; }
-        public bool StarterMap { get; set; }
-        public bool PvpMap { get; set; }
         public string StationsJSON { get; set; }
         public Position[] Limits { get; private set; }
+        public OptionsBase Options { get; set; }
 
         private List<PortalBase> PortalBase { get; set; }
         private List<StationBase> StationBase { get; set; }
 
-        public Spacemap(int mapID, string name, int factionID, bool starterMap, bool pvpMap, List<PortalBase> portals, List<StationBase> stations)
+        public Spacemap(int mapID, string name, int factionID, List<PortalBase> portals, List<StationBase> stations, OptionsBase options)
         {
             Id = mapID;
             Name = name;
             FactionId = factionID;
-            StarterMap = starterMap;
-            PvpMap = pvpMap;
             PortalBase = portals;
             StationBase = stations;
+            Options = options;
             ParseLimits();
             LoadObjects();
 
@@ -69,11 +77,11 @@ namespace Ow.Game
                 {
                     if (!thisCharacter.Equals(otherCharacter))
                     {
-                        if (thisCharacter.Position.DistanceTo(otherCharacter.Position) <= ((EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(otherCharacter.Id)) ? 999999 : otherCharacter.SeeRange))
+                        if (thisCharacter.InRange(otherCharacter, otherCharacter.RenderRange))
                         {
                             thisCharacter.AddInRangeCharacter(otherCharacter);
                         }
-                        else if (thisCharacter.SelectedCharacter == null || !thisCharacter.SelectedCharacter.Equals(otherCharacter))
+                        else if (thisCharacter.SelectedCharacter == null || (thisCharacter.SelectedCharacter != null && !thisCharacter.SelectedCharacter.Equals(otherCharacter)))
                         {
                             thisCharacter.RemoveInRangeCharacter(otherCharacter);
                         }
@@ -108,6 +116,7 @@ namespace Ow.Game
                 }
             }
             */
+
 
             if (Id == 16)
             {
@@ -205,31 +214,34 @@ namespace Ow.Game
         {
             foreach (var mine in Mines.Values)
             {
-                if (player.Position.DistanceTo(mine.Position) <= 1250)
+                if (mine.Player == player || player.Storage.DuelOpponent == null || (player.Storage.DuelOpponent != null && mine.Player == player.Storage.DuelOpponent))
                 {
-                    if (!player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                    if (player.Position.DistanceTo(mine.Position) <= 1250)
                     {
-                        player.Storage.InRangeMines.TryAdd(mine.Hash, mine);
-                        player.SendCommand(mine.GetMineCreateCommand());
+                        if (!player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                        {
+                            player.Storage.InRangeMines.TryAdd(mine.Hash, mine);
+                            player.SendCommand(mine.GetMineCreateCommand());
+                        }
+                        else
+                        {
+                            if (mine.Active)
+                                if (mine.activationTime.AddSeconds(Mine.ACTIVATION_TIME) < DateTime.Now)
+                                    if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
+                                    {
+                                        mine.Remove();
+                                        mine.Explode();
+                                    }
+                        }
                     }
                     else
                     {
-                        if (mine.Active)
-                            if (mine.activationTime.AddSeconds(Mine.ACTIVATION_TIME) < DateTime.Now)
-                                if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
-                                {
-                                    mine.Remove();
-                                    mine.Explode();
-                                }
-                    }
-                }
-                else
-                {
-                    if (player.Storage.InRangeMines.ContainsKey(mine.Hash))
-                    {
-                        var outMine = mine;
-                        player.Storage.InRangeMines.TryRemove(mine.Hash, out outMine);
-                        player.SendPacket("0|" + ServerCommands.REMOVE_ORE + "|" + mine.Hash);
+                        if (player.Storage.InRangeMines.ContainsKey(mine.Hash))
+                        {
+                            var outMine = mine;
+                            player.Storage.InRangeMines.TryRemove(mine.Hash, out outMine);
+                            player.SendPacket("0|" + ServerCommands.REMOVE_ORE + "|" + mine.Hash);
+                        }
                     }
                 }
             }
@@ -256,7 +268,7 @@ namespace Ow.Game
                         onBlockedMinePosition = true;
                         if (homeStation.FactionId == Player.FactionId)
                         {
-                            if (!Player.LastAttackTime(3))
+                            if (!Player.LastAttackTime(5))
                             {
                                 isInSecureZone = true;
                                 inEquipZone = true;
@@ -303,7 +315,7 @@ namespace Ow.Game
             if (Player.Settings.InGameSettings.inEquipZone != inEquipZone)
             {
                 Player.Settings.InGameSettings.inEquipZone = inEquipZone;
-                QueryManager.SavePlayer.Settings(Player);
+                QueryManager.SavePlayer.Settings(Player, "inGameSettings", Player.Settings.InGameSettings);
                 Player.SendCommand(EquipReadyCommand.write(inEquipZone));
 
                 if (Player.Settings.InGameSettings.inEquipZone)
@@ -359,10 +371,11 @@ namespace Ow.Game
 
         public void SendPlayers(Player Player)
         {
-            foreach (var character in Player.InRangeCharacters.Values)
+            foreach (var character in Characters.Values)
             {
-                Player.RemoveInRangeCharacter(character);
-                Player.AddInRangeCharacter(character);
+                Player.InRangeCharacters.Clear();
+                if (Player.InRange(character, character.RenderRange))
+                    Player.AddInRangeCharacter(character);
             }
         }
 
@@ -387,15 +400,15 @@ namespace Ow.Game
             }
         }
 
-        public event EventHandler<CharacterArgs> PlayerRemoved;
-        public event EventHandler<CharacterArgs> PlayerAdded;
+        public event EventHandler<CharacterArgs> CharacterRemoved;
+        public event EventHandler<CharacterArgs> CharacterAdded;
 
         public bool AddCharacter(Character character)
         {
             var success = Characters.TryAdd(character.Id, character);
             if (success)
             {
-                PlayerAdded?.Invoke(this, new CharacterArgs(character));
+                CharacterAdded?.Invoke(this, new CharacterArgs(character));
             }
             return success;
         }
@@ -405,11 +418,14 @@ namespace Ow.Game
             var success = Characters.TryRemove(character.Id, out character);
             if (success)
             {
-                PlayerRemoved?.Invoke(this, new CharacterArgs(character));
-                foreach (var otherPlayer in Characters.Values)
+                CharacterRemoved?.Invoke(this, new CharacterArgs(character));
+                foreach (var otherCharacter in Characters.Values)
+                    otherCharacter.RemoveInRangeCharacter(character);
+
+                if (character is Player player)
                 {
-                    if(otherPlayer is Player)
-                        (otherPlayer as Player).RemoveInRangeCharacter(character);
+                    if (EventManager.JackpotBattle.InActiveEvent(player))
+                        GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Spacemap.Characters.Count);
                 }
             }
             return success;

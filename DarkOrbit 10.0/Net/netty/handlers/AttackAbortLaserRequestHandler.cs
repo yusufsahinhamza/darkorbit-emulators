@@ -18,7 +18,7 @@ namespace Ow.Net.netty.handlers
             if(player.Selected != null)
             {
                 player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
-                player.SendPacket("0|A|STM|attstop|%!|" + (EventManager.JackpotBattle.Active && player.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id ? EventManager.JackpotBattle.Name : player.SelectedCharacter.Name));
+                player.SendPacket("0|A|STM|attstop|%!|" + (EventManager.JackpotBattle.Active && EventManager.JackpotBattle.InActiveEvent(player) ? EventManager.JackpotBattle.Name : player.SelectedCharacter.Name));
             }
         }
     }

@@ -16,10 +16,10 @@ namespace Ow.Net.netty.commands
         public int varp1w = 0;
         public int rank = 0;
 
-        public UbaG3FModule(int varjP, int varp1w, int rank, int points)
+        public UbaG3FModule(int victories, int duels, int rank, int points)
         {
-            this.varjP = varjP;
-            this.varp1w = varp1w;
+            this.varjP = victories;
+            this.varp1w = duels;
             this.rank = rank;
             this.points = points;
         }

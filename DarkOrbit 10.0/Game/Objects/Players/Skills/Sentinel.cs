@@ -1,5 +1,4 @@
-﻿using Ow.Game.Objects;
-using Ow.Game.Objects.Players.Managers;
+﻿using Ow.Game.Objects.Players.Managers;
 using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
@@ -9,22 +8,24 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Skills
 {
-    class Sentinel
+    class Sentinel : Skill
     {
-        public Player Player { get; set; }
-        public bool Active = false;
+        public override string LootId { get => SkillManager.SENTINEL; }
+        public override int Id { get => 4; }
 
-        public Sentinel(Player player) { Player = player; }
+        public override int Duration { get => TimeManager.SENTINEL_DURATION; }
+        public override int Cooldown { get => TimeManager.SENTINEL_COOLDOWN; }
 
-        public void Tick()
+        public Sentinel(Player player) : base(player) { }
+
+        public override void Tick()
         {
             if (Active)
                 if (cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION) < DateTime.Now)
                     Disable();
         }
 
-        public DateTime cooldown = new DateTime();
-        public void Send()
+        public override void Send()
         {
             if (Player.Ship.Id == 66 && cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION + TimeManager.SENTINEL_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -40,7 +41,7 @@ namespace Ow.Game.Objects.Players.Skills
             }
         }
 
-        public void Disable()
+        public override void Disable()
         {
             Player.Storage.Sentinel = false;
 

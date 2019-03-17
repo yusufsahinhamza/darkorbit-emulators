@@ -95,10 +95,7 @@ namespace Ow.Net
                     }
                 }
             }
-            catch (Exception e)
-            {
-                //ignore
-            }
+            catch (Exception) { }
         }
 
         public static void JoinToClan(Player player, Clan clan)
@@ -175,7 +172,7 @@ namespace Ow.Net
         {
             if (player.GameSession == null || player == null) return;
 
-            if (player.Settings.InGameSettings.inEquipZone && !player.AttackingOrUnderAttack() && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
+            if (player.Settings.InGameSettings.inEquipZone && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
             {
                 player.ChangeData(DataType.URIDIUM, uridiumPrice, ChangeType.DECREASE);
                 player.ChangeData(DataType.HONOR, honorPrice, ChangeType.DECREASE);

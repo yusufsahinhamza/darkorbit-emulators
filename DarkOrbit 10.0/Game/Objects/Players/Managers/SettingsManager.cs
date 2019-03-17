@@ -1,20 +1,131 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Ow.Game.Objects;
-using Ow.Game.Objects.Mines;
 using Ow.Game.Movements;
+using Ow.Game.Objects.Mines;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Ow.Utils;
 
 namespace Ow.Game.Objects.Players.Managers
 {
+    public class AudioBase
+    {
+        public bool notSet = false;
+        public bool playCombatMusic = true;
+        public int music = 100;
+        public int sound = 100;
+        public int voice = 100;
+    }
+
+    public class QualityBase
+    {
+        public bool notSet = false;
+        public short qualityAttack = 0;
+        public short qualityBackground = 3;
+        public short qualityPresetting = 3;
+        public bool qualityCustomized = true;
+        public short qualityPoizone = 3;
+        public short qualityShip = 0;
+        public short qualityEngine = 0;
+        public short qualityExplosion = 0;
+        public short qualityCollectable = 0;
+        public short qualityEffect = 0;
+    }
+
+    public class ClassY2TBase
+    {
+        public bool questsAvailableFilter = false;
+        public bool questsUnavailableFilter = false;
+        public bool questsCompletedFilter = false;
+        public bool var_1151 = false;
+        public bool var_2239 = false;
+        public bool questsLevelOrderDescending = false;
+    }
+
+    public class DisplayBase
+    {
+        public bool notSet = false;
+        public bool displayPlayerNames = true;
+        public bool displayResources = true;
+        public bool showPremiumQuickslotBar = true;
+        public bool allowAutoQuality = true;
+        public bool preloadUserShips = true;
+        public bool displayHitpointBubbles = true;
+        public bool showNotOwnedItems = true;
+        public bool displayChat = true;
+        public bool displayWindowsBackground = true;
+        public bool displayNotFreeCargoBoxes = true;
+        public bool dragWindowsAlways = true;
+        public bool displayNotifications = true;
+        public bool hoverShips = true;
+        public bool displayDrones = true;
+        public bool displayBonusBoxes = true;
+        public bool displayFreeCargoBoxes = true;
+        public bool var12P = true;
+        public bool varb3N = false;
+        public int displaySetting3DqualityAntialias = 4;
+        public int varp3M = 4;
+        public int displaySetting3DqualityEffects = 4;
+        public int displaySetting3DqualityLights = 3;
+        public int displaySetting3DqualityTextures = 3;
+        public int var03r = 4;
+        public int displaySetting3DsizeTextures = 3;
+        public int displaySetting3DtextureFiltering = -1;
+        public bool proActionBarEnabled = true;
+        public bool proActionBarKeyboardInputEnabled = true;
+        public bool proActionBarAutohideEnabled = true;
+        public bool proActionBarOpened = false;
+    }
+
+    public class GameplayBase
+    {
+        public bool notSet = false;
+        public bool autoRefinement = false;
+        public bool quickSlotStopAttack = true;
+        public bool autoBoost = false;
+        public bool autoBuyBootyKeys = false;
+        public bool doubleclickAttackEnabled = true;
+        public bool autochangeAmmo = true;
+        public bool autoStartEnabled = true;
+        public bool varE3N = true;
+    }
+
+    public class WindowBase
+    {
+        public bool hideAllWindows = false;
+        public int scale = 6;
+        public string barState = "24,1|23,1|100,1|25,1|35,0|34,0|39,0|";
+    }
+
+    public class BoundKeysBase
+    {
+        public short actionType { get; set; }
+        public short charCode { get; set; }
+        public int parameter { get; set; }
+        public List<int> keyCodes { get; set; }
+
+        public BoundKeysBase(short ActionType, short CharCode, int Parameter, List<int> KeyCodes)
+        {
+            actionType = ActionType;
+            charCode = CharCode;
+            parameter = Parameter;
+            keyCodes = KeyCodes;
+        }
+    }
+
+    public class InGameSettingsBase
+    {
+        public bool inEquipZone = true;
+        public bool blockedGroupInvites = false;
+        public string selectedLaser = AmmunitionManager.LCB_10;
+        public string selectedRocket = AmmunitionManager.R_310;
+        public string selectedRocketLauncher = AmmunitionManager.HSTRM_01;
+        public string selectedFormation = DroneManager.DEFAULT_FORMATION;
+        public int currentConfig = 1;
+        public List<string> selectedCpus = new List<string> { CpuManager.AUTO_ROCKET_CPU, CpuManager.AUTO_HELLSTROM_CPU };
+    }
+
     public class DataBase
     {
         public int uridium { get; set; }
@@ -36,7 +147,7 @@ namespace Ow.Game.Objects.Players.Managers
         public int Config2Speed { get; set; }
     }
 
-    class PlayerSettings
+    class Settings
     {
         public AudioBase Audio = new AudioBase();
         public QualityBase Quality = new QualityBase();
@@ -45,7 +156,27 @@ namespace Ow.Game.Objects.Players.Managers
         public GameplayBase Gameplay = new GameplayBase();
         public WindowBase Window = new WindowBase();
         public InGameSettingsBase InGameSettings = new InGameSettingsBase();
-        public CurrentCooldownsBase CurrentCooldowns = new CurrentCooldownsBase();
+
+        public Dictionary<string, int> Cooldowns = new Dictionary<string, int>
+        {
+                {AmmunitionManager.SMB_01, 0},
+                {AmmunitionManager.ISH_01, 0},
+                {AmmunitionManager.EMP_01, 0},
+                {AmmunitionManager.ACM_01, 0}, //tüm mayın tipleri için
+                {AmmunitionManager.DCR_250, 0},
+                {AmmunitionManager.PLD_8, 0},
+                {AmmunitionManager.R_IC3, 0},
+                {TechManager.TECH_ENERGY_LEECH, 0},
+                {TechManager.TECH_CHAIN_IMPULSE, 0},
+                {TechManager.TECH_PRECISION_TARGETER, 0},
+                {TechManager.TECH_BACKUP_SHIELDS, 0},
+                {TechManager.TECH_BATTLE_REPAIR_BOT, 0},
+                {SkillManager.SOLACE, 0},
+                {SkillManager.SENTINEL, 0},
+                {SkillManager.SPECTRUM, 0},
+                {SkillManager.DIMINISHER, 0},
+                {SkillManager.VENOM, 0}
+        };
 
         public List<BoundKeysBase> BoundKeys = new List<BoundKeysBase>
         {
@@ -81,10 +212,10 @@ namespace Ow.Game.Objects.Players.Managers
             new BoundKeysBase(10, 0, 0, new List<int>{70}),
             new BoundKeysBase(11, 0, 0, new List<int>{107}),
             new BoundKeysBase(12, 0, 0, new List<int>{109}),
-            new BoundKeysBase(14, 0, 0, new List<int>()),
+            new BoundKeysBase(14, 0, 0, new List<int>{13}),
             new BoundKeysBase(15, 0, 0, new List<int>{9}),
             new BoundKeysBase(8, 0, 9, new List<int>{121}),
-            new BoundKeysBase(16, 0, 0, new List<int>{81})
+            new BoundKeysBase(16, 0, 0, new List<int>{16})
         };
 
         public Dictionary<short, string> SlotBarItems = new Dictionary<short, string>() {
@@ -97,158 +228,19 @@ namespace Ow.Game.Objects.Players.Managers
 
         public Dictionary<short, string> ProActionBarItems = new Dictionary<short, string>();
 
-        public class AudioBase
-        {
-            public bool notSet = false;
-            public bool playCombatMusic = true;
-            public int music = 100;
-            public int sound = 100;
-            public int voice = 100;
-        }
-
-        public class QualityBase
-        {
-            public bool notSet = false;
-            public short qualityAttack = 0;
-            public short qualityBackground = 3;
-            public short qualityPresetting = 3;
-            public bool qualityCustomized = true;
-            public short qualityPoizone = 3;
-            public short qualityShip = 0;
-            public short qualityEngine = 0;
-            public short qualityExplosion = 0;
-            public short qualityCollectable = 0;
-            public short qualityEffect = 0;
-        }
-
-        public class ClassY2TBase
-        {
-            public bool questsAvailableFilter = false;
-            public bool questsUnavailableFilter = false;
-            public bool questsCompletedFilter = false;
-            public bool var_1151 = false;
-            public bool var_2239 = false;
-            public bool questsLevelOrderDescending = false;
-        }
-
-        public class DisplayBase
-        {
-            public bool notSet = false;
-            public bool displayPlayerNames = true;
-            public bool displayResources = true;
-            public bool showPremiumQuickslotBar = true;
-            public bool allowAutoQuality = true;
-            public bool preloadUserShips = true;
-            public bool displayHitpointBubbles = true;
-            public bool showNotOwnedItems = true;
-            public bool displayChat = true;
-            public bool displayWindowsBackground = true;
-            public bool displayNotFreeCargoBoxes = true;
-            public bool dragWindowsAlways = true;
-            public bool displayNotifications = true;
-            public bool hoverShips = true;
-            public bool displayDrones = true;
-            public bool displayBonusBoxes = true;
-            public bool displayFreeCargoBoxes = true;
-            public bool var12P = true;
-            public bool varb3N = false;
-            public int displaySetting3DqualityAntialias = 4;
-            public int varp3M = 4;
-            public int displaySetting3DqualityEffects = 4;
-            public int displaySetting3DqualityLights = 3;
-            public int displaySetting3DqualityTextures = 3;
-            public int var03r = 4;
-            public int displaySetting3DsizeTextures = 3;
-            public int displaySetting3DtextureFiltering = -1;
-            public bool proActionBarEnabled = true;
-            public bool proActionBarKeyboardInputEnabled = true;
-            public bool proActionBarAutohideEnabled = true;
-            public bool proActionBarOpened = false;
-        }
-
-        public class GameplayBase
-        {
-            public bool notSet = false;
-            public bool autoRefinement = false;
-            public bool quickSlotStopAttack = true;
-            public bool autoBoost = false;
-            public bool autoBuyBootyKeys = false;
-            public bool doubleclickAttackEnabled = true;
-            public bool autochangeAmmo = true;
-            public bool autoStartEnabled = true;
-            public bool varE3N = true;
-        }
-
-        public class WindowBase
-        {
-            public bool hideAllWindows = false;
-            public int scale = 6;
-            public string barState = "24,1|23,1|100,1|25,1|35,0|34,0|39,0|";
-        }
-
-        public class BoundKeysBase
-        {
-            public short actionType { get; set; }
-            public short charCode { get; set; }
-            public int parameter { get; set; }
-            public List<int> keyCodes { get; set; }
-
-            public BoundKeysBase(short ActionType, short CharCode, int Parameter, List<int> KeyCodes)
-            {
-                actionType = ActionType;
-                charCode = CharCode;
-                parameter = Parameter;
-                keyCodes = KeyCodes;
-            }
-        }
-
-        public class InGameSettingsBase
-        {
-            public bool inEquipZone = true;
-            public bool blockedGroupInvites = false;
-            public string selectedLaser = AmmunitionManager.LCB_10;
-            public string selectedRocket = AmmunitionManager.R_310;
-            public string selectedRocketLauncher = AmmunitionManager.HSTRM_01;
-            public string selectedFormation = DroneManager.DEFAULT_FORMATION;
-            public int currentConfig = 1;
-            public List<string> selectedCpus = new List<string> { CpuManager.AUTO_ROCKET_CPU, CpuManager.AUTO_HELLSTROM_CPU };
-        }
-
-        public class CurrentCooldownsBase
-        {
-            public int smbCooldown = 0;
-            public int ishCooldown = 0;
-            public int empCooldown = 0;
-            public int mineCooldown = 0;
-            public int dcrCooldown = 0;
-            public int pldCooldown = 0;
-            public int energyLeechCooldown = 0;
-            public int chainImpulseCooldown = 0;
-            public int precisionTargeterCooldown = 0;
-            public int backupShieldsCooldown = 0;
-            public int battleRepairBotCooldown = 0;
-            public int sentinelCooldown = 0;
-            public int diminisherCooldown = 0;
-            public int venomCooldown = 0;
-            public int spectrumCooldown = 0;
-            public int solaceCooldown = 0;
-        }
-
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this);
         }
     }
 
-    class SettingsManager
+    class SettingsManager : AbstractManager
     {
         public const String STANDARD_SLOT_BAR = "standardSlotBar";
         public const String PREMIUM_SLOT_BAR  = "premiumSlotBar";
         public const String PRO_ACTION_BAR = "proActionBar";
 
-        public Player Player { get; set; }
-
-        public SettingsManager(Player player) { Player = player; SetCurrentItems(); }
+        public SettingsManager(Player player) : base(player) { SetCurrentItems(); }
 
         public void SetCurrentItems()
         {
@@ -258,7 +250,10 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.Storage.AutoRocket = true;
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.AUTO_HELLSTROM_CPU))
+            {
                 Player.Storage.AutoRocketLauncher = true;
+                Player.AttackManager.RocketLauncher.ReloadingActive = true;
+            }
 
             if (Player.Settings.InGameSettings.selectedCpus.Contains(CpuManager.CLK_XL))
                 Player.Invisible = true;
@@ -274,8 +269,9 @@ namespace Ow.Game.Objects.Players.Managers
         public static string[] RocketsCategory =
         {
                 "ammunition_rocket_r-310", "ammunition_rocket_plt-2026", "ammunition_rocket_plt-2021",
-                "ammunition_rocket_plt-3030", "ammunition_specialammo_dcr-250", "ammunition_specialammo_r-ic3", "ammunition_specialammo_wiz-x"/*"ammunition_specialammo_pld-8",
-                , "ammunition_rocket_bdr-1211",*/
+                "ammunition_rocket_plt-3030", "ammunition_specialammo_dcr-250", "ammunition_specialammo_r-ic3", "ammunition_specialammo_wiz-x"
+            //"ammunition_specialammo_pld-8"
+               // , "ammunition_rocket_bdr-1211"
         };
 
         public static string[] RocketLauncherCategory =
@@ -360,7 +356,7 @@ namespace Ow.Game.Objects.Players.Managers
         public void SendUserKeyBindingsUpdateCommand()
         {            
             var keyBindingsModuleCommands = new List<UserKeyBindingsModule>();
-            List<PlayerSettings.BoundKeysBase> actions = Player.Settings.BoundKeys;
+            List<BoundKeysBase> actions = Player.Settings.BoundKeys;
 
             foreach (var action in actions)
             {
@@ -410,7 +406,8 @@ namespace Ow.Game.Objects.Players.Managers
                 leftItems.Add("spaceball", "title_spaceball");
             //leftItems.Add("contacts", "title_contactlist");
             //leftItems.Add("booster", "title_booster");
-            //leftItems.Add("traininggrounds", "title_traininggrounds");
+            if (Player.RankId == 21)
+                leftItems.Add("traininggrounds", "title_traininggrounds");
             //leftItems.Add("jackpot_status_ui", "title_jackpot_status_ui");
 
             var topLeftMenuBarItems = new List<ClientUIMenuBarItemModule>();
@@ -585,7 +582,7 @@ namespace Ow.Game.Objects.Players.Managers
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), (Player.Settings.InGameSettings.selectedLaser == AmmunitionManager.RSB_75 ? 3000 : 1000), itemLootId,
                                                                    false);
 
                 lasersItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, "ttip_laser", true, true),
@@ -602,10 +599,33 @@ namespace Ow.Game.Objects.Players.Managers
             var rocketItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in RocketsCategory)
             {
+                var maxTime = 0;
+
+                switch (itemLootId)
+                {
+                    case AmmunitionManager.R_310:
+                    case AmmunitionManager.PLT_2026:
+                    case AmmunitionManager.PLT_2021:
+                    case AmmunitionManager.PLT_3030:
+                        maxTime = 1000;
+                        break;
+                    case AmmunitionManager.DCR_250:
+                        maxTime = TimeManager.DCR_250_COOLDOWN;
+                        break;
+                    case AmmunitionManager.R_IC3:
+                        maxTime = TimeManager.R_IC3_COOLDOWN;
+                        break;
+                    case AmmunitionManager.WIZ_X:
+                        maxTime = TimeManager.WIZARD_COOLDOWN;
+                        break;
+                    case AmmunitionManager.PLD_8:
+                        maxTime = TimeManager.PLD8_COOLDOWN;
+                        break;
+                }
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), maxTime, itemLootId,
                                                                    false);
 
                 rocketItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, "ttip_rocket", true, true),
@@ -643,10 +663,22 @@ namespace Ow.Game.Objects.Players.Managers
             var specialAmmoItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in SpecialItemsCategory)
             {
+                var maxTime = 0;
+
+                switch (itemLootId)
+                {
+                    case AmmunitionManager.SMB_01:
+                    case AmmunitionManager.ISH_01:
+                        maxTime = TimeManager.ISH_COOLDOWN;
+                        break;
+                    case AmmunitionManager.EMP_01:
+                        maxTime = TimeManager.EMP_COOLDOWN;
+                        break;
+                }
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), maxTime, itemLootId,
                                                                    false);
 
                 specialAmmoItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, "ttip_explosive"),
@@ -666,7 +698,7 @@ namespace Ow.Game.Objects.Players.Managers
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), TimeManager.MINE_COOLDOWN, itemLootId,
                                                                    false);
 
                 mineItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, "ttip_explosive"),
@@ -683,10 +715,18 @@ namespace Ow.Game.Objects.Players.Managers
             var cpuItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in CpusCategory)
             {
+                var maxTime = 0;
+
+                switch (itemLootId)
+                {
+                    case CpuManager.CLK_XL:
+                        maxTime = Player.CpuManager.CLOAK_COOLDOWN;
+                        break;
+                }
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), maxTime, itemLootId,
                                                                    false);
 
                 cpuItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetCpuTtip(itemLootId), false),
@@ -718,10 +758,34 @@ namespace Ow.Game.Objects.Players.Managers
             var techItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in TechsCategory)
             {
+                var timerState = ClientUISlotBarCategoryItemTimerStateModule.short_2168;
+                var maxTime = 0;
+
+                switch (itemLootId)
+                {
+                    case TechManager.TECH_BATTLE_REPAIR_BOT:
+                        timerState = Player.TechManager.BattleRepairBot.Active ? ClientUISlotBarCategoryItemTimerStateModule.ACTIVE : ClientUISlotBarCategoryItemTimerStateModule.short_2168;
+                        maxTime = TimeManager.BATTLE_REPAIR_BOT_COOLDOWN;
+                        break;
+                    case TechManager.TECH_ENERGY_LEECH:
+                        timerState = Player.TechManager.EnergyLeech.Active ? ClientUISlotBarCategoryItemTimerStateModule.ACTIVE : ClientUISlotBarCategoryItemTimerStateModule.short_2168;
+                        maxTime = TimeManager.ENERGY_LEECH_COOLDOWN;
+                        break;
+                    case TechManager.TECH_PRECISION_TARGETER:
+                        timerState = Player.TechManager.PrecisionTargeter.Active ? ClientUISlotBarCategoryItemTimerStateModule.ACTIVE : ClientUISlotBarCategoryItemTimerStateModule.short_2168;
+                        maxTime = TimeManager.PRECISION_TARGETER_COOLDOWN;
+                        break;
+                    case TechManager.TECH_BACKUP_SHIELDS:
+                        maxTime = TimeManager.BACKUP_SHIELD_COOLDOWN;
+                        break;
+                    case TechManager.TECH_CHAIN_IMPULSE:
+                        maxTime = TimeManager.CHAIN_IMPULSE_COOLDOWN;
+                        break;
+                }
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(timerState), maxTime, itemLootId,
                                                                    false);
 
                 techItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetTechTtip(itemLootId), false, false, false),
@@ -776,51 +840,21 @@ namespace Ow.Game.Objects.Players.Managers
         {
             var abilityItems = new List<ClientUISlotBarCategoryItemModule>();
 
-           // var skills = new List<string>();
-
-           // TODO: ÇÖZ AddSkills(skills);
-
-            foreach (string itemLootId in AbilitiesCategory)
+            foreach (var itemLootId in AbilitiesCategory)
             {
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(Player.Storage.Skills.ContainsKey(itemLootId) && Player.Storage.Skills[itemLootId].Active ? ClientUISlotBarCategoryItemTimerStateModule.ACTIVE : ClientUISlotBarCategoryItemTimerStateModule.short_2168), (Player.Storage.Skills.ContainsKey(itemLootId) ? Player.Storage.Skills[itemLootId].Cooldown : 0), itemLootId,
                                                                    false);
 
-                abilityItems.Add(new ClientUISlotBarCategoryItemModule(1, GetAbilityItemStatus(itemLootId, GetAbilityTtip(itemLootId), GetAbilityDescriptionEnabled(itemLootId), false, false),
+                abilityItems.Add(new ClientUISlotBarCategoryItemModule(1, GetAbilityItemStatus(itemLootId, GetAbilityTtip(itemLootId), Player.Storage.Skills.ContainsKey(itemLootId), GetAbilityDescriptionEnabled(itemLootId), false, false),
                                                                       ClientUISlotBarCategoryItemModule.SELECTION,
                                                                       ClientUISlotBarCategoryItemModule.NONE,
                                                                       GetCooldownType(itemLootId),
                                                                       categoryTimerModule));
             }
             return new ClientUISlotBarCategoryModule("ship_abilities", abilityItems);
-        }
-        
-        public void AddSkills(List<string> skills)
-        {
-            switch(Player.Ship.Id)
-            {
-                case Ship.GOLIATH_SOLACE:
-                    skills.Add(SkillManager.SOLACE);
-                    break;
-                case Ship.GOLIATH_DIMINISHER:
-                    skills.Add(SkillManager.DIMINISHER);
-                    break;
-                case Ship.GOLIATH_SPECTRUM:
-                case Ship.GOLIATH_SPECTRUM_FROST:
-                case Ship.GOLIATH_SPECTRUM_LEGEND:
-                    skills.Add(SkillManager.SPECTRUM);
-                    break;
-                case Ship.GOLIATH_SENTINEL:
-                case Ship.GOLIATH_SENTINEL_FROST:
-                case Ship.GOLIATH_SENTINEL_LEGEND:
-                    skills.Add(SkillManager.SENTINEL);
-                    break;
-                case Ship.GOLIATH_VENOM:
-                    skills.Add(SkillManager.VENOM);
-                    break;
-            }
         }
 
         public string GetAbilityTtip(string itemId)
@@ -871,15 +905,10 @@ namespace Ow.Game.Objects.Players.Managers
             switch (itemId)
             {
                 case SkillManager.DIMINISHER:
-                    return true;
                 case SkillManager.LIGHTNING:
-                    return true;
                 case SkillManager.SENTINEL:
-                    return true;
                 case SkillManager.SOLACE:
-                    return true;
                 case SkillManager.SPECTRUM:
-                    return true;
                 case SkillManager.VENOM:
                     return true;
                 default:
@@ -892,15 +921,10 @@ namespace Ow.Game.Objects.Players.Managers
             switch (itemId)
             {
                 case SkillManager.DIMINISHER:
-                    return false;
                 case SkillManager.LIGHTNING:
-                    return false;
                 case SkillManager.SENTINEL:
-                    return false;
                 case SkillManager.SOLACE:
-                    return false;
                 case SkillManager.SPECTRUM:
-                    return false;
                 case SkillManager.VENOM:
                     return false;
                 default:
@@ -916,7 +940,7 @@ namespace Ow.Game.Objects.Players.Managers
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
-                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), 90000000, itemLootId,
+                                                                   new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), TimeManager.FORMATION_COOLDOWN, itemLootId,
                                                                    false);
 
                 formationItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetFormationTtip(itemLootId), false),
@@ -983,10 +1007,12 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_1124);
                 case AmmunitionManager.RSB_75:
                     return new CooldownTypeModule(CooldownTypeModule.short_1220);
+
                 case CpuManager.CLK_XL:
                     return new CooldownTypeModule(CooldownTypeModule.short_138);
                 case CpuManager.AUTO_ROCKET_CPU:
                     return new CooldownTypeModule(CooldownTypeModule.short_1428);
+
                 case TechManager.TECH_PRECISION_TARGETER:
                     return new CooldownTypeModule(CooldownTypeModule.ROCKET_PROBABILITY_MAXIMIZER);
                 case TechManager.TECH_BACKUP_SHIELDS:
@@ -997,6 +1023,7 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.ENERGY_LEECH_ARRAY);
                 case TechManager.TECH_CHAIN_IMPULSE:
                     return new CooldownTypeModule(CooldownTypeModule.ENERGY_CHAIN_IMPULSE);
+
                 case SkillManager.SENTINEL:
                     return new CooldownTypeModule(CooldownTypeModule.short_1439);
                 case SkillManager.SOLACE:
@@ -1007,6 +1034,7 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_1699);
                 case SkillManager.VENOM:
                     return new CooldownTypeModule(CooldownTypeModule.short_1736);
+
                 case AmmunitionManager.R_IC3:
                     return new CooldownTypeModule(CooldownTypeModule.short_1789);
                 case AmmunitionManager.DCR_250:
@@ -1017,67 +1045,39 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_2172);
 
                 case AmmunitionManager.SLM_01:
-                    return new CooldownTypeModule(CooldownTypeModule.short_2047);
                 case AmmunitionManager.EMPM_01:
-                    return new CooldownTypeModule(CooldownTypeModule.short_2047);
                 case AmmunitionManager.DDM_01:
-                    return new CooldownTypeModule(CooldownTypeModule.short_2047);
                 case AmmunitionManager.ACM_01:
-                    return new CooldownTypeModule(CooldownTypeModule.short_2047);
                 case AmmunitionManager.SABM_01:
-                    return new CooldownTypeModule(CooldownTypeModule.short_2047);
                 case AmmunitionManager.IM_01:
                     return new CooldownTypeModule(CooldownTypeModule.short_2047);
 
                 case AmmunitionManager.R_310:
-                    return new CooldownTypeModule(CooldownTypeModule.ROCKET);
                 case AmmunitionManager.PLT_2026:
-                    return new CooldownTypeModule(CooldownTypeModule.ROCKET);
                 case AmmunitionManager.PLT_2021:
-                    return new CooldownTypeModule(CooldownTypeModule.ROCKET);
                 case AmmunitionManager.PLT_3030:
                     return new CooldownTypeModule(CooldownTypeModule.ROCKET);
 
                 case DroneManager.DEFAULT_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.TURTLE_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.ARROW_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.LANCE_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.STAR_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.PINCER_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.DOUBLE_ARROW_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.DIAMOND_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.CHEVRON_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.MOTH_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.CRAB_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.HEART_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.BARRAGE_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.BAT_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.DOME_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.DRILL_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.RING_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.VETERAN_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.WHEEL_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.WAVE_FORMATION:
-                    return new CooldownTypeModule(CooldownTypeModule.short_987);
                 case DroneManager.X_FORMATION:
                     return new CooldownTypeModule(CooldownTypeModule.short_987);
                 default:
@@ -1089,6 +1089,105 @@ namespace Ow.Game.Objects.Players.Managers
         {
             switch (pItemId)
             {
+                case CpuManager.CLK_XL:
+                    var cloakCooldown = (DateTime.Now - Player.CpuManager.cloakCooldown).TotalMilliseconds;
+                    return (int)(Player.CpuManager.CLOAK_COOLDOWN - cloakCooldown);
+                case AmmunitionManager.R_310:
+                case AmmunitionManager.PLT_2026:
+                case AmmunitionManager.PLT_2021:
+                case AmmunitionManager.PLT_3030:
+                    var rocketCooldown = (DateTime.Now - Player.AttackManager.lastRocketAttack).TotalMilliseconds;
+                    return (int)((Player.Premium ? 1000 : 3000) - rocketCooldown);
+                case AmmunitionManager.DCR_250:
+                    var dcrCooldown = (DateTime.Now - Player.AttackManager.dcr_250Cooldown).TotalMilliseconds;
+                    return (int)(TimeManager.DCR_250_COOLDOWN - dcrCooldown);
+                case AmmunitionManager.R_IC3:
+                    var r_ic3Cooldown = (DateTime.Now - Player.AttackManager.r_ic3Cooldown).TotalMilliseconds;
+                    return (int)(TimeManager.R_IC3_COOLDOWN - r_ic3Cooldown);
+                case AmmunitionManager.WIZ_X:
+                    var wiz_xCooldown = (DateTime.Now - Player.AttackManager.wiz_xCooldown).TotalMilliseconds;
+                    return (int)(TimeManager.WIZARD_COOLDOWN - wiz_xCooldown);
+                case AmmunitionManager.PLD_8:
+                    var pldCooldown = (DateTime.Now - Player.AttackManager.pld8Cooldown).TotalMilliseconds;
+                    return (int)(TimeManager.PLD8_COOLDOWN - pldCooldown);
+                case AmmunitionManager.LCB_10:
+                case AmmunitionManager.MCB_25:
+                case AmmunitionManager.MCB_50:
+                case AmmunitionManager.UCB_100:
+                case AmmunitionManager.SAB_50:
+                case AmmunitionManager.CBO_100:
+                case AmmunitionManager.JOB_100:
+                    var laserCooldown = (DateTime.Now - Player.AttackManager.lastAttackTime).TotalMilliseconds;
+                    return (int)(1000 - laserCooldown);
+                case AmmunitionManager.RSB_75:
+                    var rsbCooldown = (DateTime.Now - Player.AttackManager.lastRSBAttackTime).TotalMilliseconds;
+                    return (int)(3000 - rsbCooldown);
+                case AmmunitionManager.SMB_01:
+                    var smbCooldown = (DateTime.Now - Player.AttackManager.SmbCooldown).TotalMilliseconds;
+                    return (int)(TimeManager.SMB_COOLDOWN - smbCooldown);
+                case AmmunitionManager.ISH_01:
+                    var ishCooldown = (DateTime.Now - Player.AttackManager.IshCooldown).TotalMilliseconds;
+                    return (int)(TimeManager.ISH_COOLDOWN - ishCooldown);
+                case AmmunitionManager.EMP_01:
+                    var empCooldown = (DateTime.Now - Player.AttackManager.EmpCooldown).TotalMilliseconds;
+                    return (int)(TimeManager.EMP_COOLDOWN - empCooldown);
+                case AmmunitionManager.ACM_01:
+                case AmmunitionManager.DDM_01:
+                case AmmunitionManager.EMPM_01:
+                case AmmunitionManager.IM_01:
+                case AmmunitionManager.SABM_01:
+                case AmmunitionManager.SLM_01:
+                    var mineCooldown = (DateTime.Now - Player.AttackManager.mineCooldown).TotalMilliseconds;
+                    return (int)(TimeManager.MINE_COOLDOWN - mineCooldown);
+                case TechManager.TECH_ENERGY_LEECH:
+                    var energyLeechCooldown = (DateTime.Now - Player.TechManager.EnergyLeech.cooldown).TotalMilliseconds;
+                    return (int)((Player.TechManager.EnergyLeech.Active ? TimeManager.ENERGY_LEECH_DURATION : TimeManager.ENERGY_LEECH_COOLDOWN) - energyLeechCooldown);
+                case TechManager.TECH_CHAIN_IMPULSE:
+                    var chainImpulseCooldown = (DateTime.Now - Player.TechManager.ChainImpulse.cooldown).TotalMilliseconds;
+                    return (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - chainImpulseCooldown);                
+                case TechManager.TECH_PRECISION_TARGETER:
+                    var precisionTargeterCooldown = (DateTime.Now - Player.TechManager.PrecisionTargeter.cooldown).TotalMilliseconds;
+                    return (int)((Player.TechManager.PrecisionTargeter.Active ? TimeManager.PRECISION_TARGETER_DURATION : TimeManager.PRECISION_TARGETER_COOLDOWN) - precisionTargeterCooldown);
+                case TechManager.TECH_BACKUP_SHIELDS:
+                    var backupShieldsCooldown = (DateTime.Now - Player.TechManager.BackupShields.cooldown).TotalMilliseconds;
+                    return (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - backupShieldsCooldown);
+                case TechManager.TECH_BATTLE_REPAIR_BOT:
+                    var battleRepairBotCooldown = (DateTime.Now - Player.TechManager.BattleRepairBot.cooldown).TotalMilliseconds;
+                    return (int)((Player.TechManager.BattleRepairBot.Active ? TimeManager.BATTLE_REPAIR_BOT_DURATION : TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) - battleRepairBotCooldown);
+                case SkillManager.SENTINEL:
+                case SkillManager.SPECTRUM:
+                case SkillManager.VENOM:
+                case SkillManager.SOLACE:
+                case SkillManager.DIMINISHER:
+                    if (Player.Storage.Skills.ContainsKey(pItemId))
+                    {
+                        var cooldown = (DateTime.Now - Player.Storage.Skills[pItemId].cooldown).TotalMilliseconds;
+                        return (int)((Player.Storage.Skills[pItemId].Active ? Player.Storage.Skills[pItemId].Duration : Player.Storage.Skills[pItemId].Cooldown) - cooldown);
+                    }
+                    else return 0;
+                case DroneManager.DEFAULT_FORMATION:
+                case DroneManager.TURTLE_FORMATION:
+                case DroneManager.ARROW_FORMATION:
+                case DroneManager.LANCE_FORMATION:
+                case DroneManager.STAR_FORMATION:
+                case DroneManager.PINCER_FORMATION:
+                case DroneManager.DOUBLE_ARROW_FORMATION:
+                case DroneManager.DIAMOND_FORMATION:
+                case DroneManager.CHEVRON_FORMATION:
+                case DroneManager.MOTH_FORMATION:
+                case DroneManager.CRAB_FORMATION:
+                case DroneManager.HEART_FORMATION:
+                case DroneManager.BARRAGE_FORMATION:
+                case DroneManager.BAT_FORMATION:
+                case DroneManager.DOME_FORMATION:
+                case DroneManager.DRILL_FORMATION:
+                case DroneManager.RING_FORMATION:
+                case DroneManager.VETERAN_FORMATION:
+                case DroneManager.WHEEL_FORMATION:
+                case DroneManager.WAVE_FORMATION:
+                case DroneManager.X_FORMATION:
+                    var formationCooldown = (DateTime.Now - Player.DroneManager.formationCooldown).TotalMilliseconds;
+                    return (int)(TimeManager.FORMATION_COOLDOWN - formationCooldown);
                 default:
                     return 0;
             }
@@ -1125,13 +1224,13 @@ namespace Ow.Game.Objects.Players.Managers
                                                                0);
         }
 
-        public ClientUISlotBarCategoryItemStatusModule GetAbilityItemStatus(string pItemId, string pTooltipId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false)
+        public ClientUISlotBarCategoryItemStatusModule GetAbilityItemStatus(string pItemId, string pTooltipId, bool visible, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false)
         {
 
             ClientUITooltipsCommand itemBarStatusTootip = new ClientUITooltipsCommand(GetAbilityItemBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled, doubleClickToFire));
             ClientUITooltipsCommand slotBarStatusTooltip = new ClientUITooltipsCommand(GetAbilitySlotBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled));
 
-            return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
+            return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, visible,
                                                                ClientUISlotBarCategoryItemStatusModule.BLUE, pItemId,
                                                                0, false, true,
                                                                slotBarStatusTooltip, buyEnable ? true : false, false,
@@ -1611,7 +1710,8 @@ namespace Ow.Game.Objects.Players.Managers
             }
             else if (AbilitiesCategory.Contains(pItemId))
             {
-                Player.SkillManager.AssembleSkillCategoryRequest(pItemId);
+                if (Player.Storage.Skills.ContainsKey(pItemId))
+                    Player.Storage.Skills[pItemId].Send();
             }
             else
             {
@@ -1647,12 +1747,11 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public DateTime mineCooldown = new DateTime();
         public void SendMine(string mineLootId)
         {
             if (Player.Storage.IsInDemilitarizedZone || Player.CurrentInRangePortalId != -1) return;
 
-            if (mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 switch (mineLootId)
                 {
@@ -1681,7 +1780,7 @@ namespace Ow.Game.Objects.Players.Managers
                         Player.SendCooldown(AmmunitionManager.SABM_01, TimeManager.MINE_COOLDOWN);
                         break;
                 }
-                mineCooldown = DateTime.Now;
+                Player.AttackManager.mineCooldown = DateTime.Now;
             }
         }
 

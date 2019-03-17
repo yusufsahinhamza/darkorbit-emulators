@@ -10,15 +10,13 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Managers
 {
-    class BoosterManager
+    class BoosterManager : AbstractManager
     {
-        public Player Player { get; set; }
-
         public List<BoosterTypeModule> DamageTypes = new List<BoosterTypeModule>();
         public List<BoosterTypeModule> ShieldTypes = new List<BoosterTypeModule>();
         public List<BoosterTypeModule> MaxHpTypes = new List<BoosterTypeModule>();
 
-        public BoosterManager(Player player) { Player = player; }
+        public BoosterManager(Player player) : base(player) { }
 
         public void Initiate()
         {

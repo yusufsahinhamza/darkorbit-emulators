@@ -14,6 +14,7 @@ namespace Ow.Game.Objects
     class Spaceball : Character
     {
         private int SelectedFactionId = 0;
+        public override int RenderRange => -1;
 
         public int Mmo = 0;
         public int Eic = 0;
@@ -31,11 +32,10 @@ namespace Ow.Game.Objects
 
         public Spaceball(int id, int typeId) : base(id, GameManager.GetShip(typeId).Name, 0, GameManager.GetShip(typeId), CurrentPosition, GameManager.GetSpacemap(16), null)
         {
-            SeeRange = 999999;
             Speed = 100;
         }
 
-        public new void Tick()
+        public override void Tick()
         {
             if (EventManager.Spaceball.Active)
             {
@@ -143,6 +143,9 @@ namespace Ow.Game.Objects
                 new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position.Random(Spacemap, Position.X - 1000, Position.X + 500, Position.Y - 1000, Position.Y + 500), Spacemap, false, true);
 
             Respawn();
+
+            if (Mmo > 25 || Eic > 25 || Vru > 25)
+                EventManager.Spaceball.Stop();
         }
 
         public void Respawn()
@@ -199,7 +202,7 @@ namespace Ow.Game.Objects
             }
         }
 
-        public byte[] GetShipCreateCommand()
+        public override byte[] GetShipCreateCommand()
         {
             return ShipCreateCommand.write(
                 Id,

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +24,7 @@ namespace Ow
 
         public static void Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             CheckMySQLConnection();
             LoadDatabase();
             InitiateServer();
@@ -61,7 +63,7 @@ namespace Ow
                         Thread.Sleep(tries * 1000);
                         tries++;
                         goto TRY;
-                    }
+                    } else Environment.Exit(0);
                 }
             }
             return false;

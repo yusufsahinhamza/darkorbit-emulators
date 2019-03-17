@@ -23,7 +23,7 @@ namespace Ow.Net.netty.handlers
 
             if (activatableStationary != null && portalMapEntity != null)
             {
-                if (spacemap.PvpMap)
+                if (spacemap.Options.PvpMap)
                 {
                     if(player.LastCombatTime.AddSeconds(10) < DateTime.Now)
                     {

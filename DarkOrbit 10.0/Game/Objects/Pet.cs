@@ -42,7 +42,7 @@ namespace Ow.Game.Objects
             Damage = 5000;
         }
 
-        public new void Tick()
+        public override void Tick()
         {
             if (Activated)
             {
@@ -258,5 +258,7 @@ namespace Ow.Game.Objects
             GearId = gearId;
             Owner.SendCommand(PetGearSelectCommand.write(new PetGearTypeModule(gearId), new List<int>()));
         }
+
+        public override byte[] GetShipCreateCommand() { return null; }
     }
 }

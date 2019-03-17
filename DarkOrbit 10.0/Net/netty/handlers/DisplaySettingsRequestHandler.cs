@@ -51,8 +51,12 @@ namespace Ow.Net.netty.handlers
             displaySettings.proActionBarAutohideEnabled = read.proActionBarAutohideEnabled;
 
             if(read.proActionBarEnabled != displaySettings.proActionBarEnabled)
+            {
                 displaySettings.proActionBarEnabled = read.proActionBarEnabled;
                 player.SettingsManager.SendSlotBarCommand();
+            }
+
+            QueryManager.SavePlayer.Settings(player, "display", displaySettings);
         }
     }
 }

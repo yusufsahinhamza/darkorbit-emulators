@@ -18,7 +18,6 @@ namespace Ow.Game.Events
         public string Name = "*****";
         public bool Active = false;
         public Spacemap Spacemap = GameManager.GetSpacemap(42);
-        public ConcurrentDictionary<int, Player> Players = new ConcurrentDictionary<int, Player>();
 
         public async void Start()
         {
@@ -26,7 +25,7 @@ namespace Ow.Game.Events
             {
                 Active = true;
 
-                for (int i = 10; i > 0; i--)
+                for (int i = 60; i > 0; i--)
                 {
                     var packet = $"0|A|STD|-={i}=-";
                     GameManager.SendPacketToAll(packet);
@@ -36,18 +35,21 @@ namespace Ow.Game.Events
                     {
                         foreach (var gameSession in GameManager.GameSessions.Values)
                         {
-                            var player = gameSession.Player;
-                            player.CurrentHitPoints = player.MaxHitPoints;
-                            player.CurrentShieldConfig1 = player.MaxShieldPoints;
-                            player.CurrentShieldConfig2 = player.MaxShieldPoints;
-                            player.CpuManager.DisableCloak();
+                            if (gameSession != null && gameSession.Player.Storage.DuelOpponent == null)
+                            {
+                                var player = gameSession.Player;
 
-                            var mmoPosition = new Position(2000, 1500);
-                            var eicPosition = new Position(3800, 10600);
-                            var vruPosition = new Position(18300, 6700);
+                                player.CurrentHitPoints = player.MaxHitPoints;
+                                player.CurrentShieldConfig1 = player.MaxShieldPoints;
+                                player.CurrentShieldConfig2 = player.MaxShieldPoints;
+                                player.CpuManager.DisableCloak();
 
-                            player.Jump(Spacemap.Id, player.FactionId == 1 ? mmoPosition : player.FactionId == 2 ? eicPosition : vruPosition);
-                            Players.TryAdd(player.Id, player);
+                                var mmoPosition = new Position(2000, 1500);
+                                var eicPosition = new Position(3800, 10600);
+                                var vruPosition = new Position(18300, 6700);
+
+                                player.Jump(Spacemap.Id, player.FactionId == 1 ? mmoPosition : player.FactionId == 2 ? eicPosition : vruPosition);
+                            }
                         }
 
                         var tickId = -1;
@@ -67,10 +69,10 @@ namespace Ow.Game.Events
             {
                 CheckRadiation();
 
-                if (Players.Count == 1)
+                if (Spacemap.Characters.Count == 1)
                 {
-                    var lastPlayer = Players.First().Value;
-                    SendRewardAndStop(lastPlayer);
+                    var lastPlayer = Spacemap.Characters.First().Value;
+                    SendRewardAndStop(lastPlayer as Player);
                 }
             }
         }
@@ -113,24 +115,27 @@ namespace Ow.Game.Events
 
         public async void SendRewardAndStop(Player player)
         {
-            Active = false;
-            Program.TickManager.RemoveTick(this);
-            Players.Clear();
-            Spacemap.Characters.Clear();
-            Spacemap.Mines.Clear();
-
-            var uridium = 10000;
-            player.ChangeData(DataType.URIDIUM, uridium);
-            var experience = 100000;
-            player.ChangeData(DataType.EXPERIENCE, experience);
-            var honor = 10000;
-            player.ChangeData(DataType.HONOR, honor);
+            player.ChangeData(DataType.URIDIUM, 10000);
+            player.ChangeData(DataType.EXPERIENCE, 100000);
+            player.ChangeData(DataType.HONOR, 10000);
 
             GameManager.SendPacketToAll($"0|A|STD|{player.Name} has won the Jacpot Battle!");
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
             player.SetPosition(player.FactionId == 1 ? Position.MMOPosition : player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
             player.Jump(player.GetBaseMapId(), player.Position);
+
+            Active = false;
+            Program.TickManager.RemoveTick(this);
+            Spacemap.Characters.Clear();
+            Spacemap.Collectables.Clear();
+            Spacemap.Mines.Clear();
+            Spacemap.POIs.Clear();
+        }
+
+        public bool InActiveEvent(Player player)
+        {
+            return Active && player.Spacemap.Id == Spacemap.Id && Spacemap.Characters.ContainsKey(player.Id);
         }
     }
 }

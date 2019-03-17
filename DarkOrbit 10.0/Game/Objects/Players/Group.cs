@@ -2,6 +2,7 @@
 using Ow.Game.Ticks;
 using Ow.Managers;
 using Ow.Net.netty.commands;
+using Ow.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -28,21 +29,28 @@ namespace Ow.Game.Objects
 
         public Group(Player player, Player acceptedPlayer)
         {
-            Id = FindId();
-            LootMode = LOOT_MODE_NEED_BEFORE_GREED;
+            try
+            {
+                Id = FindId();
+                LootMode = LOOT_MODE_NEED_BEFORE_GREED;
 
-            Leader = player;
+                Leader = player;
 
-            AddToGroup(acceptedPlayer);
-            AddToGroup(player);
+                AddToGroup(acceptedPlayer);
+                AddToGroup(player);
 
-            DeleteInvitation(player, acceptedPlayer);
+                DeleteInvitation(player, acceptedPlayer);
 
-            SendInitToAll();
+                SendInitToAll();
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
-            TickId = tickId;
+                var tickId = -1;
+                Program.TickManager.AddTick(this, out tickId);
+                TickId = tickId;
+            }
+            catch (Exception e)
+            {
+                Out.WriteLine("Exception: " + e, "Group.cs");
+            }
         }
 
         public DateTime updateTime = new DateTime();

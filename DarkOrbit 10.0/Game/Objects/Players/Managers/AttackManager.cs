@@ -12,13 +12,12 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players.Managers
 {
-    class AttackManager
+    class AttackManager : AbstractManager
     {
-        public Player Player { get; set; }
         public RocketLauncher RocketLauncher { get; set; }
         public bool Attacking = false;
 
-        public AttackManager(Player player) { Player = player; RocketLauncher = new RocketLauncher(Player); }
+        public AttackManager(Player player) : base(player) { RocketLauncher = new RocketLauncher(Player); }
 
         public DateTime lastAttackTime = new DateTime();
         public DateTime lastRSBAttackTime = new DateTime();
@@ -90,6 +89,9 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 switch (GetSelectedRocket())
                 {
+                    case 5:
+                        PLD8();
+                        break;
                     case 6:
                         WIZ_X();
                         break;
@@ -180,21 +182,6 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public int GetSelectedLauncherId()
-        {
-            switch (Player.Settings.InGameSettings.selectedRocketLauncher)
-            {
-                case AmmunitionManager.HSTRM_01:
-                    return 7;
-                case AmmunitionManager.UBR_100:
-                    return 8;
-                case AmmunitionManager.SAR_02:
-                    return 13;
-                default:
-                    return 7;
-            }
-        }
-
         public DateTime EmpCooldown = new DateTime();
         public void EMP()
         {
@@ -281,18 +268,18 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.SendCooldown(AmmunitionManager.PLD_8, TimeManager.PLD8_COOLDOWN);
                 pld8Cooldown = DateTime.Now;
 
-                if (RandomizeDamage(1, 1) == 0)
+                if (RandomizeDamage(1, 2) == 0)
                 {
-                    if (!(enemy is Player)) return;
+                    if (enemy is Player enemyPlayer)
+                    {
+                        if (!enemyPlayer.Attackable()) return;
 
-                    var enemyPlayer = enemy as Player;
-                    if (!enemyPlayer.Attackable()) return;
+                        enemyPlayer.Storage.underPLD8 = true;
+                        enemyPlayer.Storage.underPLD8Time = DateTime.Now;
 
-                    enemyPlayer.Storage.underPLD8 = true;
-                    enemyPlayer.Storage.underPLD8Time = DateTime.Now;
-
-                    enemyPlayer.SendPacket("0|n|MAL|SET|" + enemyPlayer.Id + "");
-                    enemyPlayer.SendPacketToInRangePlayers("0|n|MAL|SET|" + enemyPlayer.Id + "");
+                        enemyPlayer.SendPacket("0|n|MAL|SET|" + enemyPlayer.Id + "");
+                        enemyPlayer.SendPacketToInRangePlayers("0|n|MAL|SET|" + enemyPlayer.Id + "");
+                    }
                 }
             }
         }
@@ -445,6 +432,17 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (target == null) return false;
 
+            short relationType = target.Clan != null && Player.Clan != null ? Player.Clan.GetRelation(target.Clan) : (short)0;
+            if (target.FactionId == Player.FactionId && relationType != ClanRelationModule.AT_WAR && !(target is Pet pet && pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.DuelOpponent == null)
+            {
+                if (sendWarningMessage)
+                {
+                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                    Player.SendPacket("0|A|STD|You can't attack members of your own company!");
+                }
+                return false;
+            }
+
             if (target is Player && (target as Player).Group != null)
             {
                 if (Player.Group != null && Player.Group.Members.ContainsKey(target.Id))
@@ -456,17 +454,6 @@ namespace Ow.Game.Objects.Players.Managers
                     }
                     return false;
                 }
-            }
-
-            short relationType = target.Clan != null && Player.Clan != null ? Player.Clan.GetRelation(target.Clan) : (short)0;
-            if (target.FactionId == Player.FactionId && relationType != ClanRelationModule.AT_WAR && !(target is Pet pet && pet == Player.Pet) && !(EventManager.JackpotBattle.Active && EventManager.JackpotBattle.Players.ContainsKey(Player.Id)))
-            {
-                if (sendWarningMessage)
-                {
-                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                    Player.SendPacket("0|A|STD|You can't attack members of your own company!");
-                }
-                return false;
             }
 
             if (target is Player && (target as Player).Storage.IsInDemilitarizedZone)
@@ -508,34 +495,11 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 if (sendWarningMessage)
                 {
-                    Player.SendPacket("0|A|STM|oppoatt|%!|" + (EventManager.JackpotBattle.Active && Player.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id ? EventManager.JackpotBattle.Name : target.Name));
+                    Player.SendPacket("0|A|STM|oppoatt|%!|" + (EventManager.JackpotBattle.InActiveEvent(Player) ? EventManager.JackpotBattle.Name : target.Name));
                     inAttackCooldown = DateTime.Now;
                 }
             }
             return true;
-        }
-
-        private int GetRocketRange()
-        {
-            switch (Player.Settings.InGameSettings.selectedRocket)
-            {
-                case AmmunitionManager.R_310:
-                    return 400;
-                case AmmunitionManager.PLT_2026:
-                    return 600;
-                case AmmunitionManager.PLT_2021:
-                    return 800;
-                case AmmunitionManager.PLT_3030:
-                    return 800;
-                case AmmunitionManager.DCR_250:
-                    return 600;
-                case AmmunitionManager.R_IC3:
-                    return 600;
-                case AmmunitionManager.WIZ_X:
-                    return 800;
-                default:
-                    return 0;
-            }
         }
 
         public int RandomizeDamage(int baseDmg, double missProbability = 1.00)
@@ -816,6 +780,29 @@ namespace Ow.Game.Objects.Players.Managers
             return lastAttackTime.AddSeconds(1) < DateTime.Now;
         }
 
+        private int GetRocketRange()
+        {
+            switch (Player.Settings.InGameSettings.selectedRocket)
+            {
+                case AmmunitionManager.R_310:
+                    return 400;
+                case AmmunitionManager.PLT_2026:
+                    return 600;
+                case AmmunitionManager.PLT_2021:
+                    return 800;
+                case AmmunitionManager.PLT_3030:
+                    return 800;
+                case AmmunitionManager.PLD_8:
+                case AmmunitionManager.DCR_250:
+                case AmmunitionManager.R_IC3:
+                    return 600;
+                case AmmunitionManager.WIZ_X:
+                    return 800;
+                default:
+                    return 0;
+            }
+        }
+
         private int GetSelectedRocket()
         {
             switch (Player.Settings.InGameSettings.selectedRocket)
@@ -828,14 +815,37 @@ namespace Ow.Game.Objects.Players.Managers
                     return 3;
                 case AmmunitionManager.PLT_3030:
                     return 4;
+                case AmmunitionManager.PLD_8:
+                    return 5;
+                case AmmunitionManager.WIZ_X:
+                    return 6;
                 case AmmunitionManager.DCR_250:
                     return 10;
                 case AmmunitionManager.R_IC3:
                     return 18;
-                case AmmunitionManager.WIZ_X:
-                    return 6;
                 default:
                     return 0;
+            }
+        }
+
+        public int GetSelectedLauncherId()
+        {
+            switch (Player.Settings.InGameSettings.selectedRocketLauncher)
+            {
+                case AmmunitionManager.HSTRM_01:
+                    return 7;
+                case AmmunitionManager.UBR_100:
+                    return 8;
+                case AmmunitionManager.ECO_10:
+                    return 9;
+                case AmmunitionManager.SAR_01:
+                    return 12;
+                case AmmunitionManager.SAR_02:
+                    return 13;
+                case AmmunitionManager.CBR:
+                    return 14;
+                default:
+                    return 7;
             }
         }
 
@@ -912,6 +922,10 @@ namespace Ow.Game.Objects.Players.Managers
                     return 6;
                 case AmmunitionManager.CBO_100:
                     return 8;
+                case AmmunitionManager.JOB_100:
+                    return 9;
+                case AmmunitionManager.RB_214:
+                    return 11;
                 default:
                     return 0;
             }

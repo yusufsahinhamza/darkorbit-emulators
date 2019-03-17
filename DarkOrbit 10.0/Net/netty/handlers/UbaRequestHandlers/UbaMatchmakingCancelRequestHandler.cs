@@ -14,17 +14,19 @@ namespace Ow.Net.netty.handlers.UbaRequestHandlers
     {
         public void execute(GameSession gameSession, byte[] bytes)
         {
+            /*
             var player = gameSession.Player;
-            player.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 0));
+            player.SendCommand(UbaWindowInitializationCommand.write(new command_NQ(), 0));
 
-            if(player.UbaOpponent != null)
+            if(player.Storage.UbaOpponent != null)
             {
-                player.UbaOpponent.SendCommand(UbaWindowInitializationCommand.write(new class_NQ(), 0));
-                player.UbaOpponent.UbaOpponent = null;
+                player.Storage.UbaOpponent.SendCommand(UbaWindowInitializationCommand.write(new command_NQ(), 0));
+                player.Storage.UbaOpponent.Storage.UbaOpponent = null;
             }
 
-            player.UbaOpponent = null;
+            player.Storage.UbaOpponent = null;
             EventManager.UltimateBattleArena.RemovePlayer(player);
+            */
         }
     }
 }

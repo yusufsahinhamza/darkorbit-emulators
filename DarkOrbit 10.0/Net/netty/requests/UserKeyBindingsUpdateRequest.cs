@@ -13,7 +13,7 @@ namespace Ow.Net.netty.requests
         public const short ID = 13016;
 
         public bool remove = false;
-        public List<UserKeyBindingsReadModule> changedKeyBindings = new List<UserKeyBindingsReadModule>();
+        public List<UserKeyBindingsModule> changedKeyBindings = new List<UserKeyBindingsModule>();
 
         public void readCommand(byte[] bytes)
         {
@@ -24,8 +24,8 @@ namespace Ow.Net.netty.requests
             while (i < length)
             {
                 parser.readShort();
-                var ukbm = new UserKeyBindingsReadModule();
-                ukbm.readCommand(parser);
+                var ukbm = new UserKeyBindingsModule();
+                ukbm.read(parser);
                 this.changedKeyBindings.Add(ukbm);
                 i++;
             }

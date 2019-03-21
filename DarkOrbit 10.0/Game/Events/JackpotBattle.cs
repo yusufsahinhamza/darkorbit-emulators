@@ -115,6 +115,8 @@ namespace Ow.Game.Events
 
         public async void SendRewardAndStop(Player player)
         {
+            Program.TickManager.RemoveTick(this);
+
             player.ChangeData(DataType.URIDIUM, 10000);
             player.ChangeData(DataType.EXPERIENCE, 100000);
             player.ChangeData(DataType.HONOR, 10000);
@@ -126,7 +128,6 @@ namespace Ow.Game.Events
             player.Jump(player.GetBaseMapId(), player.Position);
 
             Active = false;
-            Program.TickManager.RemoveTick(this);
             Spacemap.Characters.Clear();
             Spacemap.Collectables.Clear();
             Spacemap.Mines.Clear();

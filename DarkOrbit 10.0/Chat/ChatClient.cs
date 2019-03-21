@@ -21,6 +21,7 @@ namespace Ow.Chat
 {
     public enum Permissions
     {
+        NORMAL = 0,
         ADMINISTRATOR = 1,
         CHAT_MODERATOR = 2
     }
@@ -32,7 +33,6 @@ namespace Ow.Chat
         private readonly byte[] buffer = new byte[2048];
 
         public int UserId { get; set; }
-        public string Clan { get; set; }
         public Permissions Permission { get; set; }
         public List<Int32> ChatsJoined = new List<Int32>();
 
@@ -94,32 +94,28 @@ namespace Ow.Chat
                         UserId = Convert.ToInt32(loginPacket[3]);
 
                         var gameSession = GameManager.GetGameSession(UserId);
+                        if (gameSession == null) return;
 
-                        if (gameSession != null)
+                        Permission = (Permissions)QueryManager.GetChatPermission(gameSession.Player.Id);
+
+                        if (GameManager.ChatClients.ContainsKey(UserId))
+                            GameManager.ChatClients[gameSession.Player.Id]?.ShutdownConnection();
+
+                        GameManager.ChatClients.TryAdd(gameSession.Player.Id, this);
+
+                        Send("bv%" + gameSession.Player.Id + "#");
+                        var servers = Room.Rooms.Aggregate(String.Empty, (current, chat) => current + chat.Value.ToString());
+                        servers = servers.Remove(servers.Length - 1);
+                        Send("by%" + servers + "#");
+                        Send($"dq%Use '/duel name' for invite someone to duel.#");
+                        ChatsJoined.Add(Room.Rooms.FirstOrDefault().Value.Id);
+
+                        if (QueryManager.ChatFunctions.Banned(UserId))
                         {
-                            Clan = loginPacket[7] == "noclan" ? "" : gameSession.Player.Clan.Tag;
-                            Permission = (Permissions)QueryManager.GetChatPermission(gameSession.Player.Id);
-
-                            if (GameManager.ChatClients.ContainsKey(UserId))
-                                GameManager.ChatClients[gameSession.Player.Id]?.ShutdownConnection();
-
-                            GameManager.ChatClients.TryAdd(gameSession.Player.Id, this);
-
-                            Send("bv%" + gameSession.Player.Id + "#");
-                            var servers = Room.Rooms.Aggregate(String.Empty, (current, chat) => current + chat.Value.ToString());
-                            servers = servers.Remove(servers.Length - 1);
-                            Send("by%" + servers + "#");
-                            Send($"dq%Use '/duel name' for invite someone to duel.#");
-                            ChatsJoined.Add(Room.Rooms.FirstOrDefault().Value.Id);
-
-                            if (QueryManager.ChatFunctions.Banned(UserId))
-                            {
-                                Send($"{ChatConstants.CMD_BANN_USER}%#");
-                                ShutdownConnection();
-                                return;
-                            }
+                            Send($"{ChatConstants.CMD_BANN_USER}%#");
+                            ShutdownConnection();
+                            return;
                         }
-                        else return;
                         break;
                     case ChatConstants.CMD_USER_MSG:
                         SendMessage(message);
@@ -430,7 +426,7 @@ namespace Ow.Chat
                 {
                     foreach (var m in Filter)
                     {
-                        if (message.Contains(m))
+                        if (message.Contains(m) && Permission == Permissions.NORMAL)
                         {
                             Send($"{ChatConstants.CMD_KICK_BY_SYSTEM}%#");
                             ShutdownConnection();
@@ -447,8 +443,8 @@ namespace Ow.Chat
                             else
                                 messagePacket = "a%" + roomId + "@" + gameSession.Player.Name + "@" + message;
 
-                            if (Clan != "")
-                                messagePacket += "@" + Clan;
+                            if (gameSession.Player.Clan.Tag != "")
+                                messagePacket += "@" + gameSession.Player.Clan.Tag;
 
                             pair.Send(messagePacket + "#");
                         }
@@ -461,11 +457,18 @@ namespace Ow.Chat
 
         public void ShutdownConnection()
         {
-            Socket.Shutdown(SocketShutdown.Both);
-            Socket.Close();
-            Socket = null;
-            var value = this;
-            GameManager.ChatClients.TryRemove(UserId, out value);
+            try
+            {
+                Socket.Shutdown(SocketShutdown.Both);
+                Socket.Close();
+                Socket = null;
+                var value = this;
+                GameManager.ChatClients.TryRemove(UserId, out value);
+            }
+            catch (Exception e)
+            {
+                Out.WriteLine("ShutdownConnection() void exception: " + e, "ChatClient.cs");
+            }
         }
 
         private void ReadCallback(IAsyncResult ar)

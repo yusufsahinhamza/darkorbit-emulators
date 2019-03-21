@@ -95,7 +95,7 @@ namespace Ow.Game.Objects
 
         public override void Destroy(Character destroyer, DestructionType destructionType)
         {
-            if (this is Spaceball) return;
+            if (this is Spaceball || Destroyed) return;
 
             if (MainAttacker != null && MainAttacker is Player)
             {
@@ -106,11 +106,9 @@ namespace Ow.Game.Objects
             if (destructionType == DestructionType.PLAYER)
             {
                 var destroyerPlayer = destroyer as Player;
-
                 destroyerPlayer.Deselection();
 
                 //destroyerPlayer.Storage.KilledPlayerIds ölenin id ye göre grupla count 10 15 den falan büyükse ödül verme ve bir yere kaydet sonra işlem yap bi bok yap
-
                 if (destroyerPlayer.Storage.DuelOpponent == null)
                 {
                     int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
@@ -137,13 +135,14 @@ namespace Ow.Game.Objects
 
             if (this is Player thisPlayer)
             {
+                if (EventManager.JackpotBattle.InActiveEvent(thisPlayer))
+                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + (EventManager.JackpotBattle.Spacemap.Characters.Count - 1)); //remove aşşağıda olduğu için böyle olması lazım sanırım
+
                 if (destroyer is Player destroyerPlayer)
                     destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
 
-                thisPlayer.Deselection();
                 thisPlayer.SkillManager.DisableAllSkills();
                 thisPlayer.Pet.Deactivate(true);
-                thisPlayer.CurrentHitPoints = 0;
                 thisPlayer.SendCommand(destroyCommand);
                 thisPlayer.DisableAttack(thisPlayer.Settings.InGameSettings.selectedLaser);
                 thisPlayer.CurrentInRangePortalId = -1;
@@ -151,13 +150,14 @@ namespace Ow.Game.Objects
                 thisPlayer.KillScreen(destroyer, destructionType);
             }
 
+            CurrentHitPoints = 0;
             Deselection();
             InRangeCharacters.Clear();
             VisualModifiers.Clear();
             Spacemap.RemoveCharacter(this);
 
-            if (this is Pet)
-                (this as Pet).Deactivate(true, true);
+            if (this is Pet pet)
+                pet.Deactivate(true, true);
         }
 
         public void Deselection(bool emp = false)
@@ -254,8 +254,7 @@ namespace Ow.Game.Objects
                     if (SelectedCharacter == character)
                         player.Deselection();
 
-                    var shipRemoveCommand = ShipRemoveCommand.write(character.Id);
-                    player.SendCommand(shipRemoveCommand);
+                    player.SendCommand(ShipRemoveCommand.write(character.Id));
                 }
             }
             return success;
@@ -321,7 +320,6 @@ namespace Ow.Game.Objects
             if (CurrentShieldPoints > MaxShieldPoints) CurrentShieldPoints = MaxShieldPoints;
             if (CurrentShieldPoints < 0) CurrentShieldPoints = 0;
 
-
             if (this is Player player)
             {
                 player.SendCommand(AttributeHitpointUpdateCommand.write(CurrentHitPoints, MaxHitPoints, CurrentNanoHull, MaxNanoHull));
@@ -332,11 +330,9 @@ namespace Ow.Game.Objects
 
             if (this is Pet pet)
             {
-                var gameSession = pet.Owner.GameSession;
-                if (gameSession == null) return;
-
-                gameSession.Player.SendCommand(PetHitpointsUpdateCommand.write(pet.CurrentHitPoints, pet.MaxHitPoints, false));
-                gameSession.Player.SendCommand(PetShieldUpdateCommand.write(pet.CurrentShieldPoints, pet.MaxShieldPoints));
+                var owner = pet.Owner;
+                owner.SendCommand(PetHitpointsUpdateCommand.write(pet.CurrentHitPoints, pet.MaxHitPoints, false));
+                owner.SendCommand(PetShieldUpdateCommand.write(pet.CurrentShieldPoints, pet.MaxShieldPoints));
             }
 
             foreach (var character in Spacemap.Characters.Values)
@@ -346,9 +342,13 @@ namespace Ow.Game.Objects
 
         public void AddVisualModifier(VisualModifierCommand visualModifier)
         {
+            VisualModifiers.TryAdd(visualModifier.modifier, visualModifier);
+            SendCommandToInRangePlayers(visualModifier.writeCommand());
+
             if (this is Player)
             {
                 var player = this as Player;
+                player.SendCommand(visualModifier.writeCommand());
 
                 switch (visualModifier.modifier)
                 {
@@ -366,12 +366,6 @@ namespace Ow.Game.Objects
                         break;
                 }
             }
-
-            VisualModifiers.TryAdd(visualModifier.modifier, visualModifier);
-            SendCommandToInRangePlayers(visualModifier.writeCommand());
-
-            if (this is Player)
-                (this as Player).SendCommand(visualModifier.writeCommand());
         }
 
         public void RemoveVisualModifier(int attributeId)
@@ -380,12 +374,11 @@ namespace Ow.Game.Objects
 
             if (visualModifier != null)
             {
+                VisualModifiers.TryRemove(visualModifier.modifier, out visualModifier);
                 SendCommandToInRangePlayers(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, visualModifier.attribute, Ship.LootId, visualModifier.count, false).writeCommand());
 
-                if (this is Player)
-                    (this as Player).SendCommand(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, visualModifier.attribute, Ship.LootId, visualModifier.count, false).writeCommand());
-
-                VisualModifiers.TryRemove(visualModifier.modifier, out visualModifier);
+                if (this is Player player)
+                    player.SendCommand(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, visualModifier.attribute, Ship.LootId, visualModifier.count, false).writeCommand());
             }
         }
 

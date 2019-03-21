@@ -421,12 +421,6 @@ namespace Ow.Game
                 CharacterRemoved?.Invoke(this, new CharacterArgs(character));
                 foreach (var otherCharacter in Characters.Values)
                     otherCharacter.RemoveInRangeCharacter(character);
-
-                if (character is Player player)
-                {
-                    if (EventManager.JackpotBattle.InActiveEvent(player))
-                        GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + EventManager.JackpotBattle.Spacemap.Characters.Count);
-                }
             }
             return success;
         }

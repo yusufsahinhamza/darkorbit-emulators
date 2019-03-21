@@ -82,9 +82,6 @@ namespace Ow.Game.Objects
             TechManager.Tick();
             SkillManager.Tick();
 
-            if (Moving || AttackManager.mineCooldown.AddSeconds(3) > DateTime.Now)
-                Spacemap.OnPlayerMovement(this);
-
             /*
             if (MoveManager.Moving && Collecting)
             {

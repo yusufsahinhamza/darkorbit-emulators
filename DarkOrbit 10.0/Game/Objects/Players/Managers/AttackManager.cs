@@ -210,9 +210,6 @@ namespace Ow.Game.Objects.Players.Managers
                     {
                         if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
 
-                        if (Player.RankId == 21)
-                            otherPlayer.AddVisualModifier(new VisualModifierCommand(otherPlayer.Id, VisualModifierCommand.MIRRORED_CONTROLS, 0, "", 0, true));
-
                         if (otherPlayer.Invisible)
                             otherPlayer.CpuManager.DisableCloak();
                     }
@@ -443,35 +440,50 @@ namespace Ow.Game.Objects.Players.Managers
                 return false;
             }
 
-            if (target is Player && (target as Player).Group != null)
+
+            if (target is Player)
             {
-                if (Player.Group != null && Player.Group.Members.ContainsKey(target.Id))
+                var targetPlayer = target as Player;
+
+                if (targetPlayer.Clan == Player.Clan)
                 {
                     if (sendWarningMessage)
                     {
                         Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                        Player.SendPacket("0|A|STD|You can't attack members of your group!");
+                        Player.SendPacket("0|A|STD|You can't attack members of your own clan!");
                     }
                     return false;
                 }
-            }
 
-            if (target is Player && (target as Player).Storage.IsInDemilitarizedZone)
-            {
-                Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                if (peaceAreaCooldown.AddSeconds(10) < DateTime.Now)
+                if (targetPlayer.Group != null)
                 {
-                    if (sendWarningMessage)
+                    if (Player.Group != null && Player.Group.Members.ContainsKey(target.Id))
                     {
-                        Player.SendPacket("0|A|STM|peacearea");
-
-                        if (target is Player)
-                            (target as Player).SendPacket("0|A|STM|peacearea");
-
-                        peaceAreaCooldown = DateTime.Now;
+                        if (sendWarningMessage)
+                        {
+                            Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                            Player.SendPacket("0|A|STD|You can't attack members of your group!");
+                        }
+                        return false;
                     }
                 }
-                return false;
+
+                if (targetPlayer.Storage.IsInDemilitarizedZone)
+                {
+                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                    if (peaceAreaCooldown.AddSeconds(10) < DateTime.Now)
+                    {
+                        if (sendWarningMessage)
+                        {
+                            Player.SendPacket("0|A|STM|peacearea");
+                            targetPlayer.SendPacket("0|A|STM|peacearea");
+
+                            peaceAreaCooldown = DateTime.Now;
+                        }
+                    }
+                    return false;
+                }
+
             }
 
             if (Player.Position.DistanceTo(target.Position) > (isRocketAttack ? GetRocketRange() : Player.AttackRange))

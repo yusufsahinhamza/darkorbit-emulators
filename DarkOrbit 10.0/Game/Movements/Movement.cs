@@ -77,6 +77,10 @@ namespace Ow.Game.Movements
             }
 
             character.Position = actualPosition;
+
+            if (character is Player player)
+                player.Spacemap.OnPlayerMovement(player);
+
             return actualPosition;
         }
     }

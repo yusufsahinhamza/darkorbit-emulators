@@ -74,7 +74,7 @@ namespace Ow.Net.netty
                 var read = new LoginRequest();
                 read.readCommand(bytes);
 
-                if (QueryManager.CheckSessionId(read.userID, read.sessionID))
+                if (QueryManager.CheckSessionId(read.userID, read.sessionID) && !QueryManager.Banned(read.userID))
                     new LoginRequestHandler(client, read.userID);
 
                 return;

@@ -53,24 +53,28 @@ namespace Ow.Game
 
         private void PrepareForDisconnect()
         {
-            Player.Group?.UpdatePlayer(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
-            Player.Pet.Deactivate();
-            Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-            QueryManager.SavePlayer.Information(Player);
-            Player.SaveSettings();
-            Player.Spacemap.RemoveCharacter(Player);
-            Program.TickManager.RemoveTick(Player);       
+            try
+            {
+                QueryManager.SavePlayer.Information(Player);
+                Player.SaveSettings();
+                Player.Group?.UpdatePlayer(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
+                Player.Pet.Deactivate();
+                Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                Player.Spacemap.RemoveCharacter(Player);
+                Program.TickManager.RemoveTick(Player);
+            }
+            catch (Exception e)
+            {
+                Out.WriteLine("PrepareForDisconnect void exception: " + e, "GameSession.cs");
+            }     
         }
 
         public void Disconnect(DisconnectionType dcType)
         {
             try
             {
-                if (GameManager.ChatClients.ContainsKey(Player.Id))
-                    GameManager.ChatClients[Player.Id]?.ShutdownConnection();
-
-                InProcessOfDisconnection = true;
                 Player.UpdateCurrentCooldowns();
+                InProcessOfDisconnection = true;
 
                 if (dcType == DisconnectionType.SOCKET_CLOSED)
                 {
@@ -79,9 +83,7 @@ namespace Ow.Game
                 }
 
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
-                {
                     mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 0 WHERE userID = {Player.Id}");
-                }
 
                 foreach (var session in GameManager.GameSessions.Values)
                 {
@@ -102,12 +104,11 @@ namespace Ow.Game
                 var gameSession = this;
                 Program.TickManager.RemoveTick(this);
                 GameManager.GameSessions.TryRemove(Player.Id, out gameSession);
-
                 Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)
             {
-                Out.WriteLine("Exception: " + e, "GameSession.cs");
+                Out.WriteLine("Disconnect void exception: " + e, "GameSession.cs");
             }
         }
     }

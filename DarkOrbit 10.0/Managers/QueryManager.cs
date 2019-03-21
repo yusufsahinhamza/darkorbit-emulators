@@ -73,6 +73,15 @@ namespace Ow.Managers
             }
         }
 
+        public static bool Banned(int userId)
+        {
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 1");
+                return result.Rows.Count >= 1 ? true : false;
+            }
+        }
+
         public static void LoadUser(Player Player)
         {
             try

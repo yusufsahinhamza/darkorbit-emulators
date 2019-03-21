@@ -29,7 +29,7 @@ namespace Ow.Net.netty.handlers
                     player.Respawn(true, false, false, true);
                     break;
                 case KillScreenOptionTypeModule.AT_DEATHLOCATION_REPAIR:
-                    if (player.Data.uridium >= 300)
+                    if (player.Data.uridium >= 300 && player.Spacemap.Options.DeathLocationRepair)
                     {
                         player.ChangeData(DataType.URIDIUM, 300, ChangeType.DECREASE);
                         player.Storage.KillscreenDeathLocationRepairTime = DateTime.Now;

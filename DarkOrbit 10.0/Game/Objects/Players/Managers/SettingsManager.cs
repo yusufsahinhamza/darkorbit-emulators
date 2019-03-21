@@ -1749,7 +1749,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendMine(string mineLootId)
         {
-            if (Player.Storage.IsInDemilitarizedZone || Player.CurrentInRangePortalId != -1) return;
+            if (Player.Storage.IsInDemilitarizedZone || Player.CurrentInRangePortalId != -1 || Player.Storage.OnBlockedMinePosition) return;
 
             if (Player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {

@@ -24,7 +24,6 @@ namespace Ow
 
         public static void Main(string[] args)
         {
-            Console.OutputEncoding = Encoding.UTF8;
             CheckMySQLConnection();
             LoadDatabase();
             InitiateServer();
@@ -100,15 +99,13 @@ namespace Ow
         {
             var packet = txt.Replace("/", "");
             var splitted = packet.Split(' ');
-
-            
+        
             switch (splitted[0])
             {
                 case "restart":
                     GameManager.Restart(Convert.ToInt32(splitted[1]));
                     break;
-            }
-            
+            }        
         }
     }
 }

@@ -65,6 +65,9 @@ namespace Ow.Net
                     
                     switch (String(json["Action"]))
                     {
+                        case "ChangeClanData":
+                            ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), parameters["Name"], parameters["Tag"]);
+                            break;
                         case "ChangeShip":
                             ChangeShip(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ShipId"]));
                             break;
@@ -96,6 +99,21 @@ namespace Ow.Net
                 }
             }
             catch (Exception) { }
+        }
+
+        public static void ChangeClanData(Clan clan, object name, object tag)
+        {
+            if (clan != null)
+            {
+                clan.Tag = tag.ToString();
+                clan.Name = name.ToString();
+                foreach (GameSession gameSession in GameManager.GameSessions.Values)
+                {
+                    var player = gameSession.Player;
+                    if (player.Clan == clan)
+                        GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write(clan.Tag, clan.Id, player.Id));
+                }
+            }
         }
 
         public static void JoinToClan(Player player, Clan clan)

@@ -8,6 +8,8 @@ namespace Ow.Utils
 {
     class ByteArray
     {
+        //Credits to Yuuki and E*PVP
+
         public List<byte> Message;
         public bool NROL;
 
@@ -16,6 +18,17 @@ namespace Ow.Utils
             Message = new List<byte>();
             NROL = NeedReverseOrLength;
             writeShort(ID);
+        }
+
+        public ByteArray(bool NeedReverseOrLenght = false)
+        {
+            Message = new List<byte>();
+            NROL = NeedReverseOrLenght;
+        }
+
+        public void setNROL(bool to)
+        {
+            NROL = to;
         }
 
         public void writeInt(int Int32)
@@ -27,9 +40,15 @@ namespace Ow.Utils
         {
             write(BitConverter.GetBytes(Short), true);
         }
+
         public void writeDouble(double num)
         {
             write(BitConverter.GetBytes(num), true);
+        }
+
+        public void writeLong(long num)
+        {
+            write(BitConverter.GetBytes(num));
         }
 
         public void writeFloat(float num)
@@ -66,7 +85,7 @@ namespace Ow.Utils
         {
 
             List<byte> NewMsg = new List<byte>();
-            NewMsg.AddRange(BitConverter.GetBytes(Message.Count));
+            NewMsg.AddRange(BitConverter.GetBytes((short)Message.Count));
             NewMsg.Reverse();
             NewMsg.AddRange(Message);
 
@@ -74,9 +93,37 @@ namespace Ow.Utils
         }
     }
 
-    class ByteReader
+    class ByteParser
     {
-        public static int ReadInt(byte[] data)
+        //Credits to E*PVP
+
+        public byte[] Array { get; set; }
+        public int Counter = 0;
+        public short Lenght;
+        public short ID;
+
+        public ByteParser(byte[] Array)
+        {
+            this.Array = Array;
+
+            this.Lenght = readShort();
+            this.ID = readShort();
+        }
+
+        private int ReadShort(byte[] data)
+        {
+            int outputResult = 0;
+            outputResult += data[0] << 8;
+            outputResult += data[1];
+            return outputResult;
+        }
+
+        public short readShort()
+        {
+            return (short)Convert.ToInt32(ReadShort(new byte[] { Array[Counter++], Array[Counter++] }));
+        }
+
+        private int ReadInt(byte[] data)
         {
             int outputResult = 0;
             outputResult += data[0] << 24;
@@ -86,43 +133,28 @@ namespace Ow.Utils
             return outputResult;
         }
 
-        public static int ReadShort(byte[] data)
+        public int readInt()
         {
-            int outputResult = 0;
-            outputResult += data[0] << 8;
-            outputResult += data[1];
-            return outputResult;
-        }
-    }
-
-    class ByteParser
-    {
-        private byte[] Body;
-        private int Pointer = 0;
-
-        public ByteParser(byte[] Packet)
-        {
-            Body = Packet;
-            this.Lenght = readShort();
-            this.CMD_ID = readShort();
+            return ReadInt(new byte[] { Array[Counter++], Array[Counter++], Array[Counter++], Array[Counter++], });
         }
 
-        public short Lenght;
-        public short CMD_ID;
-
-        public short readShort()
+        public long readLong()
         {
-            short value = BitConverter.ToInt16(new byte[] { Body[Pointer + 1], Body[Pointer] }, 0);
-            Pointer += 2;
+            long value = BitConverter.ToInt64(new byte[] { Array[Counter + 7], Array[Counter + 6], Array[Counter + 5], Array[Counter + 4], Array[Counter + 3], Array[Counter + 2], Array[Counter + 1], Array[Counter] }, 0);
+            Counter += 8;
 
             return value;
         }
 
-        public int readInt()
+        public double readDouble()
         {
-            int value = BitConverter.ToInt32(new byte[] { Body[Pointer + 3], Body[Pointer + 2], Body[Pointer + 1], Body[Pointer] }, 0);
-            Pointer += 4;
+            return BitConverter.Int64BitsToDouble(readLong());
+        }
 
+        public double readFloat()
+        {
+            var value = BitConverter.ToSingle(new byte[] { Array[Counter + 3], Array[Counter + 2], Array[Counter + 1], Array[Counter] }, 0);
+            Counter += 4;
             return value;
         }
 
@@ -130,20 +162,19 @@ namespace Ow.Utils
         {
             try
             {
-                int Lenght = readShort();
-                string data = Encoding.UTF8.GetString(Body, Pointer, Lenght);
-                Pointer += Lenght;
-                return data;
+                short stringLength = readShort();
+                string value = Encoding.UTF8.GetString(Array, Counter, stringLength);
+
+                Counter += stringLength;
+
+                return value;
             }
-            catch (System.Exception)
-            {
-                return "";
-            }
+            catch (Exception) { return ""; }
         }
 
         public bool readBoolean()
         {
-            return Body[Pointer++] == 1;
+            return Array[Counter++] == 1;
         }
     }
 }

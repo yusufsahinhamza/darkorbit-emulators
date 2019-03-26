@@ -348,9 +348,9 @@ namespace Ow.Game.Objects.Players.Managers
                 DroneManager.STAR_FORMATION, DroneManager.PINCER_FORMATION,
                 DroneManager.DOUBLE_ARROW_FORMATION, DroneManager.DIAMOND_FORMATION,
                 DroneManager.CHEVRON_FORMATION, DroneManager.MOTH_FORMATION,
-                DroneManager.CRAB_FORMATION, DroneManager.HEART_FORMATION/*,
+                DroneManager.CRAB_FORMATION, DroneManager.HEART_FORMATION,
                 DroneManager.DRILL_FORMATION,DroneManager.RING_FORMATION,
-                DroneManager.WHEEL_FORMATION*/
+                DroneManager.WHEEL_FORMATION
         };
 
         public void SendUserKeyBindingsUpdateCommand()
@@ -720,7 +720,7 @@ namespace Ow.Game.Objects.Players.Managers
                 switch (itemLootId)
                 {
                     case CpuManager.CLK_XL:
-                        maxTime = Player.CpuManager.CLOAK_COOLDOWN;
+                        maxTime = Player.CpuManager.CloakCooldownTime;
                         break;
                 }
 
@@ -937,13 +937,26 @@ namespace Ow.Game.Objects.Players.Managers
             var formationItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in FormationsCategory)
             {
+                var visible = true;
+
+                if (Player.RankId != 21)
+                {
+                    switch (itemLootId)
+                    {
+                        case DroneManager.DRILL_FORMATION:
+                        case DroneManager.RING_FORMATION:
+                        case DroneManager.WHEEL_FORMATION:
+                            visible = false;
+                            break;
+                    }
+                }
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
                                                                    new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), TimeManager.FORMATION_COOLDOWN, itemLootId,
                                                                    false);
 
-                formationItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetFormationTtip(itemLootId), false),
+                formationItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetFormationTtip(itemLootId), false, false, false, visible),
                                                                       ClientUISlotBarCategoryItemModule.SELECTION,
                                                                       ClientUISlotBarCategoryItemModule.NONE,
                                                                       GetCooldownType(itemLootId),
@@ -1091,7 +1104,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 case CpuManager.CLK_XL:
                     var cloakCooldown = (DateTime.Now - Player.CpuManager.cloakCooldown).TotalMilliseconds;
-                    return (int)(Player.CpuManager.CLOAK_COOLDOWN - cloakCooldown);
+                    return (int)(Player.CpuManager.CloakCooldownTime - cloakCooldown);
                 case AmmunitionManager.R_310:
                 case AmmunitionManager.PLT_2026:
                 case AmmunitionManager.PLT_2021:
@@ -1193,13 +1206,13 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public ClientUISlotBarCategoryItemStatusModule GetItemStatus(string pItemId, string pTooltipId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false)
+        public ClientUISlotBarCategoryItemStatusModule GetItemStatus(string pItemId, string pTooltipId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false, bool visible = true)
         {
 
             ClientUITooltipsCommand itemBarStatusTootip = new ClientUITooltipsCommand(GetItemBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled, doubleClickToFire));
             ClientUITooltipsCommand slotBarStatusTooltip = new ClientUITooltipsCommand(GetSlotBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled));
 
-            return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, true,
+            return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, visible,
                                                                ClientUISlotBarCategoryItemStatusModule.BLUE, pItemId,
                                                                0, false, true,
                                                                slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(pItemId) :
@@ -1749,7 +1762,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendMine(string mineLootId)
         {
-            if (Player.Storage.IsInDemilitarizedZone || Player.CurrentInRangePortalId != -1 || Player.Storage.OnBlockedMinePosition) return;
+            if (Player.Storage.IsInDemilitarizedZone || Player.Storage.OnBlockedMinePosition || Player.CurrentInRangePortalId != -1) return;
 
             if (Player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {

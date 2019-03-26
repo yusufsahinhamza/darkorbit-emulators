@@ -178,9 +178,9 @@ namespace Ow.Chat
         public void SendMessage(string content)
         {
             var gameSession = GameManager.GetGameSession(UserId);
+            if (gameSession == null) return;
 
             gameSession.LastActiveTime = DateTime.Now;
-
             string messagePacket = "";
 
             var packet = content.Replace("@", "%").Split('%');
@@ -341,7 +341,6 @@ namespace Ow.Chat
             }
             else if (cmd == "/start_jpb" && Permission == Permissions.ADMINISTRATOR)
             {
-                GameManager.SendPacketToAll($"0|A|STD|System preparing for Jackpot Battle!");
                 EventManager.JackpotBattle.Start();
             }
             else if (cmd == "/ban" && (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR))
@@ -355,7 +354,7 @@ namespace Ow.Chat
                 var playerName = message.Split(' ')[1];
                 var typeId = Convert.ToInt32(message.Split(' ')[2]);
                 var day = Convert.ToInt32(message.Split(' ')[3]);
-                var reason = message.Remove(0, playerName.Length + typeId.ToString().Length + day.ToString().Length + 8);
+                var reason = message.Remove(0, (playerName.Length + typeId.ToString().Length + day.ToString().Length) + 5);
 
                 if (typeId == 1 && Permission == Permissions.CHAT_MODERATOR) return;
 
@@ -459,11 +458,14 @@ namespace Ow.Chat
         {
             try
             {
-                Socket.Shutdown(SocketShutdown.Both);
-                Socket.Close();
-                Socket = null;
-                var value = this;
-                GameManager.ChatClients.TryRemove(UserId, out value);
+                if (Socket.IsBound)
+                {
+                    Socket.Shutdown(SocketShutdown.Both);
+                    Socket.Close();
+                    Socket = null;
+                    var value = this;
+                    GameManager.ChatClients.TryRemove(UserId, out value);
+                }
             }
             catch (Exception e)
             {

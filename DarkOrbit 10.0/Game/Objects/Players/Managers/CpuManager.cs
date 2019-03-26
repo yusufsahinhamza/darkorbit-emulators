@@ -1,4 +1,5 @@
-﻿using Ow.Game.Objects;
+﻿using Newtonsoft.Json;
+using Ow.Game.Objects;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using System;
@@ -17,11 +18,7 @@ namespace Ow.Game.Objects.Players.Managers
         public const String ROCKET_LAUNCHER = "equipment_weapon_rocketlauncher_hst-2";
         public const String GALAXY_JUMP_CPU = "equipment_extra_cpu_jp-02";
 
-        public int CLOAK_COOLDOWN
-        {
-            get { return Player.Premium ? 10000 : 20000; }
-        }
-
+        public int CloakCooldownTime => Player.Premium ? 10000 : 20000;
         private const int CLOAK_PRICE = 256;
 
         public CpuManager(Player player) : base(player) { }
@@ -29,19 +26,19 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime cloakCooldown = new DateTime();
         public void Cloak()
         {
+            if (Player.Spacemap.Options.CloakBlocked || Player.Invisible) return;
             if (Player.Data.uridium >= CLOAK_PRICE)
             {
-                if (cloakCooldown.AddMilliseconds(CLOAK_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+                if (cloakCooldown.AddMilliseconds(CloakCooldownTime) < DateTime.Now || Player.Storage.GodMode)
                 {
-                    if (Player.Spacemap.Options.CloakBlocked || Player.Invisible) return;
-
                     Player.ChangeData(DataType.URIDIUM, CLOAK_PRICE, ChangeType.DECREASE);
                     EnableCloak();
 
-                    Player.SendCooldown(CLK_XL, CLOAK_COOLDOWN);
+                    Player.SendCooldown(CLK_XL, CloakCooldownTime);
                     cloakCooldown = DateTime.Now;
                 }
             }
+            else Player.SendPacket("0|A|STD|You don't have enough uridium for buy a cloak.");
         }
 
         public void ArolX()

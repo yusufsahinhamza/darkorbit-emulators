@@ -142,7 +142,6 @@ namespace Ow.Game.Objects
                 var laserRunCommand = AttackLaserRunCommand.write(Id, target.Id, Owner.AttackManager.GetSelectedLaser(), false, false);
                 SendCommandToInRangePlayers(laserRunCommand);
 
-
                 var attackHitCommand =
                         AttackHitCommand.write(new AttackTypeModule(AttackTypeModule.LASER), Id,
                                              target.Id, target.CurrentHitPoints,

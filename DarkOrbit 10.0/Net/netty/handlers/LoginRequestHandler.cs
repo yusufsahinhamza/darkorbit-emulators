@@ -219,12 +219,15 @@ namespace Ow.Net.netty.handlers
             }
         }
 
-        public static void SendSettings(Player player)
+        public static void SendSettings(Player player, bool isLogin = true)
         {
             try
             {
-                player.UpdateCurrentCooldowns();
-                player.SetCurrentCooldowns();
+                if (isLogin)
+                {
+                    player.UpdateCurrentCooldowns();
+                    player.SetCurrentCooldowns();
+                }
                 player.SettingsManager.SendUserKeyBindingsUpdateCommand();
                 player.SettingsManager.SendUserSettingsCommand();
                 player.SettingsManager.SendMenuBarsCommand();

@@ -4,6 +4,7 @@ using Ow.Game.Objects.Collectables;
 using Ow.Game.Objects.Players;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
@@ -108,6 +109,9 @@ namespace Ow.Game.Objects
                 var destroyerPlayer = destroyer as Player;
                 destroyerPlayer.Deselection();
 
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                    mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
+
                 //destroyerPlayer.Storage.KilledPlayerIds ölenin id ye göre grupla count 10 15 den falan büyükse ödül verme ve bir yere kaydet sonra işlem yap bi bok yap
                 if (destroyerPlayer.Storage.DuelOpponent == null)
                 {
@@ -116,7 +120,7 @@ namespace Ow.Game.Objects
                     int uridium = Ship.Rewards.Uridium;
                     var changeType = ChangeType.INCREASE;
 
-                    short relationType = destroyerPlayer.Clan != null && Clan != null ? Clan.GetRelation(destroyerPlayer.Clan) : (short)0;
+                    short relationType = destroyerPlayer.Clan.Id != 0 && Clan.Id != 0 ? Clan.GetRelation(destroyerPlayer.Clan) : (short)0;
                     if ((destroyerPlayer.FactionId == FactionId && relationType != ClanRelationModule.AT_WAR && (this is Player player && !(EventManager.JackpotBattle.InActiveEvent(player))) || (this is Pet thisPet && destroyerPlayer.Pet == thisPet)))
                         changeType = ChangeType.DECREASE;
 
@@ -136,7 +140,7 @@ namespace Ow.Game.Objects
             if (this is Player thisPlayer)
             {
                 if (EventManager.JackpotBattle.InActiveEvent(thisPlayer))
-                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, "0|LM|ST|SLE|" + (EventManager.JackpotBattle.Spacemap.Characters.Count - 1)); //remove aşşağıda olduğu için böyle olması lazım sanırım
+                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, $"0|A|STM|msg_jackpot_players_left|%COUNT%|{(EventManager.JackpotBattle.Spacemap.Characters.Count - 1)}"); //remove aşşağıda olduğu için böyle olması lazım sanırım
 
                 if (destroyer is Player destroyerPlayer)
                     destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
@@ -208,8 +212,8 @@ namespace Ow.Game.Objects
 
                 if (this is Player player)
                 {
-                    short relationType = character.Clan != null && Clan != null && Clan.Id != 0 && character.Clan.Id != 0 ? Clan.GetRelation(character.Clan) : (short)0;
-                    bool sameClan = character.Clan != null && Clan != null ? (Clan.Id != 0 && character.Clan.Id != 0 && Clan == character.Clan) : false;
+                    short relationType = character.Clan.Id != 0 && Clan.Id != 0 ? Clan.GetRelation(character.Clan) : (short)0;
+                    bool sameClan = Clan.Id != 0 && character.Clan.Id != 0 && Clan == character.Clan;
 
                     if (character is Player)
                     {

@@ -15,9 +15,6 @@ namespace Ow.Net.netty.commands
         public static byte[] write(String param2, List<ClientUISlotBarModule> slotBars,
                                    List<ClientUISlotBarCategoryModule> categories)
         {
-
-
-
             var param1 = new ByteArray(ID);
             param1.writeInt(slotBars.Count);
             foreach(var sb in slotBars)

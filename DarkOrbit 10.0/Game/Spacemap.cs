@@ -226,7 +226,7 @@ namespace Ow.Game
                         else
                         {
                             if (mine.Active)
-                                if (mine.activationTime.AddSeconds(Mine.ACTIVATION_TIME) < DateTime.Now)
+                                if (mine.activationTime.AddMilliseconds(Mine.ACTIVATION_TIME) < DateTime.Now)
                                     if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
                                     {
                                         mine.Remove();
@@ -255,18 +255,16 @@ namespace Ow.Game
 
             foreach (var entity in Activatables.Values)
             {
-                bool inRange = Player.Position.DistanceTo(entity.Position) <= 500;
-
+                bool inRange = Player.Position.DistanceTo(entity.Position) <= 700;
                 short status = inRange ? MapAssetActionAvailableCommand.ON : MapAssetActionAvailableCommand.OFF;
 
-                if (entity is HomeStation)
+                if (inRange)
                 {
-                    var homeStation = (HomeStation)entity;
+                    onBlockedMinePosition = true;
 
-                    if (Player.Position.DistanceTo(homeStation.Position) <= HomeStation.SECURE_ZONE_RANGE)
+                    if (entity is HomeStation homeStation)
                     {
-                        onBlockedMinePosition = true;
-                        if (homeStation.FactionId == Player.FactionId)
+                        if (Player.Position.DistanceTo(homeStation.Position) <= HomeStation.SECURE_ZONE_RANGE && homeStation.FactionId == Player.FactionId)
                         {
                             if (!Player.LastAttackTime(5))
                             {
@@ -274,43 +272,43 @@ namespace Ow.Game
                                 inEquipZone = true;
                             }
                         }
-                    } else onBlockedMinePosition = false;
-                }
-                else if (entity is RepairStation)
-                {
-                    if(Player.CurrentHitPoints == Player.MaxHitPoints || Player.FactionId != entity.FactionId)
-                        inRange = false;
-                }
+                    }
+                    else if (entity is RepairStation)
+                    {
+                        if (Player.CurrentHitPoints == Player.MaxHitPoints || Player.FactionId != entity.FactionId)
+                            inRange = false;
+                    }
 
-                bool activateButton = Player.UpdateActivatable(entity, inRange);
+                    bool activateButton = Player.UpdateActivatable(entity, inRange);
 
-                if (activateButton)
-                {
+                    if (activateButton)
+                    {
 
-                    var tooltipItemBars = new List<ClientUITooltipModule>();
+                        var tooltipItemBars = new List<ClientUITooltipModule>();
 
-                    var class521_localized_1 =
-                     new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
+                        var class521_localized_1 =
+                         new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
 
-                    var slotBarItemStatusTooltip_1 =
-                    new ClientUITooltipModule(class521_localized_1, ClientUITooltipModule.STANDARD, "q2_condition_JUMP", new List<ClientUITextReplacementModule>());
+                        var slotBarItemStatusTooltip_1 =
+                        new ClientUITooltipModule(class521_localized_1, ClientUITooltipModule.STANDARD, "q2_condition_JUMP", new List<ClientUITextReplacementModule>());
 
-                    tooltipItemBars.Add(slotBarItemStatusTooltip_1);
+                        tooltipItemBars.Add(slotBarItemStatusTooltip_1);
 
-                    var assetAction =
-                            MapAssetActionAvailableCommand.write(entity.Id,
-                                                               status,
-                                                               inRange,
-                                                               new ClientUITooltipsCommand(
-                                                                       entity is Portal ? tooltipItemBars : new List<ClientUITooltipModule>()),
-                                                               new class_h45()
-                            );
-                    Player.SendCommand(assetAction);
+                        var assetAction =
+                                MapAssetActionAvailableCommand.write(entity.Id,
+                                                                   status,
+                                                                   inRange,
+                                                                   new ClientUITooltipsCommand(
+                                                                           entity is Portal ? tooltipItemBars : new List<ClientUITooltipModule>()),
+                                                                   new class_h45()
+                                );
+                        Player.SendCommand(assetAction);
+                    }
                 }
             }
 
-            
-            Player.Storage.OnBlockedMinePosition = onBlockedMinePosition;
+            if (Player.Storage.OnBlockedMinePosition != onBlockedMinePosition)
+                Player.Storage.OnBlockedMinePosition = onBlockedMinePosition;
 
             if (Player.Settings.InGameSettings.inEquipZone != inEquipZone)
             {
@@ -382,7 +380,7 @@ namespace Ow.Game
         public void AddAndInitPlayer(Player player)
         {
             AddCharacter(player);
-            LoginRequestHandler.SendSettings(player);
+            LoginRequestHandler.SendSettings(player, false);
             LoginRequestHandler.SendPlayerItems(player, false);
         }
 

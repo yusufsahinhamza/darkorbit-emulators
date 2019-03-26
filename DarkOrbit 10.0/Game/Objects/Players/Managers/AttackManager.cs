@@ -210,7 +210,7 @@ namespace Ow.Game.Objects.Players.Managers
                     {
                         if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
 
-                        if (otherPlayer.Invisible)
+                        if (otherPlayer.Invisible && otherPlayer.FactionId != Player.FactionId)
                             otherPlayer.CpuManager.DisableCloak();
                     }
                 }
@@ -345,7 +345,7 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime SmbCooldown = new DateTime();
         public void SMB()
         {
-            if (Player.Storage.IsInDemilitarizedZone) return;
+            if (Player.Storage.IsInDemilitarizedZone || Player.Storage.OnBlockedMinePosition || Player.CurrentInRangePortalId != -1) return;
 
             if (SmbCooldown.AddMilliseconds(TimeManager.SMB_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -359,12 +359,11 @@ namespace Ow.Game.Objects.Players.Managers
                 foreach (var otherPlayer in Player.InRangeCharacters.Values)
                 {
                     if (otherPlayer == null || !(otherPlayer is Player)) continue;
-                    if (!TargetDefinition(otherPlayer, false)) continue;
                     if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
+                    if (!TargetDefinition(otherPlayer, false)) continue;
 
                     int damage = Maths.GetPercentage(otherPlayer.CurrentHitPoints, 20);
-
-                    Damage(Player, otherPlayer as Player, DamageType.MINE, damage, false, true, false);
+                    Damage(Player, otherPlayer as Player, DamageType.MINE, damage, false, true, false, false);
                 }
             }
         }
@@ -391,12 +390,9 @@ namespace Ow.Game.Objects.Players.Managers
 
             foreach (var entry in Player.InRangeCharacters.Values)
             {
-                if (entry != null)
-                    if(entry is Player)
-                        if (TargetDefinition(entry, false))
-                            if (entry.Position.DistanceTo(Player.Position) <= 1000)
-                                if (targets.Count < 7)
-                                    targets.Add(entry.Id, entry);
+                if (entry != null && entry is Player && TargetDefinition(entry, false) && entry.Position.DistanceTo(Player.Position) <= 1000)
+                    if (targets.Count < 7)
+                        targets.Add(entry.Id, entry);
             }
 
             foreach (var target in targets.Values)
@@ -411,47 +407,37 @@ namespace Ow.Game.Objects.Players.Managers
 
                 Damage(Player, target, DamageType.ECI, damage, true, true, false);
             }
-
-            /*
-             * MANTIKEN YUKARIDAKI DAMAGEDE CAN AZSA ÖLMESİ LAZIM???
-            foreach (var target in targets.Values)
-            {
-                if (damage >= target.CurrentHitPoints || target.CurrentHitPoints == 0)
-                    target.Destroy(Player, DestructionType.PLAYER);
-            }
-            */
         }
 
         public DateTime outOfRangeCooldown = new DateTime();
         public DateTime inAttackCooldown = new DateTime();
         public DateTime peaceAreaCooldown = new DateTime();
-        public bool TargetDefinition(Character target, bool sendWarningMessage = true, bool isRocketAttack = false)
+        public bool TargetDefinition(Character target, bool sendMessage = true, bool isRocketAttack = false)
         {
             if (target == null) return false;
 
-            short relationType = target.Clan != null && Player.Clan != null ? Player.Clan.GetRelation(target.Clan) : (short)0;
+            short relationType = Player.Clan.Id != 0 && target.Clan.Id != 0 ? Player.Clan.GetRelation(target.Clan) : (short)0;
             if (target.FactionId == Player.FactionId && relationType != ClanRelationModule.AT_WAR && !(target is Pet pet && pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.DuelOpponent == null)
             {
-                if (sendWarningMessage)
-                {
-                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                /*
+                if (sendMessage)
                     Player.SendPacket("0|A|STD|You can't attack members of your own company!");
-                }
+                    */
                 return false;
             }
-
 
             if (target is Player)
             {
                 var targetPlayer = target as Player;
 
-                if (targetPlayer.Clan == Player.Clan)
+                if (relationType == ClanRelationModule.ALLIED && !(target is Pet && target as Pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.DuelOpponent == null)
                 {
-                    if (sendWarningMessage)
-                    {
-                        Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                        Player.SendPacket("0|A|STD|You can't attack members of your own clan!");
-                    }
+                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                    /*
+                    if (sendMessage)
+                        Player.SendPacket("0|A|STD|You can't attack members of your own clan or alliance clan!");
+                        */
                     return false;
                 }
 
@@ -459,11 +445,11 @@ namespace Ow.Game.Objects.Players.Managers
                 {
                     if (Player.Group != null && Player.Group.Members.ContainsKey(target.Id))
                     {
-                        if (sendWarningMessage)
-                        {
-                            Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                        Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                        /*
+                        if (sendMessage)
                             Player.SendPacket("0|A|STD|You can't attack members of your group!");
-                        }
+                            */
                         return false;
                     }
                 }
@@ -473,7 +459,7 @@ namespace Ow.Game.Objects.Players.Managers
                     Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                     if (peaceAreaCooldown.AddSeconds(10) < DateTime.Now)
                     {
-                        if (sendWarningMessage)
+                        if (sendMessage)
                         {
                             Player.SendPacket("0|A|STM|peacearea");
                             targetPlayer.SendPacket("0|A|STM|peacearea");
@@ -490,7 +476,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 if (outOfRangeCooldown.AddSeconds(5) < DateTime.Now)
                 {
-                    if (sendWarningMessage)
+                    if (sendMessage)
                     {
                         Player.SendPacket("0|A|STM|outofrange");
 
@@ -505,7 +491,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             if (inAttackCooldown.AddSeconds(10) < DateTime.Now)
             {
-                if (sendWarningMessage)
+                if (sendMessage)
                 {
                     Player.SendPacket("0|A|STM|oppoatt|%!|" + (EventManager.JackpotBattle.InActiveEvent(Player) ? EventManager.JackpotBattle.Name : target.Name));
                     inAttackCooldown = DateTime.Now;

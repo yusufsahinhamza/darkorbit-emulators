@@ -1,4 +1,5 @@
 ﻿using MySQLManager.Database.Session_Details.Interfaces;
+using Newtonsoft.Json;
 using Ow.Chat;
 using Ow.Game;
 using Ow.Game.Ticks;
@@ -77,6 +78,7 @@ namespace Ow
 
         public static void InitiateServer()
         {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
             Handler.AddCommands();
             Room.AddRooms();
             EventManager.InitiateEvents();

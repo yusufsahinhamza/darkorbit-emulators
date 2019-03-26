@@ -1,7 +1,9 @@
-﻿using Ow.Game.Movements;
+﻿using Newtonsoft.Json;
+using Ow.Game.Movements;
 using Ow.Game.Objects;
 using Ow.Game.Ticks;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Utils;
 using System;
 using System.Collections.Concurrent;
@@ -19,6 +21,11 @@ namespace Ow.Game.Events
         public bool Active = false;
         public Spacemap Spacemap = GameManager.GetSpacemap(42);
 
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public ConcurrentDictionary<int, Player> Players = new ConcurrentDictionary<int, Player>();
+        public List<int> Finalists = new List<int>();
+
         public async void Start()
         {
             if (!Active)
@@ -27,7 +34,7 @@ namespace Ow.Game.Events
 
                 for (int i = 60; i > 0; i--)
                 {
-                    var packet = $"0|A|STD|-={i}=-";
+                    var packet = $"0|A|STD|Jackpot Battle starting in {i} seconds...";
                     GameManager.SendPacketToAll(packet);
                     await Task.Delay(1000);
 
@@ -35,9 +42,10 @@ namespace Ow.Game.Events
                     {
                         foreach (var gameSession in GameManager.GameSessions.Values)
                         {
-                            if (gameSession != null && gameSession.Player.Storage.DuelOpponent == null)
+                            if (gameSession != null && gameSession.Player.Storage.DuelOpponent == null && gameSession.Player.RankId != 21)
                             {
                                 var player = gameSession.Player;
+                                Players.TryAdd(player.Id, player);
 
                                 player.CurrentHitPoints = player.MaxHitPoints;
                                 player.CurrentShieldConfig1 = player.MaxShieldPoints;
@@ -56,6 +64,7 @@ namespace Ow.Game.Events
                         Program.TickManager.AddTick(this, out tickId);
                         TickId = tickId;
 
+                        StartDate = DateTime.Now;
                         jpbTimer = DateTime.Now;
                         jpbStartTime = DateTime.Now;
                     }
@@ -69,7 +78,16 @@ namespace Ow.Game.Events
             {
                 CheckRadiation();
 
-                if (Spacemap.Characters.Count == 1)
+                /*
+                 * YENİDEN YAZ
+                */
+                if (Spacemap.Characters.Count == 2)
+                {
+                    foreach (var player in Spacemap.Characters.Values)
+                        if (!Finalists.Contains(player.Id))
+                            Finalists.Add(player.Id);
+                }
+                else if (Spacemap.Characters.Count == 1)
                 {
                     var lastPlayer = Spacemap.Characters.First().Value;
                     SendRewardAndStop(lastPlayer as Player);
@@ -106,28 +124,45 @@ namespace Ow.Game.Events
                     Spacemap.POIs.TryRemove(oldPoi.Id, out oldPoi);
 
                 Spacemap.POIs.TryAdd("jpb_poi", newPoi);
-
                 GameManager.SendCommandToMap(Spacemap.Id, newPoi.GetPOICreateCommand());
-
                 jpbTimer = DateTime.Now;
             }
         }
 
         public async void SendRewardAndStop(Player player)
         {
+            EndDate = DateTime.Now;
             Program.TickManager.RemoveTick(this);
 
             player.ChangeData(DataType.URIDIUM, 10000);
-            player.ChangeData(DataType.EXPERIENCE, 100000);
+            player.ChangeData(DataType.EXPERIENCE, 1000000);
             player.ChangeData(DataType.HONOR, 10000);
 
             GameManager.SendPacketToAll($"0|A|STD|{player.Name} has won the Jacpot Battle!");
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
+
+            var title = "title_jackpot_battle_winner";
+            var oldWinner = GameManager.GameSessions.FirstOrDefault(x => x.Value?.Player.Title == title).Value?.Player;
+            if (oldWinner != null) oldWinner.Title = "";
+            player.Title = title;
+
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                mySqlClient.ExecuteNonQuery($"INSERT INTO log_event_jpb (players, finalists, winner_id, start_date, end_date) VALUES ('{JsonConvert.SerializeObject(Players.Keys.ToList())}', '{JsonConvert.SerializeObject(Finalists.ToList())}', {player.Id}, '{StartDate.ToString("yyyy-MM-dd HH:mm:ss.fff")}', '{EndDate.ToString("yyyy-MM-dd HH:mm:ss.fff")}')");
+                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '' WHERE title = '{title}'");
+                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '{player.Title}' WHERE userID = {player.Id}");
+            }
+
             await Task.Delay(5000);
             player.SetPosition(player.FactionId == 1 ? Position.MMOPosition : player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
             player.Jump(player.GetBaseMapId(), player.Position);
 
             Active = false;
+            radiationX = 12800;
+            radiationY = 1600;
+            timerSecond = 1;
+            Players.Clear();
+            Finalists.Clear();
             Spacemap.Characters.Clear();
             Spacemap.Collectables.Clear();
             Spacemap.Mines.Clear();

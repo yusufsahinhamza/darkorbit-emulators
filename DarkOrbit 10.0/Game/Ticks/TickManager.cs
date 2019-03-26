@@ -52,10 +52,8 @@ namespace Ow.Game.Ticks
         {
             while (true)
             {
-                foreach (var tickable in Ticks)
-                {
-                    Task.Factory.StartNew(tickable.Value.Tick);
-                }
+                foreach (var tickable in Ticks.Values)
+                    tickable.Tick();
                 await Task.Delay(TICKS_PER_SECOND);
             }
         }

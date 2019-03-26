@@ -31,7 +31,7 @@ namespace Ow.Net
             try
             {
                 listener.Bind(localEndPoint);
-                listener.Listen(100);
+                listener.Listen(-1);
 
                 while (true)
                 {
@@ -103,7 +103,7 @@ namespace Ow.Net
 
         public static void ChangeClanData(Clan clan, object name, object tag)
         {
-            if (clan != null)
+            if (clan.Id != 0)
             {
                 clan.Tag = tag.ToString();
                 clan.Name = name.ToString();
@@ -126,7 +126,7 @@ namespace Ow.Net
 
         public static void EndDiplomacy(Clan senderClan, Clan targetClan)
         {
-            if (senderClan != null && targetClan != null)
+            if (senderClan.Id != 0 && targetClan.Id != 0)
             {
                 senderClan.Diplomacies.Remove(targetClan.Id);
                 targetClan.Diplomacies.Remove(senderClan.Id);
@@ -135,7 +135,7 @@ namespace Ow.Net
 
         public static void StartDiplomacy(Clan senderClan, Clan targetClan, short diplomacyType)
         {
-            if (senderClan != null && targetClan != null && (diplomacyType == 1 || diplomacyType == 2 || diplomacyType == 3))
+            if (senderClan.Id != 0 && targetClan.Id != 0 && (diplomacyType == 1 || diplomacyType == 2 || diplomacyType == 3))
             {
                 senderClan.Diplomacies.Add(targetClan.Id, (Diplomacy)diplomacyType);
                 targetClan.Diplomacies.Add(senderClan.Id, (Diplomacy)diplomacyType);
@@ -146,7 +146,7 @@ namespace Ow.Net
         {
             if (player.GameSession == null || player == null) return;
 
-            if (player.Clan != null && player.Clan.Id != 0)
+            if (player.Clan.Id != 0)
             {
                 player.Clan = GameManager.GetClan(0);
                 GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write("", 0, player.Id));
@@ -155,7 +155,7 @@ namespace Ow.Net
 
         public static void DeleteClan(Clan deletedClan)
         {
-            if (deletedClan != null)
+            if (deletedClan.Id != 0)
             {
                 GameManager.Clans.TryRemove(deletedClan.Id, out deletedClan);
 

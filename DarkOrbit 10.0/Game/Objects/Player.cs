@@ -81,7 +81,6 @@ namespace Ow.Game.Objects
             DroneManager.Tick();
             TechManager.Tick();
             SkillManager.Tick();
-
             /*
             if (MoveManager.Moving && Collecting)
             {
@@ -596,7 +595,6 @@ namespace Ow.Game.Objects
             {
                 if (Settings.Cooldowns[skill.LootId] > 0) skill.cooldown = DateTime.Now.AddMilliseconds(-(skill.Cooldown - Settings.Cooldowns[skill.LootId]));
             }
-
         }
 
         public void SelectShip(int targetId)

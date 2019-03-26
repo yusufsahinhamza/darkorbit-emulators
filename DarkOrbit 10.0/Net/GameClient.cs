@@ -33,7 +33,6 @@ namespace Ow.Net
             {
                 Out.WriteLine("Error: " + e.Message, "", ConsoleColor.Red);
             }
-
         }
 
         #region Connection 

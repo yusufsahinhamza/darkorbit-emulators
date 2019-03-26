@@ -67,29 +67,36 @@ namespace Ow.Net.netty
 
         public static void Execute(byte[] bytes, GameClient client)
         {
-            var parser = new ByteParser(bytes);
-
-            if (parser.CMD_ID == LoginRequest.ID)
+            try
             {
-                var read = new LoginRequest();
-                read.readCommand(bytes);
+                var parser = new ByteParser(bytes);
 
-                if (QueryManager.CheckSessionId(read.userID, read.sessionID) && !QueryManager.Banned(read.userID))
-                    new LoginRequestHandler(client, read.userID);
+                if (parser.ID == LoginRequest.ID)
+                {
+                    var read = new LoginRequest();
+                    read.readCommand(bytes);
 
-                return;
-            }
+                    if (QueryManager.CheckSessionId(read.userID, read.sessionID) && !QueryManager.Banned(read.userID))
+                        new LoginRequestHandler(client, read.userID);
 
-            var gameSession = GameManager.GetGameSession(client.UserId);
-            if (gameSession == null) return;
+                    return;
+                }
 
-            if (Commands.ContainsKey(parser.CMD_ID))
-            {
-                Commands[parser.CMD_ID].execute(gameSession, bytes);
-                gameSession.LastActiveTime = DateTime.Now;
-            }
-            //else
+                var gameSession = GameManager.GetGameSession(client.UserId);
+                if (gameSession == null) return;
+
+                if (Commands.ContainsKey(parser.ID))
+                {
+                    Commands[parser.ID].execute(gameSession, bytes);
+                    gameSession.LastActiveTime = DateTime.Now;
+                }
+                //else
                 //Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
+            }
+            catch (Exception)
+            {
+                //ignored Out.WriteLine("Execute void exception: " + e, "Handler.cs");
+            }
         }
     }
 }

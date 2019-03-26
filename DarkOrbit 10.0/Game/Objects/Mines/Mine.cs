@@ -15,7 +15,7 @@ namespace Ow.Game.Objects.Mines
     {
         public const int RANGE = 250;
         public const int EXPLODE_RANGE = 375;
-        public const int ACTIVATION_TIME = 2;
+        public const int ACTIVATION_TIME = 1500;
 
         public int TickId { get; set; }
         public int MineTypeId { get; set; }

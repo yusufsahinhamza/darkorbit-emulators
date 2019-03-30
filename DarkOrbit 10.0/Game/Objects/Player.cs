@@ -81,6 +81,7 @@ namespace Ow.Game.Objects
             DroneManager.Tick();
             TechManager.Tick();
             SkillManager.Tick();
+
             /*
             if (MoveManager.Moving && Collecting)
             {
@@ -440,7 +441,7 @@ namespace Ow.Game.Objects
         public void SetCurrentConfiguration(int pCurrentConfiguration)
         {
             CurrentConfig = Convert.ToInt32(pCurrentConfiguration);
-            Settings.InGameSettings.currentConfig = Convert.ToInt32(pCurrentConfiguration);
+            Settings.InGameSettings.currentConfig = CurrentConfig;
             DroneManager.UpdateDrones();
             UpdateStatus();
         }
@@ -515,10 +516,7 @@ namespace Ow.Game.Objects
 
         public bool Attackable()
         {
-            if (AttackManager.IshCooldown.AddMilliseconds(TimeManager.ISH_DURATION) > DateTime.Now || Storage.invincibilityEffect || Storage.GodMode)
-                return false;
-            else
-                return true;
+            return (AttackManager.IshCooldown.AddMilliseconds(TimeManager.ISH_DURATION) > DateTime.Now || Storage.invincibilityEffect || Storage.GodMode) ? false : true;
         }
 
         public void SendCooldown(string itemId, int time, bool countdown = false)
@@ -898,6 +896,7 @@ namespace Ow.Game.Objects
                 if (gameSession == null) return;
                 if (!Spacemap.Characters.ContainsKey(Id)) return;
                 if (!Program.TickManager.Exists(this)) return;
+                if (gameSession.Client.Socket == null) return;
                 if (!gameSession.Client.Socket.IsBound) return;
                 if (!gameSession.Client.Socket.Connected) return;
 
@@ -918,6 +917,7 @@ namespace Ow.Game.Objects
                 if (gameSession == null) return;
                 if (!Spacemap.Characters.ContainsKey(Id)) return;
                 if (!Program.TickManager.Exists(this)) return;
+                if (gameSession.Client.Socket == null) return;
                 if (!gameSession.Client.Socket.IsBound) return;
                 if (!gameSession.Client.Socket.Connected) return;
 

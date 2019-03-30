@@ -54,7 +54,7 @@ namespace Ow.Net.netty.handlers
             }
             catch (Exception e)
             {
-                Out.WriteLine("Exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: " + Player.Id + " Exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
@@ -88,7 +88,7 @@ namespace Ow.Net.netty.handlers
             }
             catch (Exception e)
             {
-                Out.WriteLine("Execute void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: "+Player.Id+" Execute void exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
@@ -119,7 +119,7 @@ namespace Ow.Net.netty.handlers
             }
             catch (Exception e)
             {
-                Out.WriteLine("LoadPlayer void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: " + Player.Id + " LoadPlayer void exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
@@ -215,7 +215,7 @@ namespace Ow.Net.netty.handlers
             }
             catch (Exception e)
             {
-                Out.WriteLine("SendPlayerItems void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: " + Player.Id + " SendPlayerItems void exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
@@ -236,7 +236,7 @@ namespace Ow.Net.netty.handlers
             }
             catch (Exception e)
             {
-                Out.WriteLine("SendSettings void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: " + Player.Id + " SendSettings void exception: " + e, "LoginRequestHandler.cs");
             }
         }
     }

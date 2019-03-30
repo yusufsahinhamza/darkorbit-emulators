@@ -93,9 +93,9 @@ namespace Ow.Net.netty
                 //else
                 //Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //ignored Out.WriteLine("Execute void exception: " + e, "Handler.cs");
+                Out.WriteLine("Execute void exception: " + e, "Handler.cs");
             }
         }
     }

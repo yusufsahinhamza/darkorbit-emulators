@@ -128,23 +128,23 @@ namespace Ow.Game.Objects.Players.Managers
 
     public class DataBase
     {
-        public int uridium { get; set; }
-        public int credits { get; set; }
-        public int honor { get; set; }
-        public int experience { get; set; }
-        public int jackpot { get; set; }
+        public int uridium = 0;
+        public int credits = 0;
+        public int honor = 0;
+        public int experience = 0;
+        public int jackpot = 0;
     }
 
     public class EquipmentBase
     {
-        public int Config1Hitpoints { get; set; }
-        public int Config1Damage { get; set; }
-        public int Config1Shield { get; set; }
-        public int Config1Speed { get; set; }
-        public int Config2Hitpoints { get; set; }
-        public int Config2Damage { get; set; }
-        public int Config2Shield { get; set; }
-        public int Config2Speed { get; set; }
+        public int Config1Hitpoints = 0;
+        public int Config1Damage = 0;
+        public int Config1Shield = 0;
+        public int Config1Speed = 0;
+        public int Config2Hitpoints = 0;
+        public int Config2Damage = 0;
+        public int Config2Shield = 0;
+        public int Config2Speed = 0;
     }
 
     class Settings

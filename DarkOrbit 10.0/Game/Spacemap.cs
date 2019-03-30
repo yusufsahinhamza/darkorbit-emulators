@@ -255,7 +255,7 @@ namespace Ow.Game
 
             foreach (var entity in Activatables.Values)
             {
-                bool inRange = Player.Position.DistanceTo(entity.Position) <= 700;
+                bool inRange = Player.Position.DistanceTo(entity.Position) <= (entity is HomeStation ? HomeStation.SECURE_ZONE_RANGE : 700);
                 short status = inRange ? MapAssetActionAvailableCommand.ON : MapAssetActionAvailableCommand.OFF;
 
                 if (inRange)
@@ -264,7 +264,7 @@ namespace Ow.Game
 
                     if (entity is HomeStation homeStation)
                     {
-                        if (Player.Position.DistanceTo(homeStation.Position) <= HomeStation.SECURE_ZONE_RANGE && homeStation.FactionId == Player.FactionId)
+                        if (homeStation.FactionId == Player.FactionId)
                         {
                             if (!Player.LastAttackTime(5))
                             {
@@ -361,7 +361,7 @@ namespace Ow.Game
 
         public void SendObjects(Player player)
         {
-            foreach (Activatable activatableStationary in Activatables.Values)
+            foreach (var activatableStationary in Activatables.Values)
                 player.SendCommand(activatableStationary.GetAssetCreateCommand());
             foreach (var poi in POIs.Values)
                 player.SendCommand(poi.GetPOICreateCommand());

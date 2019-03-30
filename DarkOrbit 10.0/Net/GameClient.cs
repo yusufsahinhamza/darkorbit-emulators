@@ -59,14 +59,17 @@ namespace Ow.Net
         {
             try
             {
-                if (Socket.IsBound)
+                if (Socket != null && Socket.Connected && Socket.IsBound)
                 {
                     Socket.Shutdown(SocketShutdown.Both);
                     Socket.Close();
-                    OnConnectionClosed();
                 }
+                OnConnectionClosed();
             }
-            catch { /*ignored*/ }
+            catch (Exception e)
+            {
+                Out.WriteLine("Close void exception: " + e, "GameClient.cs");
+            }
         }
 
         private void ReadCallback(IAsyncResult ar)

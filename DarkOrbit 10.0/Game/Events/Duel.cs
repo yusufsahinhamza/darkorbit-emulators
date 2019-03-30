@@ -74,11 +74,11 @@ namespace Ow.Game.Events
 
         public async void SendReward(Player player)
         {
+            Program.TickManager.RemoveTick(this);
+            rewarded = true;
+
             Player.Storage.DuelOpponent = null;
             OtherPlayer.Storage.DuelOpponent = null;
-
-            rewarded = true;
-            Program.TickManager.RemoveTick(this);
 
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);

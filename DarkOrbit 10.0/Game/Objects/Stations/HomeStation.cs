@@ -22,7 +22,7 @@ namespace Ow.Game.Objects.Stations
         private static String ASSET_NAME = "HQ";
         private static short ASSET_TYPE = AssetTypeModule.BASE_COMPANY;
         private static short DESIGN_ID = 0;
-        public static int SECURE_ZONE_RANGE = 1750;
+        public static int SECURE_ZONE_RANGE = 1500;
 
         public RepairStation RepairStation { get; set; }
         public HangarStation HangarStation { get; set; }

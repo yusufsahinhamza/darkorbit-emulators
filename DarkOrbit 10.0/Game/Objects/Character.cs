@@ -349,9 +349,8 @@ namespace Ow.Game.Objects
             VisualModifiers.TryAdd(visualModifier.modifier, visualModifier);
             SendCommandToInRangePlayers(visualModifier.writeCommand());
 
-            if (this is Player)
+            if (this is Player player)
             {
-                var player = this as Player;
                 player.SendCommand(visualModifier.writeCommand());
 
                 switch (visualModifier.modifier)
@@ -372,17 +371,18 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void RemoveVisualModifier(int attributeId)
+        public void RemoveVisualModifier(int modifier)
         {
-            var visualModifier = VisualModifiers.FirstOrDefault(x => x.Value.modifier == attributeId).Value;
+            var visualModifier = VisualModifiers.FirstOrDefault(x => x.Value.modifier == modifier).Value;
 
             if (visualModifier != null)
             {
-                VisualModifiers.TryRemove(visualModifier.modifier, out visualModifier);
-                SendCommandToInRangePlayers(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, visualModifier.attribute, Ship.LootId, visualModifier.count, false).writeCommand());
+                SendCommandToInRangePlayers(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, 0, Ship.LootId, 0, false).writeCommand());
 
                 if (this is Player player)
-                    player.SendCommand(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, visualModifier.attribute, Ship.LootId, visualModifier.count, false).writeCommand());
+                    player.SendCommand(new VisualModifierCommand(visualModifier.userId, visualModifier.modifier, 0, Ship.LootId, 0, false).writeCommand());
+
+                VisualModifiers.TryRemove(visualModifier.modifier, out visualModifier);
             }
         }
 

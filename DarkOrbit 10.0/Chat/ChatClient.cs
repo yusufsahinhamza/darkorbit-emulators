@@ -458,14 +458,13 @@ namespace Ow.Chat
         {
             try
             {
-                if (Socket.IsBound)
+                if (Socket != null && Socket.Connected && Socket.IsBound)
                 {
                     Socket.Shutdown(SocketShutdown.Both);
                     Socket.Close();
-                    Socket = null;
-                    var value = this;
-                    GameManager.ChatClients.TryRemove(UserId, out value);
                 }
+                var value = this;
+                GameManager.ChatClients.TryRemove(UserId, out value);
             }
             catch (Exception e)
             {

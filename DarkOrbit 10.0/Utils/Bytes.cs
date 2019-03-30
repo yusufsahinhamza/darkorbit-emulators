@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -95,55 +96,36 @@ namespace Ow.Utils
 
     class ByteParser
     {
-        //Credits to E*PVP
-
         public byte[] Array { get; set; }
-        public int Counter = 0;
-        public short Lenght;
-        public short ID;
+        public int Buffer = 0;
+        public short ID { get; set; }
 
-        public ByteParser(byte[] Array)
+        public ByteParser(byte[] bytes)
         {
-            this.Array = Array;
-
-            this.Lenght = readShort();
-            this.ID = readShort();
+            Array = bytes;
+            readShort();
+            ID = readShort();
         }
 
-        private int ReadShort(byte[] data)
+        public int read()
         {
-            int outputResult = 0;
-            outputResult += data[0] << 8;
-            outputResult += data[1];
-            return outputResult;
+            var internalCounter = Buffer;
+            return internalCounter++ < Array.Length ? Array[Buffer++] : 0;
         }
 
         public short readShort()
         {
-            return (short)Convert.ToInt32(ReadShort(new byte[] { Array[Counter++], Array[Counter++] }));
-        }
-
-        private int ReadInt(byte[] data)
-        {
-            int outputResult = 0;
-            outputResult += data[0] << 24;
-            outputResult += data[1] << 16;
-            outputResult += data[2] << 8;
-            outputResult += data[3];
-            return outputResult;
+            return (short)((read() << 8) | (read() & 0xff));
         }
 
         public int readInt()
         {
-            return ReadInt(new byte[] { Array[Counter++], Array[Counter++], Array[Counter++], Array[Counter++], });
+            return (((read() & 0xff) << 24) | ((read() & 0xff) << 16) | ((read() & 0xff) << 8) | (read() & 0xff));
         }
 
         public long readLong()
         {
-            long value = BitConverter.ToInt64(new byte[] { Array[Counter + 7], Array[Counter + 6], Array[Counter + 5], Array[Counter + 4], Array[Counter + 3], Array[Counter + 2], Array[Counter + 1], Array[Counter] }, 0);
-            Counter += 8;
-
-            return value;
+            return (((long)(read() & 0xff) << 56) | ((long)(read() & 0xff) << 48) | ((long)(read() & 0xff) << 40) | ((long)(read() & 0xff) << 32) | ((long)(read() & 0xff) << 24) | ((long)(read() & 0xff) << 16) | ((long)(read() & 0xff) << 8) | ((long)(read() & 0xff)));
         }
 
         public double readDouble()
@@ -153,9 +135,7 @@ namespace Ow.Utils
 
         public double readFloat()
         {
-            var value = BitConverter.ToSingle(new byte[] { Array[Counter + 3], Array[Counter + 2], Array[Counter + 1], Array[Counter] }, 0);
-            Counter += 4;
-            return value;
+            return BitConverter.ToSingle(new byte[] { (byte)read(), (byte)read(), (byte)read(), (byte)read() }, 0);
         }
 
         public string readUTF()
@@ -163,18 +143,16 @@ namespace Ow.Utils
             try
             {
                 short stringLength = readShort();
-                string value = Encoding.UTF8.GetString(Array, Counter, stringLength);
-
-                Counter += stringLength;
-
+                string value = Encoding.UTF8.GetString(Array, Buffer, stringLength);
+                Buffer += stringLength;
                 return value;
             }
-            catch (Exception) { return ""; }
+            catch { return ""; }
         }
 
         public bool readBoolean()
         {
-            return Array[Counter++] == 1;
+            return read() == 1;
         }
     }
 }

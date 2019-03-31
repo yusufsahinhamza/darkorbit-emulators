@@ -17,7 +17,7 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
         public void execute(GameSession gameSession, byte[] bytes)
         {
             var player = gameSession.Player;
-            player.Group?.ChangeBehavior(gameSession);
+            player.Group?.ChangeBehavior(player);
         }
     }
 }

@@ -59,32 +59,38 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void EnableCloak()
         {
-            AddSelectedCpu(CLK_XL);
-            Player.Invisible = true;
-            string cloakPacket = "0|n|INV|" + Player.Id + "|1";
-            Player.SendPacket(cloakPacket);
-            Player.SendPacketToInRangePlayers(cloakPacket);
-
-            var pet = Player.Pet;
-            if (pet.Activated)
+            if (!Player.Invisible)
             {
-                pet.Invisible = true;
-                string petCloakPacket = "0|n|INV|" + pet.Id + "|1";
-                pet.SendPacketToInRangePlayers(petCloakPacket);
-            }
+                AddSelectedCpu(CLK_XL);
+                Player.Invisible = true;
+                string cloakPacket = "0|n|INV|" + Player.Id + "|1";
+                Player.SendPacket(cloakPacket);
+                Player.SendPacketToInRangePlayers(cloakPacket);
 
-            Player.SettingsManager.SendNewItemStatus(CLK_XL);
+                var pet = Player.Pet;
+                if (pet.Activated)
+                {
+                    pet.Invisible = true;
+                    string petCloakPacket = "0|n|INV|" + pet.Id + "|1";
+                    pet.SendPacketToInRangePlayers(petCloakPacket);
+                }
+
+                Player.SettingsManager.SendNewItemStatus(CLK_XL);
+            }
         }
 
         public void DisableCloak()
         {
-            RemoveSelectedCpu(CLK_XL);
-            Player.Invisible = false;
-            string cloakPacket = "0|n|INV|" + Player.Id + "|0";
-            Player.SendPacket("0|A|STM|msg_uncloaked");
-            Player.SendPacket(cloakPacket);
-            Player.SendPacketToInRangePlayers(cloakPacket);
-            Player.SettingsManager.SendNewItemStatus(CLK_XL);
+            if (Player.Invisible)
+            {
+                RemoveSelectedCpu(CLK_XL);
+                Player.Invisible = false;
+                string cloakPacket = "0|n|INV|" + Player.Id + "|0";
+                Player.SendPacket("0|A|STM|msg_uncloaked");
+                Player.SendPacket(cloakPacket);
+                Player.SendPacketToInRangePlayers(cloakPacket);
+                Player.SettingsManager.SendNewItemStatus(CLK_XL);
+            }
         }
 
         public void EnableArolX()

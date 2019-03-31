@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Ow.Chat;
 using Ow.Game;
 using Ow.Game.Clans;
 using Ow.Game.Movements;
@@ -15,6 +16,7 @@ using Ow.Game.Objects;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
+using static Ow.Game.GameSession;
 
 namespace Ow.Net
 {
@@ -65,6 +67,12 @@ namespace Ow.Net
                     
                     switch (String(json["Action"]))
                     {
+                        case "BanUser":
+                            BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                            break;
+                        case "BuyItem":
+                            BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), (ChangeType)Short(parameters["ChangeType"]), Int(parameters["Amount"]));
+                            break;
                         case "ChangeClanData":
                             ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), parameters["Name"], parameters["Tag"]);
                             break;
@@ -99,6 +107,30 @@ namespace Ow.Net
                 }
             }
             catch (Exception) { }
+        }
+
+        public static void BanUser(Player player)
+        {
+            if (player == null) return;
+            var client = GameManager.ChatClients[player.Id];
+            client.Send($"{ChatConstants.CMD_BANN_USER}%#");
+            client.ShutdownConnection();
+            player.GameSession.Disconnect(DisconnectionType.NORMAL);
+            GameManager.SendChatSystemMessage($"{player.Name} has banned.");
+        }
+
+        public static void BuyItem(Player player, string itemType, DataType dataType, ChangeType changeType, int amount)
+        {
+            if (player.GameSession == null || player == null) return;
+
+            switch(itemType)
+            {
+                case "drone":
+                    player.DroneManager.UpdateDrones(true);
+                    break;
+            }
+
+            player.ChangeData(dataType, amount, changeType);
         }
 
         public static void ChangeClanData(Clan clan, object name, object tag)
@@ -208,6 +240,11 @@ namespace Ow.Net
                 player.ChangeShip(shipId);
         }
 
+        public static void UpdateData()
+        {
+        
+        }
+
         public static void UpdateStatus(Player player, JObject status)
         {
             if (player.GameSession == null || player == null) return;
@@ -221,7 +258,7 @@ namespace Ow.Net
             player.Equipment.Config2Shield = Int(status["Config2Shield"]);
             player.Equipment.Config2Speed = Int(status["Config2Speed"]);
 
-            player.DroneManager.UpdateDrones();
+            player.DroneManager.UpdateDrones(true);
             player.UpdateStatus();
         }
 

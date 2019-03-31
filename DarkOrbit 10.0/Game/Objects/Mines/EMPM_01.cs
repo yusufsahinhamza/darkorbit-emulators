@@ -22,7 +22,7 @@ namespace Ow.Game.Objects.Mines
                 {
                     if (Player == player || player.Storage.DuelOpponent == null || (player.Storage.DuelOpponent != null && Player == player.Storage.DuelOpponent))
                     {
-                        if (player.Invisible && player.Attackable())
+                        if (player.Attackable())
                             player.CpuManager.DisableCloak();
                     }
                 }

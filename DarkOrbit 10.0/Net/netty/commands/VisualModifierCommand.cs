@@ -14,7 +14,7 @@ namespace Ow.Net.netty.commands
         public const short FORTIFY = 2;
         public const short SURGEON_PLAGUE = 50;
         public const short BUFFZONE = 32;
-        public const short varut = 53;
+        public const short BATTLE_REPAIR_BOT = 53;
         public const short varl1M = 47;
         public const short DAMAGE_ICON = 43;
         public const short varsy = 38;

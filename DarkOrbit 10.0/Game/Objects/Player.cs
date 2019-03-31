@@ -94,7 +94,16 @@ namespace Ow.Game.Objects
         public DateTime lastHpRepairTime = new DateTime();
         private void CheckHitpointsRepair()
         {
-            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now || CurrentHitPoints == MaxHitPoints) return;
+            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now) return;
+
+            if (CurrentHitPoints == MaxHitPoints)
+            {
+                if (Storage.RepairBotActivated)
+                    RepairBot(false);
+                return;
+            }
+
+            RepairBot(true);
 
             int repairHitpoints = MaxHitPoints / 35;
             Heal(repairHitpoints);
@@ -523,10 +532,7 @@ namespace Ow.Game.Objects
         {
             SendCommand(UpdateMenuItemCooldownGroupTimerCommand.write(
             SettingsManager.GetCooldownType(itemId),
-            new ClientUISlotBarCategoryItemTimerStateModule(
-                        countdown ? ClientUISlotBarCategoryItemTimerStateModule.ACTIVE : ClientUISlotBarCategoryItemTimerStateModule.short_2168),
-            time,
-            time));
+            new ClientUISlotBarCategoryItemTimerStateModule( countdown ? ClientUISlotBarCategoryItemTimerStateModule.ACTIVE : ClientUISlotBarCategoryItemTimerStateModule.short_2168), time, time));
         }
 
         public void UpdateCurrentCooldowns()

@@ -176,12 +176,12 @@ namespace Ow.Game.Objects
             Leave(player , true);
         }
 
-        public void ChangeLeader(GameSession leaderSession)
+        public void ChangeLeader(Player leader)
         {
-            if (Leader == leaderSession.Player)
+            if (leader == null || Leader == leader)
                 return;
 
-            Leader = leaderSession.Player;
+            Leader = leader;
             foreach (var member in Members)
             {
                 if (member.Value.GameSession == null) continue;
@@ -189,9 +189,9 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void ChangeBehavior(GameSession gameSession)
+        public void ChangeBehavior(Player player)
         {
-            if (gameSession.Player != Leader) return;
+            if (player != Leader) return;
             LeaderInvitesOnly = LeaderInvitesOnly ? false : true;
             foreach (var member in Members)
             {
@@ -229,7 +229,7 @@ namespace Ow.Game.Objects
                 if (player != Leader)
                     SendInitToAll();
                 else
-                    ChangeLeader(Members.FirstOrDefault().Value.GameSession);
+                    ChangeLeader(Members.FirstOrDefault().Value);
             }
         }
     }

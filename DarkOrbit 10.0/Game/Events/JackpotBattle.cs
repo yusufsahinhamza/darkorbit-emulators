@@ -42,7 +42,7 @@ namespace Ow.Game.Events
                     {
                         foreach (var gameSession in GameManager.GameSessions.Values)
                         {
-                            if (gameSession != null && gameSession.Player.Storage.DuelOpponent == null && gameSession.Player.RankId != 21)
+                            if (gameSession != null && gameSession.Player.Storage.Duel == null && gameSession.Player.RankId != 21)
                             {
                                 var player = gameSession.Player;
                                 Players.TryAdd(player.Id, player);

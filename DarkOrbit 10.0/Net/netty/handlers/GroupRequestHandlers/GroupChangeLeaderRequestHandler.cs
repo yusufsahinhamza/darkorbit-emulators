@@ -20,7 +20,7 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            player.Group.ChangeLeader(GameManager.GetGameSession(read.userId));
+            player.Group.ChangeLeader(GameManager.GetPlayerById(read.userId));
         }
     }
 }

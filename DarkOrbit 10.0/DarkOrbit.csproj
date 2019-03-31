@@ -69,6 +69,7 @@
     <Compile Include="Game\Events\JackpotBattle.cs" />
     <Compile Include="Game\Events\Spaceball.cs" />
     <Compile Include="Game\Events\UltimateBattleArena.cs" />
+    <Compile Include="Game\GalaxyGates\Hades.cs" />
     <Compile Include="Game\GameSession.cs" />
     <Compile Include="Game\Objects\Attackable.cs" />
     <Compile Include="Game\Objects\Character.cs" />

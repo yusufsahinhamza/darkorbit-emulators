@@ -210,7 +210,7 @@ namespace Ow.Game.Objects.Players.Managers
                     {
                         if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
 
-                        if (otherPlayer.Invisible && otherPlayer.FactionId != Player.FactionId)
+                        if (otherPlayer.FactionId != Player.FactionId)
                             otherPlayer.CpuManager.DisableCloak();
                     }
                 }
@@ -255,8 +255,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             if (pld8Cooldown.AddMilliseconds(TimeManager.PLD8_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                if (Player.Invisible)
-                    Player.CpuManager.DisableCloak();
+                Player.CpuManager.DisableCloak();
 
                 String rocketRunPacket = "0|v|" + Player.Id + "|" + enemy.Id + "|H|" + GetSelectedRocket() + "|1|" + (Player.Storage.PrecisionTargeter ? 1 : 0);
                 Player.SendPacket(rocketRunPacket);
@@ -289,8 +288,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             if (wiz_xCooldown.AddMilliseconds(TimeManager.WIZARD_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                if (Player.Invisible)
-                    Player.CpuManager.DisableCloak();
+                Player.CpuManager.DisableCloak();
 
                 String rocketRunPacket = "0|v|" + Player.Id + "|" + enemy.Id + "|H|" + GetSelectedRocket() + "|1|" + (Player.Storage.PrecisionTargeter ? 1 : 0);
                 Player.SendPacket(rocketRunPacket);
@@ -318,8 +316,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             if (dcr_250Cooldown.AddMilliseconds(TimeManager.DCR_250_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                if (Player.Invisible)
-                    Player.CpuManager.DisableCloak();
+                Player.CpuManager.DisableCloak();
 
                 String rocketRunPacket = "0|v|" + Player.Id + "|" + enemy.Id + "|H|" + GetSelectedRocket() + "|1|" + (Player.Storage.PrecisionTargeter ? 1 : 0);
                 Player.SendPacket(rocketRunPacket);
@@ -454,7 +451,7 @@ namespace Ow.Game.Objects.Players.Managers
                     }
                 }
 
-                if (targetPlayer.Storage.IsInDemilitarizedZone)
+                if (targetPlayer.Storage.IsInDemilitarizedZone || (Player.Storage.Duel != null && Player.Storage.Duel.PeaceArea))
                 {
                     Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                     if (peaceAreaCooldown.AddSeconds(10) < DateTime.Now)
@@ -539,8 +536,7 @@ namespace Ow.Game.Objects.Players.Managers
             if (attacker.Storage.invincibilityEffect)
                 attacker.Storage.DeactiveInvincibilityEffect();
 
-            if (Player.Invisible)
-                Player.CpuManager.DisableCloak();
+            Player.CpuManager.DisableCloak();
 
             if (target is Player && !(target as Player).Attackable())
                 damage = 0;
@@ -631,10 +627,7 @@ namespace Ow.Game.Objects.Players.Managers
             }
 
             if (deactiveCloak)
-            {
-                if (Player.Invisible)
-                    Player.CpuManager.DisableCloak();
-            }
+                Player.CpuManager.DisableCloak();
 
             if (damageType == DamageType.LASER)
             {

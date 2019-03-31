@@ -33,7 +33,7 @@ namespace Ow.Managers
 
                 if (i <= 1)
                 {
-                    foreach (var gameSession in GameManager.GameSessions.Values)
+                    foreach (var gameSession in GameSessions.Values)
                         gameSession.Disconnect(DisconnectionType.NORMAL);
 
                     Environment.Exit(0);

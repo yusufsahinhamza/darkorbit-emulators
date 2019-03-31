@@ -64,9 +64,8 @@ namespace Ow.Game.Objects
 
                 if (this is Player thisPlayer && character is Player otherPlayer)
                 {
-                    if (thisPlayer.Spacemap.Id == Duel.Spacemap.Id)
-                        if (thisPlayer.Storage.DuelOpponent != otherPlayer)
-                            return false;
+                    if (thisPlayer.Storage.DuelOpponent != null && thisPlayer.Storage.DuelOpponent != otherPlayer)
+                        return false;
                 }
 
             }

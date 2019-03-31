@@ -210,7 +210,6 @@ namespace Ow.Net.netty.handlers
                     player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(55, 60, 5, 333443), new Uba64iModule("Yaz Sezonu", 1, ht), new UbahsModule(l4b)), 0));
                 }
 
-                player.SendCommand(player.GetBeaconCommand());
                 QueryManager.SavePlayer.Information(player);
             }
             catch (Exception e)

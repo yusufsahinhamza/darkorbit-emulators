@@ -27,8 +27,8 @@ namespace Ow.Game.Objects.Players
         public Dictionary<string, Skill> Skills = new Dictionary<string, Skill>();
 
         public bool UbaMatchmakingAccepted = false;
+        public Duel Duel { get; set; }
         public Player UbaOpponent = null;
-        public Player DuelOpponent { get; set; }
 
         public DateTime KillscreenPortalRepairTime = new DateTime();
         public DateTime KillscreenDeathLocationRepairTime = new DateTime();
@@ -176,6 +176,14 @@ namespace Ow.Game.Objects.Players
             {
                 wizardEffect = false;
                 Player.RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
+            }
+        }
+
+        public Player DuelOpponent
+        {
+            get
+            {
+                return Duel?.Players.Where(x => x.Value.Id != Player.Id).FirstOrDefault().Value;
             }
         }
     }

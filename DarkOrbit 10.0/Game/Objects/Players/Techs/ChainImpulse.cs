@@ -20,6 +20,7 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
+            return;
             if (cooldown.AddMilliseconds(TimeManager.CHAIN_IMPULSE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.AttackManager.ECI();

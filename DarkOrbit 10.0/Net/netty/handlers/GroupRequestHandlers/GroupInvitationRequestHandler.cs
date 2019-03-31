@@ -39,7 +39,7 @@ namespace Ow.Net.netty.handlers.GroupRequestHandlers
                     player.SendPacket("0|A|STM|msg_grp_inv_err_candidate_blocking");
                     return;
                 }
-                if (invited.Storage.GroupInvites.ContainsKey(player.Id) && GameManager.Groups.Contains(player.Group))
+                if (invited.Storage.GroupInvites.ContainsKey(player.Id))
                 {
                     player.SendPacket("0|A|STM|msg_grp_inv_err_duplicate_invitation");
                     return;

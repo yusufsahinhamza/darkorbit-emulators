@@ -75,12 +75,14 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public void UpdateDrones()
+        public void UpdateDrones(bool updateItems = false)
         {
-            Config1Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            Config2Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            SetDroneDesigns();
+            if (updateItems)
+            {
+                Config1Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                Config2Designs = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                SetDroneDesigns();
+            }
 
             string drones = GetDronesPacket();
             Player.SendPacket(drones);
@@ -101,20 +103,10 @@ namespace Ow.Game.Objects.Players.Managers
                 DronePacket = $"2|6|{GetDesignId(Config2Designs[0])}|2|6|{GetDesignId(Config2Designs[1])}|2|6|{GetDesignId(Config2Designs[2])}|2|6|{GetDesignId(Config2Designs[3])}|2|6|{GetDesignId(Config2Designs[4])}|2|6|{GetDesignId(Config2Designs[5])}|2|6|{GetDesignId(Config2Designs[6])}|2|6|{GetDesignId(Config2Designs[7])}";
 
             if (Apis)
-            {
-                if (Player.CurrentConfig == 1)
-                    DronePacket += $"|3|6|{GetDesignId(Config1Designs[8])}";
-                else
-                    DronePacket += $"|3|6|{GetDesignId(Config2Designs[8])}";
-            }
+                DronePacket += $"|3|6|{GetDesignId(Player.CurrentConfig == 1 ? Config1Designs[8] : Config2Designs[8])}";
 
             if (Zeus)
-            {
-                if (Player.CurrentConfig == 1)
-                    DronePacket += $"|4|6|{GetDesignId(Config1Designs[9])}";
-                else
-                    DronePacket += $"|4|6|{GetDesignId(Config2Designs[9])}";
-            }
+                DronePacket += $"|4|6|{GetDesignId(Player.CurrentConfig == 1 ? Config1Designs[9] : Config2Designs[9])}";
 
             var drones = "0|n|d|" + Player.Id + "|" + DronePacket;
             return drones;

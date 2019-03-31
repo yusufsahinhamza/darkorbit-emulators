@@ -8,82 +8,99 @@ using System.Text;
 using System.Threading.Tasks;
 using Ow.Game.Ticks;
 using Ow.Managers;
+using System.Collections.Concurrent;
 
 namespace Ow.Game.Events
 {
     class Duel : Tick
     {
         public int TickId { get; set; }
-        public Player Player { get; set; }
-        public Player OtherPlayer { get; set; }
+
+        public bool PeaceArea = true;
+
+        public ConcurrentDictionary<int, Player> Players { get; set; }
         public static Spacemap Spacemap = GameManager.GetSpacemap(101);
 
-        public Duel(Player player, Player otherPlayer)
+        public Position Position1 = new Position(3700, 3200);
+        public Position Position2 = new Position(6400, 3200);
+
+        public Duel(ConcurrentDictionary<int, Player> players)
         {
-            Player = player;
-            OtherPlayer = otherPlayer;
+            Players = players;
+            if (Players.Count > 2) return;
 
-            Player.Storage.DuelOpponent = OtherPlayer;
-            OtherPlayer.Storage.DuelOpponent = Player;
+            foreach (var player in Players.Values)
+            {
+                if (player.GameSession == null) return;
 
-            Player.CpuManager.DisableCloak();
-            OtherPlayer.CpuManager.DisableCloak();
+                player.Storage.Duel = this;
+                player.CpuManager.DisableCloak();
 
-            var position1 = new Position(3700, 3200);
-            var position2 = new Position(6400, 3200);
+                foreach (var player2 in Players.Values)
+                {
+                    if (!player.Equals(player2))
+                    {
+                        player.Jump(Spacemap.Id, Position1);
+                        player2.Jump(Spacemap.Id, Position2);
+                    }
+                }
+            }
 
-            Player.Jump(Spacemap.Id, position1);
-            OtherPlayer.Jump(Spacemap.Id, position2);
+            Start();
+        }
+        public async void Start()
+        {
+            for (int i = 25; i > 0; i--)
+            {
+                var packet = $"0|A|STD|-={i}=-";
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
-            TickId = tickId;
+                foreach (var player in Players.Values)
+                    if (player.GameSession != null)
+                        player.SendPacket(packet);
 
-            countdown = DateTime.Now;
+                await Task.Delay(1000);
+
+                if (i <= 1)
+                {
+                    PeaceArea = false;
+
+                    var tickId = -1;
+                    Program.TickManager.AddTick(this, out tickId);
+                    TickId = tickId;
+                }
+            }
         }
 
-        public DateTime countdown = new DateTime();
-        public DateTime countdownTimer = new DateTime();
-        public bool peaceArea = true;
-        public bool rewarded = false;
-
-        public int countdownTime = 20;
         public void Tick()
         {
-            /*
-            if (countdownTimer.AddSeconds(1) < DateTime.Now && peaceArea)
+            if (Players.Count == 1)
             {
-                var packet = $"0|A|STD|-={countdownTime}=-";
-                Player.SendPacket(packet);
-                OtherPlayer.SendPacket(packet);
-                countdownTime--;
-                countdownTimer = DateTime.Now;
-            }
-
-            if (countdown.AddSeconds(21) < DateTime.Now && peaceArea)
-                peaceArea = false;
-            */
-            if (!rewarded)
-            {
-                if (Player.Destroyed || Player.GameSession.InProcessOfDisconnection)
-                    SendReward(OtherPlayer);
-                else if (OtherPlayer.Destroyed || OtherPlayer.GameSession.InProcessOfDisconnection)
-                    SendReward(Player);
+                var lastPlayer = Players.First().Value;
+                SendRewardAndStop(lastPlayer as Player);
             }
         }
 
-        public async void SendReward(Player player)
+        public async void SendRewardAndStop(Player winnerPlayer)
         {
             Program.TickManager.RemoveTick(this);
-            rewarded = true;
 
-            Player.Storage.DuelOpponent = null;
-            OtherPlayer.Storage.DuelOpponent = null;
+            foreach (var player in Players.Values)
+                if (player.GameSession != null)
+                    player.Storage.Duel = null;
 
-            player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
+            winnerPlayer.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
-            player.SetPosition(player.FactionId == 1 ? Position.MMOPosition : player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
-            player.Jump(player.GetBaseMapId(), player.Position);
+            winnerPlayer.SetPosition(winnerPlayer.FactionId == 1 ? Position.MMOPosition : winnerPlayer.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
+            winnerPlayer.Jump(winnerPlayer.GetBaseMapId(), winnerPlayer.Position);
+        }
+
+        public static void RemovePlayer(Player player)
+        {
+            if (player.Storage.Duel != null)
+            {
+                player.Storage.Duel.Players.TryRemove(player.Id, out player);
+                player.Storage.Duel = null;
+            }
         }
     }
 }

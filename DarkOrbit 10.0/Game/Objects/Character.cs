@@ -1,4 +1,5 @@
 ﻿using Ow.Game.Clans;
+using Ow.Game.Events;
 using Ow.Game.Movements;
 using Ow.Game.Objects.Collectables;
 using Ow.Game.Objects.Players;
@@ -145,6 +146,7 @@ namespace Ow.Game.Objects
                 if (destroyer is Player destroyerPlayer)
                     destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
 
+                Duel.RemovePlayer(thisPlayer);
                 thisPlayer.SkillManager.DisableAllSkills();
                 thisPlayer.Pet.Deactivate(true);
                 thisPlayer.SendCommand(destroyCommand);

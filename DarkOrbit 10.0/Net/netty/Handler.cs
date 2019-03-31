@@ -41,7 +41,6 @@ namespace Ow.Net.netty
             Commands.Add(EquipModuleRequest.ID, new EquipModuleRequestHandler());
             Commands.Add(GroupInvitationRequest.ID, new GroupInvitationRequestHandler());
             Commands.Add(GroupAcceptInvitationRequest.ID, new GroupAcceptInvitationRequestHandler());
-            //   Commands.Add(WindowSettingsRequest.ID, new WindowSettingsRequestHandler());
             Commands.Add(CollectBoxRequest.ID, new CollectBoxRequestHandler());
             Commands.Add(PetGearActivationRequest.ID, new PetGearActivationRequestHandler());
             Commands.Add(GroupRevokeInvitationRequest.ID, new GroupRevokeInvitationRequestHandler());

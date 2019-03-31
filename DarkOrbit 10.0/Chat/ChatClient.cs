@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Ow.Game;
 using static Ow.Game.GameSession;
+using System.Collections.Concurrent;
 
 namespace Ow.Chat
 {
@@ -170,7 +171,11 @@ namespace Ow.Chat
                 if (gameSession.Player.Settings.InGameSettings.inEquipZone && inviterPlayer.Settings.InGameSettings.inEquipZone)
                 {
                     gameSession.Player.Storage.DuelInvites.TryRemove(duelId, out inviterPlayer);
-                    new Duel(gameSession.Player, inviterPlayer);
+                    var players = new ConcurrentDictionary<int, Player>();
+                    players.TryAdd(gameSession.Player.Id, gameSession.Player);
+                    players.TryAdd(inviterPlayer.Id, inviterPlayer);
+
+                    new Duel(players);
                 }
             }          
         }
@@ -224,8 +229,8 @@ namespace Ow.Chat
             {
                 if (message.Split(' ').Length < 2) return;
 
-                var userName = message.Split(' ')[1];
-                var player = GameManager.GetPlayerByName(userName);
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
+                var player = GameManager.GetPlayerById(userId);
 
                 if (player != null && player.Name != gameSession.Player.Name)
                 {
@@ -235,7 +240,7 @@ namespace Ow.Chat
                         client.Send($"{ChatConstants.CMD_KICK_USER}%#");
                         client.ShutdownConnection();
 
-                        GameManager.SendChatSystemMessage($"{userName} has kicked.");
+                        GameManager.SendChatSystemMessage($"{player.Name} has kicked.");
                     }
                 }
             }
@@ -285,12 +290,16 @@ namespace Ow.Chat
             {
                 if (message.Split(' ').Length < 2) return;
 
-                var userName = message.Split(' ')[1];
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
+                var player = GameManager.GetPlayerById(userId);
 
-                var player = GameManager.GetPlayerByName(userName);
+                if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
 
-                if (player != null)
-                    player.Destroy(gameSession.Player, Game.DestructionType.PLAYER);
+                player.Destroy(gameSession.Player, Game.DestructionType.PLAYER);
             }
             else if (cmd == "/ship" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -312,9 +321,9 @@ namespace Ow.Chat
             {
                 if (message.Split(' ').Length < 3) return;
 
-                var playerName = message.Split(' ')[1];
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
                 var mapId = Convert.ToInt32(message.Split(' ')[2]);
-                GameManager.GetPlayerByName(playerName)?.Jump(mapId, new Position(0, 0));
+                GameManager.GetPlayerById(userId)?.Jump(mapId, new Position(0, 0));
             }
             else if (cmd == "/speed+" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -351,24 +360,27 @@ namespace Ow.Chat
                 */
                 if (message.Split(' ').Length < 4) return;
 
-                var playerName = message.Split(' ')[1];
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
                 var typeId = Convert.ToInt32(message.Split(' ')[2]);
                 var day = Convert.ToInt32(message.Split(' ')[3]);
-                var reason = message.Remove(0, (playerName.Length + typeId.ToString().Length + day.ToString().Length) + 5);
+                var reason = message.Remove(0, (userId.ToString().Length + typeId.ToString().Length + day.ToString().Length) + 5);
 
                 if (typeId == 1 && Permission == Permissions.CHAT_MODERATOR) return;
 
                 if (typeId == 0 || typeId == 1)
                 {
-                    var player = GameManager.GetPlayerByName(playerName);
+                    var player = GameManager.GetPlayerById(userId);
                     if (player == null) return;               
 
                     var client = GameManager.ChatClients[player.Id];
                     client.Send($"{ChatConstants.CMD_BANN_USER}%#");
                     client.ShutdownConnection();
 
+                    if (typeId == 1)
+                        player.GameSession.Disconnect(DisconnectionType.NORMAL);
+
                     QueryManager.ChatFunctions.AddBan(player.Id, gameSession.Player.Id, reason, typeId, (DateTime.Now.AddDays(day)).ToString("yyyy-MM-dd HH:mm:ss.fff"));
-                    GameManager.SendChatSystemMessage($"{playerName} has banned.");
+                    GameManager.SendChatSystemMessage($"{player.Name} has banned.");
                 }
             }
             else if (cmd == "/restart" && Permission == Permissions.ADMINISTRATOR)
@@ -390,14 +402,27 @@ namespace Ow.Chat
                 message = message.Remove(0, 8);
                 GameManager.SendChatSystemMessage(message);
             }
+            else if (cmd == "/id")
+            {
+                if (message.Split(' ').Length < 2) return;
+                var player = GameManager.GetPlayerByName(message.Split(' ')[1]);
+
+                if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
+
+                Send($"dq%{player.Name} id : {player.Id}#");
+            }
             else if (cmd == "/reward" && Permission == Permissions.ADMINISTRATOR)
             {
                 if (message.Split(' ').Length < 4) return;
-                var playerName = message.Split(' ')[1];
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
                 var typeId = Convert.ToInt32(message.Split(' ')[2]); //1 uridium / 2 credits / 3 honor / 4 experience
                 var amount = Convert.ToInt32(message.Split(' ')[3]);
 
-                var player = GameManager.GetPlayerByName(playerName);
+                var player = GameManager.GetPlayerById(userId);
                 
                 if (player != null && new[] {1,2,3,4}.Contains(typeId))
                 {
@@ -509,8 +534,8 @@ namespace Ow.Chat
 
         public void Send(String data)
         {
-            if (!GameManager.ChatClients.ContainsKey(UserId)) return;
-            if (Socket == null && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
+            if (!GameManager.ChatClients.ContainsKey(UserId) || Socket == null) return;
+            if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
             try
             {
                 var byteData = Encoding.UTF8.GetBytes(data + (char)0x00);
@@ -525,7 +550,7 @@ namespace Ow.Chat
 
         private void Write(byte[] byteArray)
         {
-            if (Socket == null && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
+            if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
             try
             {
                 Socket.BeginSend(byteArray, 0, byteArray.Length, SocketFlags.None, null, null);

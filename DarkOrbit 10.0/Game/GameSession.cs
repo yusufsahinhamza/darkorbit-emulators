@@ -1,4 +1,5 @@
 ﻿using Ow.Chat;
+using Ow.Game.Events;
 using Ow.Game.Objects;
 using Ow.Game.Ticks;
 using Ow.Managers;
@@ -60,6 +61,7 @@ namespace Ow.Game
                 Player.Group?.UpdatePlayer(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
                 Player.Pet.Deactivate();
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
+                Duel.RemovePlayer(Player);
                 Player.Spacemap.RemoveCharacter(Player);
                 Program.TickManager.RemoveTick(Player);
             }

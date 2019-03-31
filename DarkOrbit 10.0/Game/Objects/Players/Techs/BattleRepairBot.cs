@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,9 +32,7 @@ namespace Ow.Game.Objects.Players.Techs
             if (lastRepairTime.AddSeconds(1) < DateTime.Now)
             {
                 int heal = HEALT;
-
                 Player.Heal(heal);
-
                 lastRepairTime = DateTime.Now;
             }
         }
@@ -43,10 +42,7 @@ namespace Ow.Game.Objects.Players.Techs
         {
             if (cooldown.AddMilliseconds(TimeManager.BATTLE_REPAIR_BOT_DURATION + TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                string packet = "0|TX|A|S|BRB|" + Player.Id;
-                Player.SendPacket(packet);
-                Player.SendPacketToInRangePlayers(packet);
-
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.BATTLE_REPAIR_BOT, 0, "", 0, true));
                 Player.SendCooldown(TechManager.TECH_BATTLE_REPAIR_BOT, TimeManager.BATTLE_REPAIR_BOT_DURATION, true);
                 Active = true;
                 cooldown = DateTime.Now;
@@ -55,10 +51,7 @@ namespace Ow.Game.Objects.Players.Techs
 
         public void Disable()
         {
-            string packet = "0|TX|D|S|BRB|" + Player.Id;
-            Player.SendPacket(packet);
-            Player.SendPacketToInRangePlayers(packet);
-
+            Player.RemoveVisualModifier(VisualModifierCommand.BATTLE_REPAIR_BOT);
             Player.SendCooldown(TechManager.TECH_BATTLE_REPAIR_BOT, TimeManager.BATTLE_REPAIR_BOT_COOLDOWN);
             Active = false;
         }

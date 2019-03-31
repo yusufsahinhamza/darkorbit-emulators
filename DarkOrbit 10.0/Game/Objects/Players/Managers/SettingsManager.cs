@@ -261,9 +261,9 @@ namespace Ow.Game.Objects.Players.Managers
 
         public static string[] LaserCategory =
         {
-                "ammunition_laser_lcb-10", "ammunition_laser_mcb-25", "ammunition_laser_mcb-50",
-                "ammunition_laser_ucb-100", "ammunition_laser_sab-50", //"ammunition_laser_cbo-100",
-                "ammunition_laser_rsb-75" //"ammunition_laser_job-100"
+                AmmunitionManager.LCB_10, AmmunitionManager.MCB_25, AmmunitionManager.MCB_50,
+                AmmunitionManager.UCB_100, AmmunitionManager.SAB_50, AmmunitionManager.CBO_100,
+                AmmunitionManager.RSB_75 //"ammunition_laser_job-100"
         };
 
         public static string[] RocketsCategory =
@@ -579,13 +579,24 @@ namespace Ow.Game.Objects.Players.Managers
             var lasersItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in LaserCategory)
             {
+                var visible = true;
+
+                if (Player.RankId != 21)
+                {
+                    switch (itemLootId)
+                    {
+                        case AmmunitionManager.CBO_100:
+                            visible = false;
+                            break;
+                    }
+                }
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
                                                                    new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), (Player.Settings.InGameSettings.selectedLaser == AmmunitionManager.RSB_75 ? 3000 : 1000), itemLootId,
                                                                    false);
 
-                lasersItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, "ttip_laser", true, true),
+                lasersItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, "ttip_laser", true, true, false, visible),
                                                                       ClientUISlotBarCategoryItemModule.SELECTION,
                                                                       ClientUISlotBarCategoryItemModule.NONE,
                                                                       GetCooldownType(itemLootId),
@@ -760,6 +771,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 var timerState = ClientUISlotBarCategoryItemTimerStateModule.short_2168;
                 var maxTime = 0;
+                var blocked = false;
 
                 switch (itemLootId)
                 {
@@ -779,6 +791,7 @@ namespace Ow.Game.Objects.Players.Managers
                         maxTime = TimeManager.BACKUP_SHIELD_COOLDOWN;
                         break;
                     case TechManager.TECH_CHAIN_IMPULSE:
+                        blocked = true;
                         maxTime = TimeManager.CHAIN_IMPULSE_COOLDOWN;
                         break;
                 }
@@ -788,7 +801,7 @@ namespace Ow.Game.Objects.Players.Managers
                                                                    new ClientUISlotBarCategoryItemTimerStateModule(timerState), maxTime, itemLootId,
                                                                    false);
 
-                techItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetTechTtip(itemLootId), false, false, false),
+                techItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetTechTtip(itemLootId), false, false, false, true, blocked),
                                                                       ClientUISlotBarCategoryItemModule.SELECTION,
                                                                       ClientUISlotBarCategoryItemModule.NONE,
                                                                       GetCooldownType(itemLootId),
@@ -1154,19 +1167,19 @@ namespace Ow.Game.Objects.Players.Managers
                     return (int)(TimeManager.MINE_COOLDOWN - mineCooldown);
                 case TechManager.TECH_ENERGY_LEECH:
                     var energyLeechCooldown = (DateTime.Now - Player.TechManager.EnergyLeech.cooldown).TotalMilliseconds;
-                    return (int)((Player.TechManager.EnergyLeech.Active ? TimeManager.ENERGY_LEECH_DURATION : TimeManager.ENERGY_LEECH_COOLDOWN) - energyLeechCooldown);
+                    return (int)((Player.TechManager.EnergyLeech.Active ? TimeManager.ENERGY_LEECH_DURATION : (TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN)) - energyLeechCooldown);
                 case TechManager.TECH_CHAIN_IMPULSE:
                     var chainImpulseCooldown = (DateTime.Now - Player.TechManager.ChainImpulse.cooldown).TotalMilliseconds;
                     return (int)(TimeManager.CHAIN_IMPULSE_COOLDOWN - chainImpulseCooldown);                
                 case TechManager.TECH_PRECISION_TARGETER:
                     var precisionTargeterCooldown = (DateTime.Now - Player.TechManager.PrecisionTargeter.cooldown).TotalMilliseconds;
-                    return (int)((Player.TechManager.PrecisionTargeter.Active ? TimeManager.PRECISION_TARGETER_DURATION : TimeManager.PRECISION_TARGETER_COOLDOWN) - precisionTargeterCooldown);
+                    return (int)((Player.TechManager.PrecisionTargeter.Active ? TimeManager.PRECISION_TARGETER_DURATION : (TimeManager.PRECISION_TARGETER_DURATION + TimeManager.PRECISION_TARGETER_COOLDOWN)) - precisionTargeterCooldown);
                 case TechManager.TECH_BACKUP_SHIELDS:
                     var backupShieldsCooldown = (DateTime.Now - Player.TechManager.BackupShields.cooldown).TotalMilliseconds;
                     return (int)(TimeManager.BACKUP_SHIELD_COOLDOWN - backupShieldsCooldown);
                 case TechManager.TECH_BATTLE_REPAIR_BOT:
                     var battleRepairBotCooldown = (DateTime.Now - Player.TechManager.BattleRepairBot.cooldown).TotalMilliseconds;
-                    return (int)((Player.TechManager.BattleRepairBot.Active ? TimeManager.BATTLE_REPAIR_BOT_DURATION : TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) - battleRepairBotCooldown);
+                    return (int)((Player.TechManager.BattleRepairBot.Active ? TimeManager.BATTLE_REPAIR_BOT_DURATION : (TimeManager.BATTLE_REPAIR_BOT_DURATION + TimeManager.BATTLE_REPAIR_BOT_COOLDOWN)) - battleRepairBotCooldown);
                 case SkillManager.SENTINEL:
                 case SkillManager.SPECTRUM:
                 case SkillManager.VENOM:
@@ -1175,7 +1188,7 @@ namespace Ow.Game.Objects.Players.Managers
                     if (Player.Storage.Skills.ContainsKey(pItemId))
                     {
                         var cooldown = (DateTime.Now - Player.Storage.Skills[pItemId].cooldown).TotalMilliseconds;
-                        return (int)((Player.Storage.Skills[pItemId].Active ? Player.Storage.Skills[pItemId].Duration : Player.Storage.Skills[pItemId].Cooldown) - cooldown);
+                        return (int)((Player.Storage.Skills[pItemId].Active ? Player.Storage.Skills[pItemId].Duration : (Player.Storage.Skills[pItemId].Duration + Player.Storage.Skills[pItemId].Cooldown)) - cooldown);
                     }
                     else return 0;
                 case DroneManager.DEFAULT_FORMATION:
@@ -1206,7 +1219,7 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public ClientUISlotBarCategoryItemStatusModule GetItemStatus(string pItemId, string pTooltipId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false, bool visible = true)
+        public ClientUISlotBarCategoryItemStatusModule GetItemStatus(string pItemId, string pTooltipId, bool descriptionEnabled = true, bool doubleClickToFire = false, bool buyEnable = false, bool visible = true, bool blocked = false)
         {
 
             ClientUITooltipsCommand itemBarStatusTootip = new ClientUITooltipsCommand(GetItemBarStatusTooltip(pItemId, pTooltipId, false, 0, descriptionEnabled, doubleClickToFire));
@@ -1214,7 +1227,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             return new ClientUISlotBarCategoryItemStatusModule(itemBarStatusTootip, true, pItemId, visible,
                                                                ClientUISlotBarCategoryItemStatusModule.BLUE, pItemId,
-                                                               0, false, true,
+                                                               0, blocked, true,
                                                                slotBarStatusTooltip, buyEnable ? true : false, LaserCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedLaser.Equals(pItemId) :
                                                                                                                RocketsCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocket.Equals(pItemId) :
                                                                                                                RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) :

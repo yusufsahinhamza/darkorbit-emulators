@@ -88,7 +88,7 @@ namespace Ow.Game.Objects
 
         public override short GetAssetType() { return 0; }
 
-        public override byte[] GetAssetCreateCommand()
+        public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
             return CreatePortalCommand.write(Id, FactionId, GraphicsId,
                                            Position.X, Position.Y, Working,

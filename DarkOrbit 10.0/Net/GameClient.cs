@@ -59,16 +59,19 @@ namespace Ow.Net
         {
             try
             {
-                if (Socket != null && Socket.Connected && Socket.IsBound)
+                if (Socket.IsBound && Socket.Connected)
                 {
                     Socket.Shutdown(SocketShutdown.Both);
                     Socket.Close();
+                    Socket.Dispose();
                 }
+
                 OnConnectionClosed();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Out.WriteLine("Close void exception: " + e, "GameClient.cs");
+                //ignore
+                //Out.WriteLine("Close void exception: " + e, "GameClient.cs");
             }
         }
 
@@ -76,7 +79,7 @@ namespace Ow.Net
         {
             try
             {
-                if (Socket == null || !Socket.Connected || !Socket.IsBound) return;
+                if (Socket == null) return;
 
                 var bytesRead = Socket.EndReceive(ar);
 
@@ -100,42 +103,24 @@ namespace Ow.Net
 
                     Write(Encoding.UTF8.GetBytes(policyPacket + (char)0x00));
                 }
-                else
-                {
-                    Handler.Execute(bytes, this);
-                }
+                else { Handler.Execute(bytes, this); }
 
                 Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
             }
-            catch
-            {
-                Close();
-            }
+            catch { Close(); }
         }
 
         public void Send(byte[] data)
         {
             try
             {
-                var gameSession = GameManager.GetGameSession(UserId);
-                if (gameSession != null)
-                {
-                    if (gameSession.InProcessOfDisconnection) return;
-                    if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
-
-                    try
-                    {
-                        Socket.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
-                    }
-                    catch (Exception e)
-                    {
-                        new Exception("Something went wrong writting on the socket.\n" + e.Message);
-                    }
-                }
+                if (!Socket.Connected) return;
+                Write(data);
             }
-            catch
+            catch (Exception e)
             {
-                Close();
+                Out.WriteLine("Send void exception: " + e, "GameClient.cs");
+                GameManager.GetGameSession(UserId)?.Disconnect(GameSession.DisconnectionType.NORMAL);
             }
         }
 

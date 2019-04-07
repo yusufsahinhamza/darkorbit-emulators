@@ -71,7 +71,7 @@ namespace Ow.Net
                             BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
                             break;
                         case "BuyItem":
-                            BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), (ChangeType)Short(parameters["ChangeType"]), Int(parameters["Amount"]));
+                            BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), Int(parameters["Amount"]));
                             break;
                         case "ChangeClanData":
                             ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), parameters["Name"], parameters["Tag"]);
@@ -112,25 +112,27 @@ namespace Ow.Net
         public static void BanUser(Player player)
         {
             if (player == null) return;
+
             var client = GameManager.ChatClients[player.Id];
             client.Send($"{ChatConstants.CMD_BANN_USER}%#");
             client.ShutdownConnection();
+
             player.GameSession.Disconnect(DisconnectionType.NORMAL);
             GameManager.SendChatSystemMessage($"{player.Name} has banned.");
         }
 
-        public static void BuyItem(Player player, string itemType, DataType dataType, ChangeType changeType, int amount)
+        public static void BuyItem(Player player, string itemType, DataType dataType, int amount)
         {
             if (player.GameSession == null || player == null) return;
 
-            switch(itemType)
+            player.ChangeData(dataType, amount, ChangeType.DECREASE);
+
+            switch (itemType)
             {
                 case "drone":
                     player.DroneManager.UpdateDrones(true);
                     break;
             }
-
-            player.ChangeData(dataType, amount, changeType);
         }
 
         public static void ChangeClanData(Clan clan, object name, object tag)
@@ -209,7 +211,7 @@ namespace Ow.Net
 
         public static void CreateClan(Player player, int clanId, object name, object tag)
         {
-            var clan = new Clan(clanId, name.ToString(), tag.ToString(), 0);
+            var clan = new Clan(clanId, name.ToString(), tag.ToString(), player.FactionId, 0);
             GameManager.Clans.TryAdd(clan.Id, clan);
 
             if (player.GameSession == null || player == null) return;

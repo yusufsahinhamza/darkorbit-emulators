@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Clans;
 using Ow.Game.Movements;
+using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
@@ -12,13 +13,23 @@ namespace Ow.Game.Objects.Stations
 {
     class Satellite : Activatable
     {
-        private static String ASSET_NAME = "Satellite";
-        private static short ASSET_TYPE = 56;
-        private static short DESIGN_ID = 0;
+        private static short ASSET_TYPE = AssetTypeModule.SATELLITE;
+        public string Name = "Satellite";
+        public int DesignId = 0;
 
-        public Satellite(Spacemap pCurrentSpaceMapId, string name, int pFactionId, Position position, Clan clan) : base(pCurrentSpaceMapId, pFactionId, position, clan)
+        public Satellite(Spacemap pCurrentSpaceMapId, string name, int designId, int pFactionId, Position position, Clan clan) : base(pCurrentSpaceMapId, pFactionId, position, clan)
         {
-            ASSET_NAME = name;
+            Name = name;
+            DesignId = designId;
+
+            foreach (var character in Spacemap.Characters.Values)
+            {
+                if (character is Player player)
+                {
+                    short relationType = character.Clan.Id != 0 && Clan.Id != 0 ? Clan.GetRelation(character.Clan) : (short)0;
+                    player.SendCommand(GetAssetCreateCommand(relationType));
+                }
+            }
         }
 
         public override short GetAssetType() { return ASSET_TYPE; }
@@ -28,12 +39,12 @@ namespace Ow.Game.Objects.Stations
 
         }
 
-        public override byte[] GetAssetCreateCommand()
+        public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
-            return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), ASSET_NAME,
-                                          FactionId, "", Id, DESIGN_ID, 0,
-                                          Position.X, Position.Y, 0, false, true, true, true,
-                                          new ClanRelationModule(ClanRelationModule.NONE),
+            return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), Name,
+                                          FactionId, Clan.Tag, Id, DesignId, 0,
+                                          Position.X, Position.Y, Clan.Id, false, true, true, true,
+                                          new ClanRelationModule(clanRelationModule),
                                           new List<VisualModifierCommand>());
         }
     }

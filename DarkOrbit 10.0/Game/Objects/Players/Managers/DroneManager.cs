@@ -47,8 +47,8 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void Tick()
         {
-            DiamondRegeneration();
-            MothWeaken();
+            ShieldRegeneration();
+            ShieldWeaken();
         }
 
         public void SetDroneDesigns()
@@ -88,7 +88,7 @@ namespace Ow.Game.Objects.Players.Managers
             Player.SendPacket(drones);
             Player.SendPacketToInRangePlayers(drones);
 
-            var droneFormationChangeCommand = DroneFormationChangeCommand.write(Player.Id, DroneManager.GetSelectedFormationId(Player.Settings.InGameSettings.selectedFormation));
+            var droneFormationChangeCommand = DroneFormationChangeCommand.write(Player.Id, GetSelectedFormationId(Player.Settings.InGameSettings.selectedFormation));
             Player.SendCommand(droneFormationChangeCommand);
             Player.SendCommandToInRangePlayers(droneFormationChangeCommand);
         }
@@ -122,11 +122,11 @@ namespace Ow.Game.Objects.Players.Managers
         }
 
         public DateTime regenerationCooldown = new DateTime();
-        public void DiamondRegeneration()
+        public void ShieldRegeneration()
         {
-            if (regenerationCooldown.AddSeconds(1) >= DateTime.Now || Player.Settings.InGameSettings.selectedFormation != DroneManager.DIAMOND_FORMATION || Player.CurrentShieldPoints >= Player.MaxShieldPoints) return;
+            if (regenerationCooldown.AddSeconds(1) >= DateTime.Now || Player.Settings.InGameSettings.selectedFormation != DIAMOND_FORMATION || Player.CurrentShieldPoints >= Player.MaxShieldPoints) return;
 
-            int regeneration = Maths.GetPercentage(Player.MaxShieldPoints, 1);
+            int regeneration = Maths.GetPercentage(Player.MaxShieldPoints, Player.Settings.InGameSettings.selectedFormation == DIAMOND_FORMATION ? 1 : 0);
 
             Player.CurrentShieldPoints += regeneration > 5000 ? 5000 : regeneration;
             Player.UpdateStatus();
@@ -134,17 +134,17 @@ namespace Ow.Game.Objects.Players.Managers
             regenerationCooldown = DateTime.Now;
         }
 
-        public DateTime mothWeakenCooldown = new DateTime();
-        public void MothWeaken()
+        public DateTime shieldWeakenCooldown = new DateTime();
+        public void ShieldWeaken()
         {
-            if (mothWeakenCooldown.AddSeconds(1) >= DateTime.Now || Player.Settings.InGameSettings.selectedFormation != DroneManager.MOTH_FORMATION || Player.CurrentShieldPoints <= 0) return;
+            if (shieldWeakenCooldown.AddSeconds(1) >= DateTime.Now || (Player.Settings.InGameSettings.selectedFormation != MOTH_FORMATION && Player.Settings.InGameSettings.selectedFormation != WHEEL_FORMATION)  || Player.CurrentShieldPoints <= 0) return;
 
-            int amount = Maths.GetPercentage(Player.MaxShieldPoints, 1);
+            int amount = Maths.GetPercentage(Player.MaxShieldPoints, Player.Settings.InGameSettings.selectedFormation == MOTH_FORMATION ? 1 : Player.Settings.InGameSettings.selectedFormation == WHEEL_FORMATION ? 5 : 0);
 
             Player.CurrentShieldPoints -= amount;
             Player.UpdateStatus();
 
-            mothWeakenCooldown = DateTime.Now;
+            shieldWeakenCooldown = DateTime.Now;
         }
 
         public DateTime formationCooldown = new DateTime();

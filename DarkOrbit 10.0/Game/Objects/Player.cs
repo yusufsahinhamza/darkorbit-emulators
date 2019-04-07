@@ -96,7 +96,7 @@ namespace Ow.Game.Objects
         {
             if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now) return;
 
-            if (CurrentHitPoints == MaxHitPoints)
+            if (CurrentHitPoints == MaxHitPoints || AttackingOrUnderAttack())
             {
                 if (Storage.RepairBotActivated)
                     RepairBot(false);
@@ -115,7 +115,8 @@ namespace Ow.Game.Objects
         private void CheckShieldPointsRepair()
         {
             if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastShieldRepairTime.AddSeconds(1) >= DateTime.Now ||
-                CurrentShieldPoints == MaxShieldPoints || Settings.InGameSettings.selectedFormation == DroneManager.MOTH_FORMATION) return;
+                CurrentShieldPoints == MaxShieldPoints || Settings.InGameSettings.selectedFormation == DroneManager.MOTH_FORMATION
+                || Settings.InGameSettings.selectedFormation == DroneManager.WHEEL_FORMATION) return;
 
             int repairShield = MaxShieldPoints / 25;
             CurrentShieldPoints += repairShield;
@@ -400,11 +401,7 @@ namespace Ow.Game.Objects
         {
             if (Storage.InRangeAssets.ContainsKey(pEntity.Id))
             {
-                if (pInRange)
-                {
-                    return false;
-                }
-                else
+                if (!pInRange)
                 {
                     if (pEntity is Portal)
                     {
@@ -425,11 +422,8 @@ namespace Ow.Game.Objects
                     Storage.InRangeAssets.TryAdd(pEntity.Id, pEntity);
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
             }
+            return false;
         }
 
         public DateTime ConfigCooldown = new DateTime();

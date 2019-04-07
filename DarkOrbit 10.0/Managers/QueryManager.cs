@@ -195,7 +195,7 @@ namespace Ow.Managers
 
         public static void LoadClans()
         {
-            GameManager.Clans.TryAdd(0, new Clan(0, "", "", 0));
+            GameManager.Clans.TryAdd(0, new Clan(0, "", "", 0, 0));
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
                 var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_clan");
@@ -205,8 +205,9 @@ namespace Ow.Managers
                     string name = Convert.ToString(row["name"]);
                     string tag = Convert.ToString(row["tag"]);
                     int rankPoints = Convert.ToInt32(row["rankPoints"]);
+                    int factionId = Convert.ToInt32(row["factionID"]);
 
-                    var clan = new Clan(id, name, tag, rankPoints);
+                    var clan = new Clan(id, name, tag, factionId, rankPoints);
                     GameManager.Clans.TryAdd(clan.Id, clan);
                     LoadClanDiplomacy(clan);
                 }

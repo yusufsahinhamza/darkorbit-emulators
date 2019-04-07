@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Clans;
 using Ow.Game.Movements;
+using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace Ow.Game.Objects.Stations
     {
         public const int ACTIVATED_RANGE = 500;
 
-        public abstract byte[] GetAssetCreateCommand();
+        public abstract byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE);
 
         public abstract void Click(GameSession gameSession);
 

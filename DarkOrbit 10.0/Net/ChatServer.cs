@@ -24,7 +24,7 @@ namespace Ow.Net
             try
             {
                 listener.Bind(localEndPoint);
-                listener.Listen(-1);
+                listener.Listen(40);
 
                 while (true)
                 {

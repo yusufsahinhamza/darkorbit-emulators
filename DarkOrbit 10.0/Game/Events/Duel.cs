@@ -48,6 +48,7 @@ namespace Ow.Game.Events
 
             Start();
         }
+
         public async void Start()
         {
             for (int i = 25; i > 0; i--)

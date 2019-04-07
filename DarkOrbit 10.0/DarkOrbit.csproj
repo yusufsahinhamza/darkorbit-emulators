@@ -158,6 +158,10 @@
     <Compile Include="Net\mysql\QueryException.cs" />
     <Compile Include="Net\mysql\TransactionException.cs" />
     <Compile Include="Net\mysql\TransactionQueryReactor.cs" />
+    <Compile Include="Net\netty\commands\AssetInfoCommand.cs" />
+    <Compile Include="Net\netty\commands\BattleStationBuildingStateCommand.cs" />
+    <Compile Include="Net\netty\commands\tetetestcommand.cs" />
+    <Compile Include="Net\netty\commands\BattleStationErrorCommand.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerAttackingModule.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerActiveModule.cs" />
     <Compile Include="Net\netty\commands\GroupUpdateUICommand.cs" />
@@ -203,7 +207,7 @@
     <Compile Include="Net\netty\commands\GroupPlayerLocationModule.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerTargetModule.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerInformationsModule.cs" />
-    <Compile Include="Net\netty\commands\GroupPlayerFactionModule.cs" />
+    <Compile Include="Net\netty\commands\FactionModule.cs" />
     <Compile Include="Net\netty\commands\command_i3O.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerShipModule.cs" />
     <Compile Include="Net\netty\commands\JumpCPUPriceMappingModule.cs" />
@@ -313,6 +317,9 @@
     <Compile Include="Net\netty\commands\WindowSettingsModule.cs" />
     <Compile Include="Net\netty\commands\ClientUIMenuBarModule.cs" />
     <Compile Include="Net\netty\Handler.cs" />
+    <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\BuildStationRequestHandler.cs" />
+    <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\UnEquipModuleRequestHandler.cs" />
+    <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\EquipModuleRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupUpdateBlockInvitationStateRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupKickPlayerRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupChangeLeaderRequestHandler.cs" />
@@ -326,7 +333,6 @@
     <Compile Include="Net\netty\handlers\PetGearActivationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupAcceptInvitationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupInvitationRequestHandler.cs" />
-    <Compile Include="Net\netty\handlers\EquipModuleRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\PetRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\CollectBoxRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\RepairStationRequestHandler.cs" />
@@ -356,6 +362,7 @@
     <Compile Include="Net\netty\handlers\ShipSelectRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\MoveRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\LoginRequestHandler.cs" />
+    <Compile Include="Net\netty\requests\BattleStationRequests\UnEquipModuleRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupChangeLeaderRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupFollowPlayerRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupKickPlayerRequest.cs" />
@@ -363,8 +370,9 @@
     <Compile Include="Net\netty\requests\GroupRequests\GroupPingPlayerRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupRevokeInvitationRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupRejectInvitationRequest.cs" />
+    <Compile Include="Net\netty\requests\BattleStationRequests\EquipModuleRequest.cs" />
+    <Compile Include="Net\netty\requests\BattleStationRequests\BuildStationRequest.cs" />
     <Compile Include="Net\netty\requests\PetGearActivationRequest.cs" />
-    <Compile Include="Net\netty\requests\EquipModuleRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupAcceptInvitationRequest.cs" />
     <Compile Include="Net\netty\requests\ProActionBarRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupInvitationRequest.cs" />

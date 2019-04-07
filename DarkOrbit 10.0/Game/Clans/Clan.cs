@@ -13,14 +13,16 @@ namespace Ow.Game.Clans
         public string Name { get; set; }
         public string Tag { get; set; }
         public int RankPoints { get; set; }
+        public int FactionId { get; set; }
 
         public Dictionary<int, Diplomacy> Diplomacies = new Dictionary<int, Diplomacy>();
 
-        public Clan(int id, string name, string tag, int rankPoints)
+        public Clan(int id, string name, string tag, int factionId, int rankPoints)
         {
             Id = id;
             Name = name;
             Tag = tag;
+            FactionId = factionId;
             RankPoints = rankPoints;
         }
 

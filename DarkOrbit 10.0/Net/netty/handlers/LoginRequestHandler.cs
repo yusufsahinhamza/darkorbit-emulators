@@ -161,7 +161,7 @@ namespace Ow.Net.netty.handlers
 
                 player.SendCommand(CpuInitializationCommand.write(true, false));
                 */
-                //player.BoosterManager.Initiate();
+                player.BoosterManager.Initiate();
                 //player.SendPacket("0|A|JCPU|S|20|1"); //ATLAMA GERİ SAYIM
 
                 player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));

@@ -462,10 +462,9 @@ namespace Ow.Chat
                     {
                         if (pair.ChatsJoined.Contains(Convert.ToInt32(roomId)))
                         {
-                            if (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR)
-                                messagePacket = "j%" + roomId + "@" + gameSession.Player.Name + "@" + message;
-                            else
-                                messagePacket = "a%" + roomId + "@" + gameSession.Player.Name + "@" + message;
+                            var name = gameSession.Player.Name + (pair.Permission == Permissions.ADMINISTRATOR || pair.Permission == Permissions.CHAT_MODERATOR ? $" ({gameSession.Player.Id})" : "");
+                            var color = (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR) ? "j" : "a";
+                            messagePacket = $"{color}%" + roomId + "@" + name + "@" + message;
 
                             if (gameSession.Player.Clan.Tag != "")
                                 messagePacket += "@" + gameSession.Player.Clan.Tag;
@@ -483,11 +482,13 @@ namespace Ow.Chat
         {
             try
             {
-                if (Socket != null && Socket.Connected && Socket.IsBound)
+                if (Socket.IsBound && Socket.Connected)
                 {
                     Socket.Shutdown(SocketShutdown.Both);
                     Socket.Close();
+                    Socket.Dispose();
                 }
+
                 var value = this;
                 GameManager.ChatClients.TryRemove(UserId, out value);
             }
@@ -501,7 +502,7 @@ namespace Ow.Chat
         {
             try
             {
-                if (Socket == null || !Socket.Connected || !Socket.IsBound) return;
+                if (Socket == null) return;
 
                 var bytesRead = Socket.EndReceive(ar);
                 var content = Encoding.UTF8.GetString(buffer, 0, bytesRead);
@@ -519,10 +520,7 @@ namespace Ow.Chat
 
                     Write(Encoding.UTF8.GetBytes(policyPacket + (char)0x00));
                 }
-                else
-                {
-                    Execute(content);
-                }
+                else { Execute(content); }
 
                 Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
             }
@@ -534,17 +532,14 @@ namespace Ow.Chat
 
         public void Send(String data)
         {
-            if (!GameManager.ChatClients.ContainsKey(UserId) || Socket == null) return;
-            if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
             try
             {
-                var byteData = Encoding.UTF8.GetBytes(data + (char)0x00);
-                Socket.BeginSend(byteData, 0, byteData.Length, 0,
-                                       SendCallback, Socket);
+                if (!Socket.Connected) return;
+                Write(Encoding.UTF8.GetBytes(data + (char)0x00));
             }
             catch (Exception e)
             {
-                new Exception("Something went wrong writting on the socket.\n" + e.Message);
+                Out.WriteLine("Send void exception: " + e, "ChatClient.cs");
             }
         }
 

@@ -64,12 +64,12 @@ namespace Ow.Game.Objects.Stations
 
         }
 
-        public override byte[] GetAssetCreateCommand()
+        public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
             return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), ASSET_NAME,
                                           FactionId, "", Id, DESIGN_ID, 0,
                                           Position.X, Position.Y, 0, true, true, true, false,
-                                          new ClanRelationModule(ClanRelationModule.NONE),
+                                          new ClanRelationModule(clanRelationModule),
                                           new List<VisualModifierCommand>());
         }
     }

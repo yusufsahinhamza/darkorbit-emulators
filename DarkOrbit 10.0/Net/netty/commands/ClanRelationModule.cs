@@ -11,10 +11,10 @@ namespace Ow.Net.netty.commands
     {
         public const short ID = 27378;
 
-        public static short NONE = 0;
-        public static short ALLIED = 1;
-        public static short NON_AGGRESSION_PACT = 2;
-        public static short AT_WAR = 3;
+        public const short NONE = 0;
+        public const short ALLIED = 1;
+        public const short NON_AGGRESSION_PACT = 2;
+        public const short AT_WAR = 3;
 
         public short type = 0;
         public ClanRelationModule(short type)

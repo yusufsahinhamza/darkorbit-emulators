@@ -2,9 +2,11 @@
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Net.netty.handlers;
+using Ow.Net.netty.handlers.BattleStationRequestHandlers;
 using Ow.Net.netty.handlers.GroupRequestHandlers;
 using Ow.Net.netty.handlers.UbaRequestHandlers;
 using Ow.Net.netty.requests;
+using Ow.Net.netty.requests.BattleStationRequests;
 using Ow.Net.netty.requests.GroupRequests;
 using Ow.Utils;
 using System;
@@ -38,7 +40,6 @@ namespace Ow.Net.netty
             Commands.Add(KillscreenRequest.ID, new KillsceenRequestHandler());
             Commands.Add(ProActionBarRequest.ID, new ProActionBarRequestHandler());
             Commands.Add(PetRequest.ID, new PetRequestHandler());
-            Commands.Add(EquipModuleRequest.ID, new EquipModuleRequestHandler());
             Commands.Add(GroupInvitationRequest.ID, new GroupInvitationRequestHandler());
             Commands.Add(GroupAcceptInvitationRequest.ID, new GroupAcceptInvitationRequestHandler());
             Commands.Add(CollectBoxRequest.ID, new CollectBoxRequestHandler());
@@ -50,6 +51,11 @@ namespace Ow.Net.netty
             Commands.Add(GroupPingPositionRequest.ID, new GroupPingPositionRequestHandler());
             Commands.Add(GroupFollowPlayerRequest.ID, new GroupFollowPlayerRequestHandler());
             Commands.Add(GroupKickPlayerRequest.ID, new GroupKickPlayerRequestHandler());
+
+            Commands.Add(EquipModuleRequest.ID, new EquipModuleRequestHandler());
+            Commands.Add(BuildStationRequest.ID, new BuildStationRequestHandler());
+            Commands.Add(UnEquipModuleRequest.ID, new UnEquipModuleRequestHandler());
+
             Commands.Add(2244, new RepairStationRequestHandler());
             Commands.Add(10343, new LogoutCancelRequestHandler());
             Commands.Add(31106, new AttackLaserRequestHandler());
@@ -89,8 +95,7 @@ namespace Ow.Net.netty
                     Commands[parser.ID].execute(gameSession, bytes);
                     gameSession.LastActiveTime = DateTime.Now;
                 }
-                //else
-                //Out.WriteLine("Unknown command ID: " + parser.CMD_ID);
+                else Out.WriteLine("Unknown command ID: " + parser.ID);
             }
             catch (Exception e)
             {

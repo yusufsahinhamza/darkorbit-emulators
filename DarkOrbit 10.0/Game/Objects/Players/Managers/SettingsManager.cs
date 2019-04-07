@@ -405,7 +405,8 @@ namespace Ow.Game.Objects.Players.Managers
             if (EventManager.Spaceball.Active)
                 leftItems.Add("spaceball", "title_spaceball");
             //leftItems.Add("contacts", "title_contactlist");
-            //leftItems.Add("booster", "title_booster");
+            if (Player.RankId == 21)
+                leftItems.Add("booster", "title_booster");
             if (Player.RankId == 21)
                 leftItems.Add("traininggrounds", "title_traininggrounds");
             //leftItems.Add("jackpot_status_ui", "title_jackpot_status_ui");

@@ -7,7 +7,7 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class GroupPlayerFactionModule : command_i3O
+    class FactionModule : command_i3O
     {
         public const short ID = 2289;
 
@@ -18,7 +18,7 @@ namespace Ow.Net.netty.commands
 
         public short factionId = 0;
 
-        public GroupPlayerFactionModule(short factionId)
+        public FactionModule(short factionId)
         {
             this.factionId = factionId;
         }

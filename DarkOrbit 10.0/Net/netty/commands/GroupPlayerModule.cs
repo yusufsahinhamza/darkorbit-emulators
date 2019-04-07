@@ -13,7 +13,7 @@ namespace Ow.Net.netty.commands
 
         public Boolean disconnected = false;
         public GroupPlayerShipModule ship;      
-        public GroupPlayerFactionModule faction;      
+        public FactionModule faction;      
         public String name = "";      
         public GroupPlayerInformationsModule information;      
         public GroupPlayerTargetModule target;      
@@ -27,7 +27,7 @@ namespace Ow.Net.netty.commands
         public int id = 0; 
         public GroupPlayerClanModule clan;
 
-        public GroupPlayerModule(string name, int id, GroupPlayerInformationsModule information, GroupPlayerLocationModule location, int level, bool active, bool cloaked, bool attacking, bool disconnected, bool var51u, GroupPlayerClanModule clan, GroupPlayerFactionModule faction, GroupPlayerTargetModule target, GroupPlayerShipModule ship, GroupPlayerHadesGateModule hades)
+        public GroupPlayerModule(string name, int id, GroupPlayerInformationsModule information, GroupPlayerLocationModule location, int level, bool active, bool cloaked, bool attacking, bool disconnected, bool var51u, GroupPlayerClanModule clan, FactionModule faction, GroupPlayerTargetModule target, GroupPlayerShipModule ship, GroupPlayerHadesGateModule hades)
         {
             this.name = name;
             this.id = id;

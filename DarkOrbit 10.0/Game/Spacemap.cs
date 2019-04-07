@@ -120,9 +120,9 @@ namespace Ow.Game
 
             if (Id == 16)
             {
-                new HomeStation(this, 1, Position.MMOPosition, null);
-                new HomeStation(this, 2, Position.EICPosition, null);
-                new HomeStation(this, 3, Position.VRUPosition, null);
+                new HomeStation(this, 1, Position.MMOPosition, GameManager.GetClan(0));
+                new HomeStation(this, 2, Position.EICPosition, GameManager.GetClan(0));
+                new HomeStation(this, 3, Position.VRUPosition, GameManager.GetClan(0));
             }
 
             /*
@@ -144,7 +144,10 @@ namespace Ow.Game
                 var battleStation = new BattleStation(this, 1, new Position(18500, 600), GameManager.GetClan(1));
             }
             */
-
+            if (Id == 1)
+            {
+                new BattleStation(this, 0, new Position(27500, 2000), GameManager.GetClan(0));
+            }
             //if (Id != 101 && Id != 121 && Id != 42)
             if (Id == 16)
             {
@@ -278,32 +281,37 @@ namespace Ow.Game
                         if (Player.CurrentHitPoints == Player.MaxHitPoints || Player.FactionId != entity.FactionId)
                             inRange = false;
                     }
+                }
 
-                    bool activateButton = Player.UpdateActivatable(entity, inRange);
+                bool activateButton = Player.UpdateActivatable(entity, inRange);
 
-                    if (activateButton)
+                if (activateButton)
+                {
+                    if (entity is BattleStation && status == MapAssetActionAvailableCommand.OFF)
                     {
-
-                        var tooltipItemBars = new List<ClientUITooltipModule>();
-
-                        var class521_localized_1 =
-                         new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
-
-                        var slotBarItemStatusTooltip_1 =
-                        new ClientUITooltipModule(class521_localized_1, ClientUITooltipModule.STANDARD, "q2_condition_JUMP", new List<ClientUITextReplacementModule>());
-
-                        tooltipItemBars.Add(slotBarItemStatusTooltip_1);
-
-                        var assetAction =
-                                MapAssetActionAvailableCommand.write(entity.Id,
-                                                                   status,
-                                                                   inRange,
-                                                                   new ClientUITooltipsCommand(
-                                                                           entity is Portal ? tooltipItemBars : new List<ClientUITooltipModule>()),
-                                                                   new class_h45()
-                                );
-                        Player.SendCommand(assetAction);
+                        //TODO: Find close ui command end send it
                     }
+
+                    var tooltipItemBars = new List<ClientUITooltipModule>();
+
+                    var class521_localized_1 =
+                     new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
+
+                    var slotBarItemStatusTooltip_1 =
+                    new ClientUITooltipModule(class521_localized_1, ClientUITooltipModule.STANDARD, "q2_condition_JUMP", new List<ClientUITextReplacementModule>());
+
+                    tooltipItemBars.Add(slotBarItemStatusTooltip_1);
+
+                    var assetAction =
+                            MapAssetActionAvailableCommand.write(entity.Id,
+                                                               status,
+                                                               inRange,
+                                                               new ClientUITooltipsCommand(
+                                                                       entity is Portal ? tooltipItemBars : new List<ClientUITooltipModule>()),
+                                                               new class_h45()
+                            );
+
+                    Player.SendCommand(assetAction);
                 }
             }
 
@@ -362,7 +370,10 @@ namespace Ow.Game
         public void SendObjects(Player player)
         {
             foreach (var activatableStationary in Activatables.Values)
-                player.SendCommand(activatableStationary.GetAssetCreateCommand());
+            {
+                short relationType = player.Clan.Id != 0 && activatableStationary.Clan.Id != 0 ? activatableStationary.Clan.GetRelation(player.Clan) : (short)0;
+                player.SendCommand(activatableStationary.GetAssetCreateCommand(relationType));
+            }
             foreach (var poi in POIs.Values)
                 player.SendCommand(poi.GetPOICreateCommand());
         }

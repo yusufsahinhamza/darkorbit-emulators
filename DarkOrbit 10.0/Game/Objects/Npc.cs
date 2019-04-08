@@ -16,7 +16,7 @@ namespace Ow.Game.Objects
     {
         public NpcAI NpcAI { get; set; }
 
-        public Npc(int id, int shipId, Spacemap spacemap, Position position) : base(id, GameManager.GetShip(shipId).Name, 0, GameManager.GetShip(shipId), position, spacemap, null)
+        public Npc(int id, int shipId, Spacemap spacemap, Position position) : base(id, GameManager.GetShip(shipId).Name, 0, GameManager.GetShip(shipId), position, spacemap, GameManager.GetClan(0))
         {
             Spacemap.AddCharacter(this);
 

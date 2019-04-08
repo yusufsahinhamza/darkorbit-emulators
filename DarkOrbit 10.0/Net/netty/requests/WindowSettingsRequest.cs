@@ -39,7 +39,7 @@ namespace Ow.Net.netty.requests
             this.premiumSlotBarPosition = parser.readUTF();
             parser.readShort();
             this.scaleFactor = parser.readInt();
-            this.scaleFactor = this.scaleFactor << 1 | this.scaleFactor >> 31;
+            this.scaleFactor = (int)(((uint)this.scaleFactor) << 1 | ((uint)this.scaleFactor >> 31));
             this.gameFeatureBarLayoutType = parser.readUTF();
             this.gameFeatureBarPosition = parser.readUTF();
             this.proActionBarLayoutType = parser.readUTF();

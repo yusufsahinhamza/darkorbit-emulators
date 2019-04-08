@@ -7,13 +7,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Ow.Game.Ticks;
+using System.Collections.Concurrent;
+using Ow.Managers;
 
 namespace Ow.Game.Events
 {
     class UltimateBattleArena : Tick
     {
         public int TickId { get; set; }
-        public static List<Player> WaitingPlayers = new List<Player>();
+        public static ConcurrentDictionary<int, Player> WaitingPlayers = new ConcurrentDictionary<int, Player>();
 
         public UltimateBattleArena()
         {
@@ -24,109 +26,156 @@ namespace Ow.Game.Events
 
         public void Tick()
         {
-            /*
             if (WaitingPlayers.Count >= 2)
             {
-                foreach (var thisPlayer in WaitingPlayers)
+                foreach (var thisPlayer in WaitingPlayers.Values)
                 {
-                    foreach (var otherPlayer in WaitingPlayers)
+                    foreach (var otherPlayer in WaitingPlayers.Values)
                     {
                         if (!thisPlayer.Equals(otherPlayer))
                         {
-                            if (thisPlayer.Storage.UbaOpponent == null && otherPlayer.Storage.UbaOpponent == null)
+                            if (thisPlayer.Storage.Uba == null && otherPlayer.Storage.Uba == null)
                             {
-                                thisPlayer.Storage.UbaOpponent = otherPlayer;
-                                otherPlayer.Storage.UbaOpponent = thisPlayer;
-                                thisPlayer.SendCommand(UbaWindowInitializationCommand.write(new command_NQ(), 3));
-                                thisPlayer.Storage.UbaOpponent.SendCommand(UbaWindowInitializationCommand.write(new command_NQ(), 3));
+                                var players = new ConcurrentDictionary<int, Player>();
+                                players.TryAdd(thisPlayer.Id, thisPlayer);
+                                players.TryAdd(otherPlayer.Id, otherPlayer);
+                                new Uba(players);
                             }
                         }
                     }
                 }
             }
-            */
         }
 
-        public void AddPlayer(Player player)
+        public void AddWaitingPlayer(Player player)
         {
-            if (!WaitingPlayers.Contains(player))
-                WaitingPlayers.Add(player);
+            if (!WaitingPlayers.ContainsKey(player.Id))
+            {
+                player.SendCommand(UbaWindowInitializationCommand.write(new UbaD26Module(), 2));
+                WaitingPlayers.TryAdd(player.Id, player);
+            }
         }
 
-        public void RemovePlayer(Player player)
+        public void RemoveWaitingPlayer(Player player)
         {
-            if (WaitingPlayers.Contains(player))
-                WaitingPlayers.Remove(player);
+            if (WaitingPlayers.ContainsKey(player.Id))
+            {
+                player.Storage.Uba = null;
+                WaitingPlayers.TryRemove(player.Id, out player);
+            }
         }
     }
 
     class Uba : Tick
     {
         public int TickId { get; set; }
-        public Player Player { get; set; }
-        public Player OtherPlayer { get; set; }
 
-        public Uba(Player player, Player otherPlayer)
+        public bool PeaceArea = true;
+
+        public ConcurrentDictionary<int, Player> Players { get; set; }
+        public static Spacemap Spacemap = GameManager.GetSpacemap(121);
+
+        public Position Position1 = new Position(4400, 3600);
+        public Position Position2 = new Position(5600, 2400);
+
+        public Uba(ConcurrentDictionary<int, Player> players)
         {
-            Player = player;
-            OtherPlayer = otherPlayer;
+            Players = players;
+            if (Players.Count > 2) return;
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
-            TickId = tickId;
+            foreach (var player in Players.Values)
+            {
+                if (player.GameSession == null) return;
 
-            countdown = DateTime.Now;
+                player.Storage.Uba = this;
+                /*
+                player.CpuManager.DisableCloak();
+
+                foreach (var player2 in Players.Values)
+                {
+                    if (!player.Equals(player2))
+                    {
+                        player.Jump(Spacemap.Id, Position1);
+                        player2.Jump(Spacemap.Id, Position2);
+                    }
+                }
+                */
+            }
+
+            Page3Timer();
         }
-
+        /*
         public DateTime countdown = new DateTime();
         public DateTime countdownTimer = new DateTime();
         public bool peaceArea = true;
         public bool rewarded = false;
+        public bool Active = false;
 
         public int countdownTime = 20;
+        */
         public void Tick()
         {
-            if (countdownTimer.AddSeconds(1) < DateTime.Now && peaceArea)
+            /*
+            if (Active)
             {
-                var packet = $"0|A|STD|-={countdownTime}=-";
-                Player.SendPacket(packet);
-                OtherPlayer.SendPacket(packet);
-                countdownTime--;
-                countdownTimer = DateTime.Now;
-            }
+                if (countdownTimer.AddSeconds(1) < DateTime.Now && peaceArea)
+                {
+                    var packet = $"0|A|STD|-={countdownTime}=-";
+                    Player.SendPacket(packet);
+                    OtherPlayer.SendPacket(packet);
+                    countdownTime--;
+                    countdownTimer = DateTime.Now;
+                }
 
-            if (countdown.AddSeconds(21) < DateTime.Now && peaceArea)
-            {
-                Player.SendCommand(MapRemovePOICommand.write("uba_poi2"));
-                Player.SendCommand(MapRemovePOICommand.write("uba_poi3"));
-                OtherPlayer.SendCommand(MapRemovePOICommand.write("uba_poi2"));
-                OtherPlayer.SendCommand(MapRemovePOICommand.write("uba_poi3"));
-                peaceArea = false;
-            }
+                if (countdown.AddSeconds(21) < DateTime.Now && peaceArea)
+                {
+                    Player.SendCommand(MapRemovePOICommand.write("uba_poi2"));
+                    Player.SendCommand(MapRemovePOICommand.write("uba_poi3"));
+                    OtherPlayer.SendCommand(MapRemovePOICommand.write("uba_poi2"));
+                    OtherPlayer.SendCommand(MapRemovePOICommand.write("uba_poi3"));
+                    peaceArea = false;
+                }
 
-            if (!rewarded)
-            {
-                if (Player.Destroyed)
-                    SendReward(OtherPlayer);
-                else if (OtherPlayer.Destroyed)
-                    SendReward(Player);
+                if (!rewarded)
+                {
+                    if (Player.Destroyed)
+                        SendReward(OtherPlayer);
+                    else if (OtherPlayer.Destroyed)
+                        SendReward(Player);
+                }
             }
+            */
+        }
+
+        public async void Page3Timer()
+        {
+            for (int i = 5; i > 0; i--)
+            {
+                foreach(var player in Players.Values)
+                    player.SendCommand(UbaWindowInitializationCommand.write(new Uba047Module(i * 1000, new UbaM1tModule(false)), 3));
+
+                await Task.Delay(1000);
+
+                if (i <= 1)
+                {
+                    foreach (var player in Players.Values)
+                    {
+                        player.SendCommand(UbaWindowInitializationCommand.write(new UbaD26Module(), 0));
+                        EventManager.UltimateBattleArena.RemoveWaitingPlayer(player);
+                    }
+                    /*
+                    foreach (var player in Players.Values)
+                        if (!player.Storage.UbaMatchmakingAccepted)
+                        player.SendCommand(UbaWindowInitializationCommand.write(new UbaD26Module(), 0));
+                        */
+                }
+            }
+               
         }
 
         public async void SendReward(Player player)
         {
-            rewarded = true;
-            Program.TickManager.RemoveTick(this);
 
-            player.Storage.UbaMatchmakingAccepted = false;
-            player.Storage.UbaOpponent = null;
-            OtherPlayer.Storage.UbaMatchmakingAccepted = false;
-            OtherPlayer.Storage.UbaOpponent = null;
-
-            player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
-            await Task.Delay(5000);
-            //TODO: player.MoveManager.SetPosition();
-            player.Jump(player.GetBaseMapId(), player.Position);
         }
     }
 }

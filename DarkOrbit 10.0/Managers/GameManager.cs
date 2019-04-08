@@ -1,6 +1,5 @@
 ﻿using Ow.Chat;
 using Ow.Game;
-using Ow.Game.Clans;
 using Ow.Game.Events;
 using Ow.Game.Objects;
 using Ow.Game.Objects.Players;

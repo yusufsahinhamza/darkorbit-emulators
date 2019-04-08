@@ -63,7 +63,7 @@
   <ItemGroup>
     <Compile Include="Chat\ChatClient.cs" />
     <Compile Include="Chat\Room.cs" />
-    <Compile Include="Game\Clans\Clan.cs" />
+    <Compile Include="Game\Clan.cs" />
     <Compile Include="Game\Enums.cs" />
     <Compile Include="Game\Events\Duel.cs" />
     <Compile Include="Game\Events\JackpotBattle.cs" />
@@ -158,9 +158,9 @@
     <Compile Include="Net\mysql\QueryException.cs" />
     <Compile Include="Net\mysql\TransactionException.cs" />
     <Compile Include="Net\mysql\TransactionQueryReactor.cs" />
+    <Compile Include="Net\netty\commands\RemovePortalCommand.cs" />
     <Compile Include="Net\netty\commands\AssetInfoCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationBuildingStateCommand.cs" />
-    <Compile Include="Net\netty\commands\tetetestcommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationErrorCommand.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerAttackingModule.cs" />
     <Compile Include="Net\netty\commands\GroupPlayerActiveModule.cs" />
@@ -173,9 +173,12 @@
     <Compile Include="Net\netty\commands\GroupRemoveCommand.cs" />
     <Compile Include="Net\netty\commands\HeroMoveCommand.cs" />
     <Compile Include="Net\netty\commands\ClanChangedCommand.cs" />
+    <Compile Include="Net\netty\commands\UbaD26Module.cs" />
+    <Compile Include="Net\netty\commands\UbaM1tModule.cs" />
     <Compile Include="Net\netty\commands\UbaJ39Module.cs" />
     <Compile Include="Net\netty\commands\Ubaf3kModule.cs" />
     <Compile Include="Net\netty\commands\Uba43GModule.cs" />
+    <Compile Include="Net\netty\commands\Uba047Module.cs" />
     <Compile Include="Net\netty\commands\UpdateWindowItemCommand.cs" />
     <Compile Include="Net\netty\commands\Ubaz3QModule.cs" />
     <Compile Include="Net\netty\commands\CreateBoxCommand.cs" />

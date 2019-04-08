@@ -33,6 +33,7 @@ namespace Ow.Game.Events
             {
                 if (player.GameSession == null) return;
 
+                player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.CAMERA, 0, "", 0, true));
                 player.Storage.Duel = this;
                 player.CpuManager.DisableCloak();
 
@@ -85,12 +86,16 @@ namespace Ow.Game.Events
         {
             Program.TickManager.RemoveTick(this);
 
-            foreach (var player in Players.Values)
-                if (player.GameSession != null)
-                    player.Storage.Duel = null;
-
             winnerPlayer.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
+
+            foreach (var player in Players.Values)
+                if (player.GameSession != null)
+                {
+                    player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
+                    player.Storage.Duel = null;
+                }
+
             winnerPlayer.SetPosition(winnerPlayer.FactionId == 1 ? Position.MMOPosition : winnerPlayer.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
             winnerPlayer.Jump(winnerPlayer.GetBaseMapId(), winnerPlayer.Position);
         }

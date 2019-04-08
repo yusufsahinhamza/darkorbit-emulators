@@ -10,10 +10,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ow.Chat;
 using Ow.Game;
-using Ow.Game.Clans;
 using Ow.Game.Movements;
 using Ow.Game.Objects;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 using static Ow.Game.GameSession;
@@ -183,7 +183,7 @@ namespace Ow.Net
             if (player.Clan.Id != 0)
             {
                 player.Clan = GameManager.GetClan(0);
-                GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write("", 0, player.Id));
+                GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write(player.Clan.Tag, player.Clan.Id, player.Id));
             }
         }
 
@@ -200,7 +200,7 @@ namespace Ow.Net
                     if (member.Clan == deletedClan)
                     {
                         member.Clan = GameManager.GetClan(0);
-                        GameManager.SendCommandToMap(member.Spacemap.Id, ClanChangedCommand.write("", 0, member.Id));
+                        GameManager.SendCommandToMap(member.Spacemap.Id, ClanChangedCommand.write(member.Clan.Tag, member.Clan.Id, member.Id));
                     }
                 }
 
@@ -226,6 +226,9 @@ namespace Ow.Net
 
             if (player.Settings.InGameSettings.inEquipZone && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
             {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET factionID = {factionId} WHERE userID = {player.Id}");
+
                 player.ChangeData(DataType.URIDIUM, uridiumPrice, ChangeType.DECREASE);
                 player.ChangeData(DataType.HONOR, honorPrice, ChangeType.DECREASE);
 

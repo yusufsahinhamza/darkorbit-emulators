@@ -10,7 +10,6 @@ using Ow.Game;
 using Newtonsoft.Json;
 using Ow.Game.Objects.Players;
 using Ow.Game.Objects.Stations;
-using Ow.Game.Clans;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Game.Objects;
 using Ow.Game.Objects.Collectables;

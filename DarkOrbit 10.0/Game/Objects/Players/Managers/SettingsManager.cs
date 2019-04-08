@@ -96,6 +96,17 @@ namespace Ow.Game.Objects.Players.Managers
         public bool hideAllWindows = false;
         public int scale = 6;
         public string barState = "24,1|23,1|100,1|25,1|35,0|34,0|39,0|";
+        public string gameFeatureBarPosition = "0,0";
+        public string gameFeatureBarLayoutType = "0";
+        public string genericFeatureBarPosition = "98.3,0";
+        public string genericFeatureBarLayoutType = "0";
+        public string categoryBarPosition = "50,85";
+        public string standartSlotBarPosition = "50,85|0,40";
+        public string standartSlotBarLayoutType = "0";
+        public string premiumSlotBarPosition = "50,85|0,80";
+        public string premiumSlotBarLayoutType = "0";
+        public string proActionBarPosition = "50,85|0,120";
+        public string proActionBarLayoutType = "0";
     }
 
     public class BoundKeysBase
@@ -386,8 +397,8 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendMenuBarsCommand()
         {
+            var windowSettings = Player.Settings.Window;
             var menuBarsCommand = new List<ClientUIMenuBarModule>();
-
             var leftItems = new Dictionary<string, string>();
 
             leftItems.Add("user", "title_user");
@@ -429,10 +440,9 @@ namespace Ow.Game.Objects.Players.Managers
 
                 topLeftMenuBarItems.Add(menuBarItem);
             }
-            var topLeftMenuBar =
-                    new ClientUIMenuBarModule(ClientUIMenuBarModule.GAME_FEATURE_BAR, topLeftMenuBarItems, "0,0", "0");
-            menuBarsCommand.Add(topLeftMenuBar);
 
+            var topLeftMenuBar = new ClientUIMenuBarModule(ClientUIMenuBarModule.GAME_FEATURE_BAR, topLeftMenuBarItems, windowSettings.gameFeatureBarPosition, windowSettings.gameFeatureBarLayoutType);
+            menuBarsCommand.Add(topLeftMenuBar);
 
             var rightItems = new Dictionary<string, string>();
 
@@ -458,8 +468,8 @@ namespace Ow.Game.Objects.Players.Managers
 
                 topRightMenuBarItems.Add(menuBarItem);
             }
-            var topRightMenuBar =
-                    new ClientUIMenuBarModule(ClientUIMenuBarModule.GENERIC_FEATURE_BAR, topRightMenuBarItems, "98.3,0", "0");
+
+            var topRightMenuBar = new ClientUIMenuBarModule(ClientUIMenuBarModule.GENERIC_FEATURE_BAR, topRightMenuBarItems, windowSettings.genericFeatureBarPosition, windowSettings.genericFeatureBarLayoutType);
             menuBarsCommand.Add(topRightMenuBar);
 
             Player.SendCommand(ClientUIMenuBarsCommand.write(menuBarsCommand));
@@ -467,6 +477,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendSlotBarCommand()
         {
+            var windowSettings = Player.Settings.Window;
             var slotBars = new List<ClientUISlotBarModule>();
             slotBars.Add(GetStandardSlotBar());
             slotBars.Add(GetPremiumSlotBar());
@@ -486,7 +497,7 @@ namespace Ow.Game.Objects.Players.Managers
             categories.Add(GetAbilityCategory());
             categories.Add(GetFormationCategory());
 
-            Player.SendCommand(ClientUISlotBarsCommand.write("50,85", slotBars, categories));
+            Player.SendCommand(ClientUISlotBarsCommand.write(windowSettings.categoryBarPosition, slotBars, categories));
         }
 
         public void SendHelpWindows()
@@ -536,6 +547,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public ClientUISlotBarModule GetStandardSlotBar()
         {
+            var windowSettings = Player.Settings.Window;
             var standartItems = new List<ClientUISlotBarItemModule>();
 
             foreach (var pair in Player.Settings.SlotBarItems)
@@ -544,12 +556,12 @@ namespace Ow.Game.Objects.Players.Managers
                 standartItems.Add(item);
             }
 
-            return new ClientUISlotBarModule("50,85|0,40", STANDARD_SLOT_BAR, "0", standartItems, true);
+            return new ClientUISlotBarModule(windowSettings.standartSlotBarPosition, STANDARD_SLOT_BAR, windowSettings.standartSlotBarLayoutType, standartItems, true);
         }
 
         public ClientUISlotBarModule GetPremiumSlotBar()
         {
-
+            var windowSettings = Player.Settings.Window;
             var premiumItems = new List<ClientUISlotBarItemModule>();
 
             foreach (var pair in Player.Settings.PremiumSlotBarItems)
@@ -558,12 +570,12 @@ namespace Ow.Game.Objects.Players.Managers
                 premiumItems.Add(item);
             }
 
-            return new ClientUISlotBarModule("50,85|0,80", PREMIUM_SLOT_BAR, "0", premiumItems, true);
+            return new ClientUISlotBarModule(windowSettings.premiumSlotBarPosition, PREMIUM_SLOT_BAR, windowSettings.premiumSlotBarLayoutType, premiumItems, true);
         }
 
         public ClientUISlotBarModule GetProActionSlotBar()
         {
-
+            var windowSettings = Player.Settings.Window;
             var proActionItems = new List<ClientUISlotBarItemModule>();
 
             foreach (var pair in Player.Settings.ProActionBarItems)
@@ -572,7 +584,7 @@ namespace Ow.Game.Objects.Players.Managers
                 proActionItems.Add(item);
             }
 
-            return new ClientUISlotBarModule("50,85|0,120", PRO_ACTION_BAR, "0", proActionItems, Player.Settings.Display.proActionBarOpened);
+            return new ClientUISlotBarModule(windowSettings.proActionBarPosition, PRO_ACTION_BAR, windowSettings.proActionBarLayoutType, proActionItems, Player.Settings.Display.proActionBarOpened);
         }
 
         public ClientUISlotBarCategoryModule GetLasersCategory()
@@ -951,6 +963,7 @@ namespace Ow.Game.Objects.Players.Managers
             var formationItems = new List<ClientUISlotBarCategoryItemModule>();
             foreach (string itemLootId in FormationsCategory)
             {
+                /*
                 var visible = true;
 
                 if (Player.RankId != 21)
@@ -964,13 +977,14 @@ namespace Ow.Game.Objects.Players.Managers
                             break;
                     }
                 }
+                */
 
                 ClientUISlotBarCategoryItemTimerModule categoryTimerModule =
                         new ClientUISlotBarCategoryItemTimerModule(GetCooldownTime(itemLootId),
                                                                    new ClientUISlotBarCategoryItemTimerStateModule(ClientUISlotBarCategoryItemTimerStateModule.short_2168), TimeManager.FORMATION_COOLDOWN, itemLootId,
                                                                    false);
 
-                formationItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetFormationTtip(itemLootId), false, false, false, visible),
+                formationItems.Add(new ClientUISlotBarCategoryItemModule(1, GetItemStatus(itemLootId, GetFormationTtip(itemLootId), false, false, false, true),
                                                                       ClientUISlotBarCategoryItemModule.SELECTION,
                                                                       ClientUISlotBarCategoryItemModule.NONE,
                                                                       GetCooldownType(itemLootId),

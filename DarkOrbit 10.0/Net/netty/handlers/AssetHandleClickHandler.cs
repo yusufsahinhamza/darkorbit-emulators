@@ -23,10 +23,8 @@ namespace Ow.Net.netty.handlers
 
             if (activatableStationaryMapEntity != null)
             {
-                if (activatableStationaryMapEntity is Portal)
-                    (activatableStationaryMapEntity as Portal).Click(gameSession);
-                else
-                    activatableStationaryMapEntity.Click(gameSession);
+                if (activatableStationaryMapEntity is Portal) return;
+                activatableStationaryMapEntity.Click(gameSession);
             }
         }
     }

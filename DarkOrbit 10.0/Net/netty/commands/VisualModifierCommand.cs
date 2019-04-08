@@ -34,7 +34,7 @@ namespace Ow.Net.netty.commands
         public const short HADES_MINUS = 37;
         public const short GHOST_EFFECT = 19;
         public const short INVINCIBILITY = 26;
-        public const short varR2T = 45;
+        public const short CAMERA = 45;
         public const short var747 = 51;
         public const short EMERGENCY_REPAIR = 25;
         public const short GREEN_GLOW = 22;

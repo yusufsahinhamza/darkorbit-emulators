@@ -30,7 +30,7 @@ namespace Ow.Game.Objects
 
         public DateTime LastDamagedTime = new DateTime();
 
-        public Spaceball(int id, int typeId) : base(id, GameManager.GetShip(typeId).Name, 0, GameManager.GetShip(typeId), CurrentPosition, GameManager.GetSpacemap(16), null)
+        public Spaceball(int id, int typeId) : base(id, GameManager.GetShip(typeId).Name, 0, GameManager.GetShip(typeId), CurrentPosition, GameManager.GetSpacemap(16), GameManager.GetClan(0))
         {
             Speed = 100;
         }
@@ -121,6 +121,9 @@ namespace Ow.Game.Objects
 
         public void SendReward()
         {
+            var portal = Spacemap.Activatables.Values.FirstOrDefault(x => x is Portal && (x as Portal).Position == (SelectedFactionId == 1 ? MMOPosition : SelectedFactionId == 2 ? EICPosition : VRUPosition));
+            GameManager.SendCommandToMap(Spacemap.Id, ActivatePortalCommand.write((portal as Portal).TargetSpaceMapId, portal.Id));
+
             switch (SelectedFactionId)
             {
                 case 1:

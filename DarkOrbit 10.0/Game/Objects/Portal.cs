@@ -34,7 +34,7 @@ namespace Ow.Game.Objects
         public bool Visible { get; set; }
         public bool Working { get; set; }
 
-        public Portal(Spacemap spacemap, Position position, Position targetPosition, int targetSpacemapId, int graphicsId, int factionId, bool visible, bool working) : base(spacemap, factionId, position, null)
+        public Portal(Spacemap spacemap, Position position, Position targetPosition, int targetSpacemapId, int graphicsId, int factionId, bool visible, bool working) : base(spacemap, factionId, position, GameManager.GetClan(0))
         {
             TargetPosition = targetPosition;
             TargetSpaceMapId = targetSpacemapId;
@@ -47,7 +47,7 @@ namespace Ow.Game.Objects
         public override async void Click(GameSession gameSession)
         {
             var player = gameSession.Player;
-            if (!Working) return;
+            if (!Working || GameManager.GetSpacemap(TargetSpaceMapId) == null || TargetPosition == null) return;
             if (player.Storage.Jumping) return;
 
             player.Storage.Jumping = true;
@@ -83,7 +83,7 @@ namespace Ow.Game.Objects
         {
             var portal = this as Activatable;
             Spacemap.Activatables.TryRemove(Id, out portal);
-            //TODO: in 10.0 command GameManager.SendPacketToMap(Spacemap.Id, "0|n|p|REM|" + Id);
+            GameManager.SendCommandToMap(Spacemap.Id, RemovePortalCommand.write(Id));
         }
 
         public override short GetAssetType() { return 0; }
@@ -91,7 +91,7 @@ namespace Ow.Game.Objects
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
             return CreatePortalCommand.write(Id, FactionId, GraphicsId,
-                                           Position.X, Position.Y, Working,
+                                           Position.X, Position.Y, true,
                                            Visible, new List<int>());
         }
 

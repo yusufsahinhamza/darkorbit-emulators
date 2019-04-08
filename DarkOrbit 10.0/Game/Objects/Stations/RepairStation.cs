@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Ow.Utils;
 using Ow.Game.Movements;
-using Ow.Game.Clans;
+using Ow.Game;
 
 namespace Ow.Game.Objects.Stations
 {

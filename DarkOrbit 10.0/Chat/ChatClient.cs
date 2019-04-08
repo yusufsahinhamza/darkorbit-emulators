@@ -46,8 +46,10 @@ namespace Ow.Chat
             "dinini",
             "imanını",
             "kitabını",
-            "kasıyor",
+            "siker",
+            "lavuk",
             "ananı",
+            "gavat",
             "oneultimate",
             "http",
             "bitch",
@@ -286,7 +288,7 @@ namespace Ow.Chat
                 var msg = message.Remove(0, 4);
                 GameManager.SendPacketToAll($"0|A|STD|{msg}");
             }
-            else if (cmd == "/patlat" && Permission == Permissions.ADMINISTRATOR)
+            else if (cmd == "/destroy" && Permission == Permissions.ADMINISTRATOR)
             {
                 if (message.Split(' ').Length < 2) return;
 
@@ -426,22 +428,29 @@ namespace Ow.Chat
                 
                 if (player != null && new[] {1,2,3,4}.Contains(typeId))
                 {
+                    var rewardName = "";
                     switch (typeId)
                     {
                         case 1:
                             player.ChangeData(DataType.URIDIUM, amount);
+                            rewardName = "uridium";
                             break;
                         case 2:
                             player.ChangeData(DataType.CREDITS, amount);
+                            rewardName = "credits";
                             break;
                         case 3:
                             player.ChangeData(DataType.HONOR, amount);
+                            rewardName = "honor";
                             break;
                         case 4:
                             player.ChangeData(DataType.EXPERIENCE, amount);
+                            rewardName = "experience";
                             break;
                     }
-                    Send($"dq%{player.Name} has got {amount} rewards from you. (type = {typeId})#");
+                    player.SendPacket($"0|A|STD|You got {amount} {rewardName} from {gameSession.Player.Name}.");
+                    Send($"dq%{player.Name} has got {amount} {rewardName} from you.#");
+                    GameManager.ChatClients[player.Id].Send($"dq%You got {amount} {rewardName} from {gameSession.Player.Name}.#");
                 }
             }
             else

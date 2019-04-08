@@ -85,23 +85,23 @@ namespace Ow.Game.Objects.Players.Managers
             if (Player.Settings.InGameSettings.selectedRocket != AmmunitionManager.WIZ_X)
                 if (!TargetDefinition(enemy, true, true)) return;
 
-            if (lastRocketAttack.AddSeconds(Player.RocketSpeed) < DateTime.Now)
+            switch (GetSelectedRocket())
             {
-                switch (GetSelectedRocket())
-                {
-                    case 5:
-                        PLD8();
-                        break;
-                    case 6:
-                        WIZ_X();
-                        break;
-                    case 10:
-                        DCR_250();
-                        break;
-                    case 18:
-                        R_IC3();
-                        break;
-                    default:
+                case 5:
+                    PLD8();
+                    break;
+                case 6:
+                    WIZ_X();
+                    break;
+                case 10:
+                    DCR_250();
+                    break;
+                case 18:
+                    R_IC3();
+                    break;
+                default:
+                    if (lastRocketAttack.AddSeconds(Player.RocketSpeed) < DateTime.Now)
+                    {
                         var damage = RandomizeDamage(Player.RocketDamage, Player.Storage.PrecisionTargeter ? 0 : 1);
                         Damage(Player, enemy, DamageType.ROCKET, damage, 0);
 
@@ -110,10 +110,9 @@ namespace Ow.Game.Objects.Players.Managers
                         Player.SendPacketToInRangePlayers(rocketRunPacket);
 
                         Player.SendCooldown(AmmunitionManager.R_310, Player.Premium ? 1000 : 3000);
-                        break;
-                }
-
-                lastRocketAttack = DateTime.Now;
+                        lastRocketAttack = DateTime.Now;
+                    }
+                    break;
             }
         }
 

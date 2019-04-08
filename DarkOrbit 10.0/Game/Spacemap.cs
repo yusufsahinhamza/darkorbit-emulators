@@ -101,8 +101,7 @@ namespace Ow.Game
 
         public void LoadObjects()
         {
-            /*
-             * TEK HARİTA SEBEBİ İLE KAPATILDI
+            
             if (StationBase != null && StationBase.Count >= 1) {
                 foreach (var station in StationBase)
                 {
@@ -110,23 +109,12 @@ namespace Ow.Game
                     {
                         case AssetTypeModule.BASE_COMPANY:
                             var stationPosition = new Position(station.Position[0], station.Position[1]);
-                            new HomeStation(this, station.FactionId, stationPosition, null);
+                            new HomeStation(this, station.FactionId, stationPosition, GameManager.GetClan(0));
                             break;
                     }
                 }
             }
-            */
-
-
-            if (Id == 16)
-            {
-                new HomeStation(this, 1, Position.MMOPosition, GameManager.GetClan(0));
-                new HomeStation(this, 2, Position.EICPosition, GameManager.GetClan(0));
-                new HomeStation(this, 3, Position.VRUPosition, GameManager.GetClan(0));
-            }
-
-            /*
-             * TEK HARİTA SEBEBİ İLE KAPATILDI
+            
             if (PortalBase != null && PortalBase.Count >= 1)
             {
                 foreach (var portal in PortalBase)
@@ -136,26 +124,17 @@ namespace Ow.Game
                     new Portal(this, portalPosition, targetPosition, portal.TargetSpaceMapId, portal.GraphicId, portal.FactionId, portal.Visible, portal.Working);
                 }
             }
-            */
+            
 
-            /*
-            if (Id == 14)
-            {
-                var battleStation = new BattleStation(this, 1, new Position(18500, 600), GameManager.GetClan(1));
-            }
-            */
             if (Id == 1)
             {
-                new BattleStation(this, 0, new Position(27500, 2000), GameManager.GetClan(0));
+                new BattleStation(this, 0, new Position(1600, 1600), GameManager.GetClan(0));
             }
-            //if (Id != 101 && Id != 121 && Id != 42)
-            if (Id == 16)
+
+            if (Id != 101 && Id != 121 && Id != 42)
             {
                 for (int i = 0; i <= 85; i++)
                     new BonusBox(AssetTypeModule.BOXTYPE_BONUS_BOX, Position.Random(this, 1000, 19800, 1000, 11800), this, true);
-
-               // for (int i = 0; i <= 15; i++)
-               //     new GreenBooty(AssetTypeModule.BOXTYPE_PIRATE_BOOTY, Position.Random(this, 1000, 19800, 1000, 11800), this, true);
             }
 
             if (Id == 101)
@@ -176,17 +155,7 @@ namespace Ow.Game
             }
         }
 
-        public void OnPlayerMovement(Player player)
-        {
-            CheckCollectables(player);
-            CheckMines(player);
-            bool inRadiationChanged = CheckRadiation(player);
-            bool assetsChanged = CheckActivatables(player);
-            if (inRadiationChanged || assetsChanged)
-                player.SendCommand(player.GetBeaconCommand());
-        }
-
-        private void CheckCollectables(Player player)
+        public void CheckCollectables(Player player)
         {
             foreach (var collectable in Collectables.Values)
             {
@@ -213,7 +182,7 @@ namespace Ow.Game
             }
         }
 
-        private void CheckMines(Player player)
+        public void CheckMines(Player player)
         {
             foreach (var mine in Mines.Values)
             {
@@ -250,7 +219,7 @@ namespace Ow.Game
             }
         }
 
-        private bool CheckActivatables(Player Player)
+        public bool CheckActivatables(Player Player)
         {
             bool isInSecureZone = false;
             bool inEquipZone = false;
@@ -287,8 +256,9 @@ namespace Ow.Game
 
                 if (activateButton)
                 {
+                    if (entity is Portal portal && !portal.Working) status = MapAssetActionAvailableCommand.OFF;
                     if (entity is BattleStation && status == MapAssetActionAvailableCommand.OFF)
-                    {
+                    {                      
                         //TODO: Find close ui command end send it
                     }
 
@@ -338,7 +308,7 @@ namespace Ow.Game
             return false;
         }
 
-        private bool CheckRadiation(Player Player)
+        public bool CheckRadiation(Player Player)
         {
             int positionX = Player.Position.X;
             int positionY = Player.Position.Y;

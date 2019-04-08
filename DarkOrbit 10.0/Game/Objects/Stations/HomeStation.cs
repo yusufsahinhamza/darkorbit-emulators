@@ -1,4 +1,4 @@
-﻿using Ow.Game.Clans;
+﻿using Ow.Game;
 using Ow.Game.Movements;
 using Ow.Net.netty.commands;
 using Ow.Utils;

@@ -1,5 +1,6 @@
-﻿using Ow.Game.Clans;
+﻿using Ow.Game;
 using Ow.Game.Movements;
+using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
@@ -22,7 +23,7 @@ namespace Ow.Game.Objects.Stations
 
         public Spacemap Spacemap { get; set; }
         public Position Position { get; set; }
-        public Clan Clan { get; set; }
+        public Clan Clan = GameManager.GetClan(0);
         public int Id { get; set; }
         public int FactionId { get; set; }
 

@@ -95,7 +95,7 @@ namespace Ow.Net.netty
                     Commands[parser.ID].execute(gameSession, bytes);
                     gameSession.LastActiveTime = DateTime.Now;
                 }
-                else Out.WriteLine("Unknown command ID: " + parser.ID);
+                //else Out.WriteLine("Unknown command ID: " + parser.ID);
             }
             catch (Exception e)
             {

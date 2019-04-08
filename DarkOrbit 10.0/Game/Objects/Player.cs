@@ -1,4 +1,4 @@
-﻿using Ow.Game.Clans;
+﻿using Ow.Game;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Game.Movements;
 using Ow.Managers;
@@ -154,6 +154,16 @@ namespace Ow.Game.Objects
                 SendCommand(AttributeSkillShieldUpdateCommand.write(1, 1, 0));
             else
                 SendCommand(AttributeSkillShieldUpdateCommand.write(0, 0, 0));
+        }
+
+        public void OnPlayerMovement()
+        {
+            Spacemap.CheckCollectables(this);
+            Spacemap.CheckMines(this);
+            bool inRadiationChanged = Spacemap.CheckRadiation(this);
+            bool assetsChanged = Spacemap.CheckActivatables(this);
+            if (inRadiationChanged || assetsChanged)
+                SendCommand(GetBeaconCommand());
         }
 
         public override int Speed
@@ -403,10 +413,8 @@ namespace Ow.Game.Objects
             {
                 if (!pInRange)
                 {
-                    if (pEntity is Portal)
-                    {
+                    if (pEntity is Portal portal && portal.Working)
                         CurrentInRangePortalId = -1;
-                    }
                     Storage.InRangeAssets.TryRemove(pEntity.Id, out pEntity);
                     return true;
                 }
@@ -415,10 +423,8 @@ namespace Ow.Game.Objects
             {
                 if (pInRange)
                 {
-                    if (pEntity is Portal)
-                    {
+                    if (pEntity is Portal portal && portal.Working)
                         CurrentInRangePortalId = pEntity.Id;
-                    }
                     Storage.InRangeAssets.TryAdd(pEntity.Id, pEntity);
                     return true;
                 }
@@ -778,8 +784,8 @@ namespace Ow.Game.Objects
 
         public int GetBaseMapId()
         {
-            //return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
-            return 16;
+            return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
+            //return 16;
         }
 
         public void ChangeData(DataType dataType, int amount, ChangeType changeType = ChangeType.INCREASE)

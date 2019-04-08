@@ -106,8 +106,7 @@ namespace Ow.Net.netty.handlers
                     if (Player.RankId == 21)
                         Player.Premium = true;
 
-                    var mapId = 16;//player.FactionId == 1 ? 13 : player.FactionId == 2 ? 14 : 15;
-                    Player.Spacemap = GameManager.GetSpacemap(mapId);
+                    Player.Spacemap = GameManager.GetSpacemap(Player.GetBaseMapId());
                     Player.SetPosition(Player.FactionId == 1 ? Position.MMOPosition : Player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
                 }
 
@@ -199,6 +198,14 @@ namespace Ow.Net.netty.handlers
                     player.SendCommand(PetInitializationCommand.write(true, true, true));
                     player.UpdateStatus();
 
+                    player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(0, 0, 0, 0), new Uba64iModule("", 0, new List<UbaHtModule>()), new UbahsModule(new List<Ubal4bModule>())), 0));
+                }
+
+                /*
+                if (isLogin)
+                {
+                UBA SEASON
+
                     var ht = new List<UbaHtModule>();
                     var j3s = new List<command_j3s>();
                     j3s.Add(new Ubaf3kModule("currency_uridium", 250000));
@@ -209,6 +216,9 @@ namespace Ow.Net.netty.handlers
 
                     player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(55, 60, 5, 333443), new Uba64iModule("Yaz Sezonu", 1, ht), new UbahsModule(l4b)), 0));
                 }
+                */
+
+
 
                 QueryManager.SavePlayer.Information(player);
             }

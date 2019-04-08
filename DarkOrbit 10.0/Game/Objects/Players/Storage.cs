@@ -28,7 +28,7 @@ namespace Ow.Game.Objects.Players
 
         public bool UbaMatchmakingAccepted = false;
         public Duel Duel { get; set; }
-        public Player UbaOpponent = null;
+        public Uba Uba = null;
 
         public DateTime KillscreenPortalRepairTime = new DateTime();
         public DateTime KillscreenDeathLocationRepairTime = new DateTime();
@@ -184,6 +184,14 @@ namespace Ow.Game.Objects.Players
             get
             {
                 return Duel?.Players.Where(x => x.Value.Id != Player.Id).FirstOrDefault().Value;
+            }
+        }
+
+        public Player UbaOpponent
+        {
+            get
+            {
+                return Uba?.Players.Where(x => x.Value.Id != Player.Id).FirstOrDefault().Value;
             }
         }
     }

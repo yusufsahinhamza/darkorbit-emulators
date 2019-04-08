@@ -9,9 +9,9 @@ namespace Ow.Game.Movements
 {
     class Position
     {
-        public static Position MMOPosition = new Position(7000, 13500); //= new Position(1600, 1600);
-        public static Position EICPosition = new Position(28000, 1200); //= new Position(19500, 1500);
-        public static Position VRUPosition = new Position(28000, 25000); //= new Position(19500, 11600);
+        public static Position MMOPosition = new Position(1600, 1600); //= new Position(1600, 1600);
+        public static Position EICPosition = new Position(19500, 1500); //= new Position(19500, 1500);
+        public static Position VRUPosition = new Position(19500, 11600); //= new Position(19500, 11600);
 
         public int X { get; set; }
         public int Y { get; set; }

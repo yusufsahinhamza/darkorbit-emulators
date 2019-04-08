@@ -18,27 +18,20 @@ namespace Ow.Net.netty.handlers
             var player = gameSession.Player;
 
             var spacemap = player.Spacemap;
-            var activatableStationary = player.Spacemap.GetActivatableMapEntity(player.CurrentInRangePortalId);
-            var portalMapEntity = (Portal) player.Spacemap.GetActivatableMapEntity(player.CurrentInRangePortalId);
+            var activatable = player.Spacemap.GetActivatableMapEntity(player.CurrentInRangePortalId);
 
-            if (activatableStationary != null && portalMapEntity != null)
+            if (activatable != null && activatable is Portal portal)
             {
                 if (spacemap.Options.PvpMap)
                 {
-                    if(player.LastCombatTime.AddSeconds(10) < DateTime.Now)
-                    {
-                        portalMapEntity.Click(gameSession);
-                    }
-                    else
+                    if(player.LastCombatTime.AddSeconds(10) > DateTime.Now)
                     {
                         string jumpError = "0|A|STM|jumpgate_failed_pvp_map";
                         player.SendPacket(jumpError);
+                        return;
                     }
                 }
-                else
-                {
-                    portalMapEntity.Click(gameSession);
-                }
+                portal.Click(gameSession);
             }
             else
             {

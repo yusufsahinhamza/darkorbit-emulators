@@ -23,6 +23,17 @@ namespace Ow.Net.netty.handlers
             windowSettings.barState = read.barStatesAsString;
             windowSettings.hideAllWindows = read.hideAllWindows;
             windowSettings.scale = read.scaleFactor;
+            windowSettings.gameFeatureBarLayoutType = read.gameFeatureBarLayoutType;
+            windowSettings.gameFeatureBarPosition = read.gameFeatureBarPosition;
+            windowSettings.genericFeatureBarLayoutType = read.genericFeatureBarLayoutType;
+            windowSettings.genericFeatureBarPosition = read.genericFeatureBarPosition;
+            windowSettings.categoryBarPosition = read.categoryBarPosition;
+            windowSettings.standartSlotBarLayoutType = read.standartSlotBarLayoutType;
+            windowSettings.standartSlotBarPosition = read.standartSlotBarPosition;
+            windowSettings.premiumSlotBarLayoutType = read.premiumSlotBarLayoutType;
+            windowSettings.premiumSlotBarPosition = read.premiumSlotBarPosition;
+            windowSettings.proActionBarLayoutType = read.proActionBarLayoutType;
+            windowSettings.proActionBarPosition = read.proActionBarPosition;
 
             QueryManager.SavePlayer.Settings(player, "window", windowSettings);
         }

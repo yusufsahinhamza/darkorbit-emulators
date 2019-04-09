@@ -39,6 +39,7 @@ namespace Ow.Net.netty.handlers
                         break;
                 }
             }
+
             if (read.ToIndex != 0)
             {
                 switch (read.ToSlotBarId)
@@ -62,7 +63,6 @@ namespace Ow.Net.netty.handlers
             }
 
             player.SettingsManager.SendSlotBarCommand();
-            //player.SendCurrentCooldowns();
         }
     }
 }

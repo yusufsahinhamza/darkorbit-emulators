@@ -127,7 +127,6 @@ namespace Ow.Game.Objects.Players.Managers
 
     public class InGameSettingsBase
     {
-        public bool inEquipZone = true;
         public bool blockedGroupInvites = false;
         public string selectedLaser = AmmunitionManager.LCB_10;
         public string selectedRocket = AmmunitionManager.R_310;
@@ -361,7 +360,7 @@ namespace Ow.Game.Objects.Players.Managers
                 DroneManager.CHEVRON_FORMATION, DroneManager.MOTH_FORMATION,
                 DroneManager.CRAB_FORMATION, DroneManager.HEART_FORMATION,
                 DroneManager.DRILL_FORMATION,DroneManager.RING_FORMATION,
-                DroneManager.WHEEL_FORMATION
+                DroneManager.WHEEL_FORMATION,
         };
 
         public void SendUserKeyBindingsUpdateCommand()
@@ -552,6 +551,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             foreach (var pair in Player.Settings.SlotBarItems)
             {
+                if (pair.Value == "") continue;
                 ClientUISlotBarItemModule item = new ClientUISlotBarItemModule(pair.Value, pair.Key);
                 standartItems.Add(item);
             }
@@ -566,6 +566,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             foreach (var pair in Player.Settings.PremiumSlotBarItems)
             {
+                if (pair.Value == "") continue; 
                 ClientUISlotBarItemModule item = new ClientUISlotBarItemModule(pair.Value, pair.Key);
                 premiumItems.Add(item);
             }
@@ -580,6 +581,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             foreach (var pair in Player.Settings.ProActionBarItems)
             {
+                if (pair.Value == "") continue;
                 ClientUISlotBarItemModule item = new ClientUISlotBarItemModule(pair.Value, pair.Key);
                 proActionItems.Add(item);
             }

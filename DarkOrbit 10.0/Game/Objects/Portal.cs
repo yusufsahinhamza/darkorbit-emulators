@@ -25,7 +25,7 @@ namespace Ow.Game.Objects
 
     class Portal : Activatable
     {
-        public static int JUMP_DELAY = 0;
+        public static int JUMP_DELAY = 1000;
         public static int SECURE_ZONE_RANGE = 1500;
 
         public Position TargetPosition { get; set; }

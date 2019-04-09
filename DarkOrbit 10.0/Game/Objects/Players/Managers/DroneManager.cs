@@ -126,9 +126,9 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (regenerationCooldown.AddSeconds(1) >= DateTime.Now || Player.Settings.InGameSettings.selectedFormation != DIAMOND_FORMATION || Player.CurrentShieldPoints >= Player.MaxShieldPoints) return;
 
-            int regeneration = Maths.GetPercentage(Player.MaxShieldPoints, Player.Settings.InGameSettings.selectedFormation == DIAMOND_FORMATION ? 1 : 0);
+            int regeneration = Maths.GetPercentage(Player.MaxShieldPoints, (Player.Settings.InGameSettings.selectedFormation == DIAMOND_FORMATION ? 1 : 0));
 
-            Player.CurrentShieldPoints += regeneration > 5000 ? 5000 : regeneration;
+            Player.CurrentShieldPoints += (regeneration > 5000 ? 5000 : regeneration);
             Player.UpdateStatus();
 
             regenerationCooldown = DateTime.Now;
@@ -139,7 +139,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (shieldWeakenCooldown.AddSeconds(1) >= DateTime.Now || (Player.Settings.InGameSettings.selectedFormation != MOTH_FORMATION && Player.Settings.InGameSettings.selectedFormation != WHEEL_FORMATION)  || Player.CurrentShieldPoints <= 0) return;
 
-            int amount = Maths.GetPercentage(Player.MaxShieldPoints, Player.Settings.InGameSettings.selectedFormation == MOTH_FORMATION ? 1 : Player.Settings.InGameSettings.selectedFormation == WHEEL_FORMATION ? 5 : 0);
+            int amount = Maths.GetPercentage(Player.MaxShieldPoints, (Player.Settings.InGameSettings.selectedFormation == MOTH_FORMATION || Player.Settings.InGameSettings.selectedFormation == WHEEL_FORMATION ? 5 : 0));
 
             Player.CurrentShieldPoints -= amount;
             Player.UpdateStatus();

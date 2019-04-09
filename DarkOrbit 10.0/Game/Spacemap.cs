@@ -288,13 +288,13 @@ namespace Ow.Game
             if (Player.Storage.OnBlockedMinePosition != onBlockedMinePosition)
                 Player.Storage.OnBlockedMinePosition = onBlockedMinePosition;
 
-            if (Player.Settings.InGameSettings.inEquipZone != inEquipZone)
+            if (Player.Storage.IsInEquipZone != inEquipZone)
             {
-                Player.Settings.InGameSettings.inEquipZone = inEquipZone;
-                QueryManager.SavePlayer.Settings(Player, "inGameSettings", Player.Settings.InGameSettings);
-                Player.SendCommand(EquipReadyCommand.write(inEquipZone));
+                Player.Storage.IsInEquipZone = inEquipZone;
 
-                if (Player.Settings.InGameSettings.inEquipZone)
+                Player.SendCommand(EquipReadyCommand.write(Player.Storage.IsInEquipZone));
+
+                if (Player.Storage.IsInEquipZone)
                     Player.SendPacket("0|A|STM|msg_equip_ready");
                 else
                     Player.SendPacket("0|A|STM|msg_equip_not_ready");

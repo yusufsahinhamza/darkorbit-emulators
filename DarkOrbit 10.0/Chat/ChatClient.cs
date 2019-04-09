@@ -170,7 +170,7 @@ namespace Ow.Chat
 
             if (inviterPlayer != null && gameSession.Player != null)
             {
-                if (gameSession.Player.Settings.InGameSettings.inEquipZone && inviterPlayer.Settings.InGameSettings.inEquipZone)
+                if (gameSession.Player.Storage.IsInEquipZone && inviterPlayer.Storage.IsInEquipZone)
                 {
                     gameSession.Player.Storage.DuelInvites.TryRemove(duelId, out inviterPlayer);
                     var players = new ConcurrentDictionary<int, Player>();
@@ -459,7 +459,7 @@ namespace Ow.Chat
                 {
                     foreach (var m in Filter)
                     {
-                        if (message.Contains(m) && Permission == Permissions.NORMAL)
+                        if (message.ToLower().Contains(m.ToLower()) && Permission == Permissions.NORMAL)
                         {
                             Send($"{ChatConstants.CMD_KICK_BY_SYSTEM}%#");
                             ShutdownConnection();

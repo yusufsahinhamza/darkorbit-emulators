@@ -142,7 +142,7 @@ namespace Ow.Managers
                     var rankId = Convert.ToInt32(querySet["rankID"]);
                     var clan = GameManager.GetClan(Convert.ToInt32(querySet["clanID"]));
 
-                    player = new Player(playerId, name, (clan != null ? clan : GameManager.GetClan(0)), factionId, new Position(0, 0), GameManager.GetSpacemap(0), rankId, shipId);
+                    player = new Player(playerId, name, clan, factionId, rankId, GameManager.GetShip(shipId));
                     player.Pet.Name = Convert.ToString(querySet["petName"]);
                 }
 

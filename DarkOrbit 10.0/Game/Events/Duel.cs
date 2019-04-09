@@ -89,15 +89,19 @@ namespace Ow.Game.Events
             winnerPlayer.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
             await Task.Delay(5000);
 
+            winnerPlayer.SetPosition(winnerPlayer.GetBasePosition());
+            winnerPlayer.Jump(winnerPlayer.GetBaseMapId(), winnerPlayer.Position);
+
             foreach (var player in Players.Values)
                 if (player.GameSession != null)
                 {
+                    var mines = Spacemap.Mines.Where(x => x.Value.Player == player);
+                    foreach (var mine in mines)
+                        mine.Value.Remove();
+
                     player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
                     player.Storage.Duel = null;
                 }
-
-            winnerPlayer.SetPosition(winnerPlayer.FactionId == 1 ? Position.MMOPosition : winnerPlayer.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
-            winnerPlayer.Jump(winnerPlayer.GetBaseMapId(), winnerPlayer.Position);
         }
 
         public static void RemovePlayer(Player player)

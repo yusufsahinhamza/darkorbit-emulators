@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Mines
 {
-    abstract class Mine
+    abstract class Mine : Tick
     {
         public const int RANGE = 250;
         public const int EXPLODE_RANGE = 375;
@@ -39,9 +39,19 @@ namespace Ow.Game.Objects.Mines
             Hash = Randoms.GenerateHash(16);
             Spacemap.Mines.TryAdd(Hash, this);
             activationTime = DateTime.Now;
+
+            var tickId = -1;
+            Program.TickManager.AddTick(this, out tickId);
+            TickId = tickId;
         }
 
         public abstract void Explode();
+
+        public void Tick()
+        {
+            if (Active && activationTime.AddMinutes(4) < DateTime.Now)
+                Remove();
+        }
 
         public void Remove()
         {
@@ -58,6 +68,7 @@ namespace Ow.Game.Objects.Mines
 
             Spacemap.Mines.TryRemove(Hash, out mine);
             GameManager.SendPacketToMap(Spacemap.Id, $"0|n|MIN|{Hash}");
+            Program.TickManager.RemoveTick(this);
         }
 
         public byte[] GetMineCreateCommand()

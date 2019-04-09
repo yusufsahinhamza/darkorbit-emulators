@@ -41,16 +41,13 @@ namespace Ow.Game.Objects
         public SkillManager SkillManager { get; set; }
         public BoosterManager BoosterManager { get; set; }
 
-        public Player(int id, string name, Clan clan, int factionId, Position position, Spacemap spacemap, int rankId, int shipId)
-                     : base(id, name, factionId, GameManager.GetShip(shipId), position, spacemap, clan)
+        public Player(int id, string name, Clan clan, int factionId, int rankId, Ship ship)
+                     : base(id, name, factionId, ship, new Position(0, 0), null, clan)
         {
             Name = name;
             Clan = clan;
             FactionId = factionId;
-            Spacemap = spacemap;
             RankId = rankId;
-
-            QueryManager.LoadUser(this);
             InitiateManagers();
         }
 
@@ -94,14 +91,14 @@ namespace Ow.Game.Objects
         public DateTime lastHpRepairTime = new DateTime();
         private void CheckHitpointsRepair()
         {
-            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now) return;
-
             if (CurrentHitPoints == MaxHitPoints || AttackingOrUnderAttack())
             {
                 if (Storage.RepairBotActivated)
                     RepairBot(false);
                 return;
             }
+
+            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now) return;
 
             RepairBot(true);
 
@@ -174,8 +171,11 @@ namespace Ow.Game.Objects
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
+                    case DroneManager.DOME_FORMATION:
+                        value -= Maths.GetPercentage(value, 50);
+                        break;
                     case DroneManager.CRAB_FORMATION:
-                        value -= Maths.GetPercentage(value, 20);
+                        value -= Maths.GetPercentage(value, 15);
                         break;
                     case DroneManager.BAT_FORMATION:
                         value -= Maths.GetPercentage(value, 15);
@@ -232,16 +232,42 @@ namespace Ow.Game.Objects
             }
         }
 
-        public int RocketSpeed
+        public double RocketSpeed
         {
             get
             {
-                var value = Premium ? 1 : 3;
+                var value = Premium ? 1.0 : 3.0;
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
+                    case DroneManager.DOME_FORMATION:
+                        value -= 0.25;
+                        break;
                     case DroneManager.RING_FORMATION:
-                        value += Maths.GetPercentage(value, 25);
+                        value += 0.25;
+                        break;
+                }
+
+                return value;
+            }
+        }
+
+        public double RocketLauncherSpeed
+        {
+            get
+            {
+                var value = 1.0;
+
+                switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
+                {
+                    case DroneManager.DOME_FORMATION:
+                        value -= 0.25;
+                        break;
+                    case DroneManager.STAR_FORMATION:
+                        value += 0.33;
+                        break;
+                    case DroneManager.RING_FORMATION:
+                        value += 0.25;
                         break;
                 }
 
@@ -276,16 +302,19 @@ namespace Ow.Game.Objects
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
-                    case DroneManager.HEART_FORMATION:
                     case DroneManager.TURTLE_FORMATION:
                         value += Maths.GetPercentage(value, 10);
                         break;
                     case DroneManager.RING_FORMATION:
-                        value += Maths.GetPercentage(value, 120);
+                        value += Maths.GetPercentage(value, 85);
                         break;
                     case DroneManager.DRILL_FORMATION:
                         value -= Maths.GetPercentage(value, 25);
                         break;
+                    case DroneManager.DOME_FORMATION:
+                        value += Maths.GetPercentage(value, 30);
+                        break;
+                    case DroneManager.HEART_FORMATION:
                     case DroneManager.DOUBLE_ARROW_FORMATION:
                         value -= Maths.GetPercentage(value, 20);
                         break;
@@ -307,9 +336,6 @@ namespace Ow.Game.Objects
                         break;
                     case DroneManager.BARRAGE_FORMATION:
                         value -= 0.15;
-                        break;
-                    case DroneManager.DRILL_FORMATION:
-                        value -= 0.05;
                         break;
                 }
                 return value;
@@ -345,6 +371,9 @@ namespace Ow.Game.Objects
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
+                    case DroneManager.DOME_FORMATION:
+                        value -= Maths.GetPercentage(value, 50);
+                        break;
                     case DroneManager.TURTLE_FORMATION:
                         value -= Maths.GetPercentage(value, (int)7.5);
                         break;
@@ -361,7 +390,7 @@ namespace Ow.Game.Objects
                         value -= Maths.GetPercentage(value, 25);
                         break;
                     case DroneManager.DRILL_FORMATION:
-                        value += Maths.GetPercentage(value, 25);
+                        value += Maths.GetPercentage(value, 20);
                         break;
                     case DroneManager.WHEEL_FORMATION:
                         value -= Maths.GetPercentage(value, 20);
@@ -399,8 +428,11 @@ namespace Ow.Game.Objects
                     case DroneManager.STAR_FORMATION:
                         value += Maths.GetPercentage(value, 25);
                         break;
+                    case DroneManager.DOUBLE_ARROW_FORMATION:
+                        value += Maths.GetPercentage(value, 30);
+                        break;
                     case DroneManager.CHEVRON_FORMATION:
-                        value += Maths.GetPercentage(value, 50);
+                        value += Maths.GetPercentage(value, 65);
                         break;
                 }
                 return value;
@@ -754,7 +786,7 @@ namespace Ow.Game.Objects
             AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.INVINCIBILITY, 0, "", 0, true));
 
             Storage.IsInDemilitarizedZone = basicRepair || fullRepair ? true : false;
-            Settings.InGameSettings.inEquipZone = basicRepair || fullRepair ? true : false;
+            Storage.IsInEquipZone = basicRepair || fullRepair ? true : false;
             Storage.IsInRadiationZone = false;
 
             if (atNearestPortal)
@@ -764,7 +796,7 @@ namespace Ow.Game.Objects
             else
             {
                 CurrentHitPoints = Maths.GetPercentage(MaxHitPoints, 1);
-                SetPosition(FactionId == 1 ? Position.MMOPosition : FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
+                SetPosition(GetBasePosition());
             }
 
             if (basicRepair || fullRepair)
@@ -785,7 +817,11 @@ namespace Ow.Game.Objects
         public int GetBaseMapId()
         {
             return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
-            //return 16;
+        }
+
+        public Position GetBasePosition()
+        {
+            return FactionId == 1 ? Position.MMOPosition : FactionId == 2 ? Position.EICPosition : Position.VRUPosition;
         }
 
         public void ChangeData(DataType dataType, int amount, ChangeType changeType = ChangeType.INCREASE)
@@ -900,13 +936,10 @@ namespace Ow.Game.Objects
             {
                 var gameSession = GameManager.GetGameSession(Id);
                 if (gameSession == null) return;
-                if (!Spacemap.Characters.ContainsKey(Id)) return;
                 if (!Program.TickManager.Exists(this)) return;
                 if (gameSession.Client.Socket == null) return;
                 if (!gameSession.Client.Socket.IsBound) return;
-                if (!gameSession.Client.Socket.Connected) return;
 
-                //Console.WriteLine("PACKET SENDED => " + Name);
                 gameSession.Client.Send(LegacyModule.write(packet));
             }
             catch (Exception e)
@@ -921,13 +954,10 @@ namespace Ow.Game.Objects
             {
                 var gameSession = GameManager.GetGameSession(Id);
                 if (gameSession == null) return;
-                if (!Spacemap.Characters.ContainsKey(Id)) return;
                 if (!Program.TickManager.Exists(this)) return;
                 if (gameSession.Client.Socket == null) return;
                 if (!gameSession.Client.Socket.IsBound) return;
-                if (!gameSession.Client.Socket.Connected) return;
 
-                //Console.WriteLine("COMMAND SENDED => " + Name);
                 gameSession.Client.Send(command);
             }
             catch (Exception e)

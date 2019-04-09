@@ -37,6 +37,7 @@ namespace Ow.Game.Objects.Players
         public bool OnBlockedMinePosition = false;
         public bool IsInDemilitarizedZone = false;
         public bool IsInRadiationZone = false;
+        public bool IsInEquipZone = false;
         public bool AtHangar = false;
 
         public bool AutoRocket = false;

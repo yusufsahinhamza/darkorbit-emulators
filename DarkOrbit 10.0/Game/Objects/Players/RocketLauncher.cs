@@ -30,7 +30,7 @@ namespace Ow.Game.Objects.Players
         public DateTime LastReloadTime = new DateTime();
         public void Reload()
         {
-            if (LastReloadTime.AddSeconds(Player.Settings.InGameSettings.selectedFormation == DroneManager.STAR_FORMATION ? 0.67 : 1) > DateTime.Now) return;
+            if (LastReloadTime.AddSeconds(Player.RocketLauncherSpeed) > DateTime.Now) return;
             if (CurrentLoad == MaxLoad)
             {
                 ReloadingActive = false;

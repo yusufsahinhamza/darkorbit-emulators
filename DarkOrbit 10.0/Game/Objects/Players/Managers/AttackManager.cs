@@ -285,6 +285,12 @@ namespace Ow.Game.Objects.Players.Managers
             var enemy = Player.SelectedCharacter;
             if (enemy == null) return;
 
+            if (Player.Position.DistanceTo(enemy.Position) > GetRocketRange())
+            {
+                Player.SendPacket("0|A|STM|outofrange");
+                return;
+            }
+
             if (wiz_xCooldown.AddMilliseconds(TimeManager.WIZARD_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.CpuManager.DisableCloak();

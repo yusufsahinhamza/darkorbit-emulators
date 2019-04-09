@@ -28,7 +28,7 @@ namespace Ow.Game.Objects
         public override Position Position { get; set; }
         public override Spacemap Spacemap { get; set; }
         public Ship Ship { get; set; }
-        public Clan Clan = GameManager.GetClan(0);
+        public Clan Clan { get; set; }
         public bool Destroyed = false;
         public bool Collecting = false;
 
@@ -74,7 +74,7 @@ namespace Ow.Game.Objects
             MovementStartTime = new DateTime();
             MovementTime = 0;
 
-            if (clan == null)
+            if (Clan == null)
                 Clan = GameManager.GetClan(0);
         }
 

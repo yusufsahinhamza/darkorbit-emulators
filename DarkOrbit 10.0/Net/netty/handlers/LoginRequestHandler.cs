@@ -84,6 +84,7 @@ namespace Ow.Net.netty.handlers
                     GameManager.GameSessions[Player.Id] = GameSession;
                 }
 
+                QueryManager.LoadUser(Player);
                 LoadPlayer(firstLogin);
             }
             catch (Exception e)
@@ -107,7 +108,7 @@ namespace Ow.Net.netty.handlers
                         Player.Premium = true;
 
                     Player.Spacemap = GameManager.GetSpacemap(Player.GetBaseMapId());
-                    Player.SetPosition(Player.FactionId == 1 ? Position.MMOPosition : Player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
+                    Player.SetPosition(Player.GetBasePosition());
                 }
 
                 Player.Spacemap.AddCharacter(Player);

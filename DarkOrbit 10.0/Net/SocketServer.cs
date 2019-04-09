@@ -67,6 +67,16 @@ namespace Ow.Net
                     
                     switch (String(json["Action"]))
                     {
+                        case "IsOnline":
+                            var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                            var online = player != null ? true : false;
+                            socket.Send(Encoding.UTF8.GetBytes(online.ToString()));
+                            break;
+                        case "IsInEquipZone":
+                            player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                            var inEquipZone = player != null ? player.Storage.IsInEquipZone : false;
+                            socket.Send(Encoding.UTF8.GetBytes(inEquipZone.ToString()));
+                            break;
                         case "BanUser":
                             BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
                             break;
@@ -92,7 +102,7 @@ namespace Ow.Net
                             LeaveFromClan(GameManager.GetPlayerById(Int(parameters["UserId"])));
                             break;
                         case "CreateClan":
-                            CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), parameters["Name"], parameters["Tag"]);
+                            CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), Int(parameters["FactionId"]), parameters["Name"], parameters["Tag"]);
                             break;
                         case "DeleteClan":
                             DeleteClan(GameManager.GetClan(Int(parameters["ClanId"])));
@@ -209,9 +219,9 @@ namespace Ow.Net
             }
         }
 
-        public static void CreateClan(Player player, int clanId, object name, object tag)
+        public static void CreateClan(Player player, int clanId, int factionId, object name, object tag)
         {
-            var clan = new Clan(clanId, name.ToString(), tag.ToString(), player.FactionId, 0);
+            var clan = new Clan(clanId, name.ToString(), tag.ToString(), factionId, 0);
             GameManager.Clans.TryAdd(clan.Id, clan);
 
             if (player.GameSession == null || player == null) return;
@@ -224,7 +234,7 @@ namespace Ow.Net
         {
             if (player.GameSession == null || player == null) return;
 
-            if (player.Settings.InGameSettings.inEquipZone && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
+            if (player.Storage.IsInEquipZone && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                     mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET factionID = {factionId} WHERE userID = {player.Id}");
@@ -233,7 +243,7 @@ namespace Ow.Net
                 player.ChangeData(DataType.HONOR, honorPrice, ChangeType.DECREASE);
 
                 player.FactionId = factionId;
-                player.Jump(player.GetBaseMapId(), factionId == 1 ? Position.MMOPosition : factionId == 2 ? Position.EICPosition : Position.VRUPosition);
+                player.Jump(player.GetBaseMapId(), player.GetBasePosition());
             }
         }
 

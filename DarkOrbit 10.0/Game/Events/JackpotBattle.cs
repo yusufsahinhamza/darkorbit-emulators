@@ -154,7 +154,7 @@ namespace Ow.Game.Events
             }
 
             await Task.Delay(5000);
-            player.SetPosition(player.FactionId == 1 ? Position.MMOPosition : player.FactionId == 2 ? Position.EICPosition : Position.VRUPosition);
+            player.SetPosition(player.GetBasePosition());
             player.Jump(player.GetBaseMapId(), player.Position);
 
             Active = false;

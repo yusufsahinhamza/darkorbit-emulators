@@ -23,7 +23,7 @@ namespace Ow.Game.Objects.Stations
 
         public Spacemap Spacemap { get; set; }
         public Position Position { get; set; }
-        public Clan Clan = GameManager.GetClan(0);
+        public Clan Clan { get; set; }
         public int Id { get; set; }
         public int FactionId { get; set; }
 

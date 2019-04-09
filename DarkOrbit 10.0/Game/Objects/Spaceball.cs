@@ -22,11 +22,11 @@ namespace Ow.Game.Objects
 
         public static Position CurrentPosition = new Position(21000, 13200);
         private int MMODamage = 0;
-        public Position MMOPosition = new Position(10000, 13500); //= new Position(7000, 13500);
+        public Position MMOPosition = new Position(7000, 13500);
         private int EICDamage = 0;
-        public Position EICPosition = new Position(27000, 4000); //= new Position(28000, 1200);
+        public Position EICPosition = new Position(28000, 1200);
         private int VRUDamage = 0;
-        public Position VRUPosition = new Position(27500, 22000); //= new Position(28000, 25000);
+        public Position VRUPosition = new Position(28000, 25000);
 
         public DateTime LastDamagedTime = new DateTime();
 

@@ -38,8 +38,7 @@ namespace Ow.Game.Events
             }
             Character.Spacemap.AddCharacter(Character);
 
-            var tickId = -1;
-            Program.TickManager.AddTick(Character, out tickId);
+            Program.TickManager.AddTick(Character, out var tickId);
             Character.TickId = tickId;
         }
 

@@ -19,8 +19,7 @@ namespace Ow.Game.Events
 
         public UltimateBattleArena()
         {
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
+            Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
         }
 

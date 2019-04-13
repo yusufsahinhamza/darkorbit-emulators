@@ -155,6 +155,7 @@ namespace Ow.Game.Objects
 
         public void OnPlayerMovement()
         {
+            if (Storage.Jumping) return;
             Spacemap.CheckCollectables(this);
             Spacemap.CheckMines(this);
             bool inRadiationChanged = Spacemap.CheckRadiation(this);
@@ -349,7 +350,7 @@ namespace Ow.Game.Objects
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.MOTH_FORMATION:
-                        return 0.2;
+                        return 0.15; // 0.2
                     case DroneManager.DOUBLE_ARROW_FORMATION:
                         return 0.1;
                     case DroneManager.PINCER_FORMATION:
@@ -506,14 +507,14 @@ namespace Ow.Game.Objects
                 FactionId,
                 Clan.Id,
                 RankId,
-                RankId == 21 ? true : false,
-                new ClanRelationModule((sameClan && Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id) ? ClanRelationModule.ALLIED : relationType),
+                false,//RankId == 21 ? true : false,
+                new ClanRelationModule((EventManager.JackpotBattle.InActiveEvent(this) || Storage.Duel != null || Storage.Uba != null) ? ClanRelationModule.AT_WAR : relationType),
                 100,
                 false,
                 false,
-                false,
-                (sameClan && Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id) ? ClanRelationModule.NON_AGGRESSION_PACT : ClanRelationModule.NONE,
-                (sameClan && Spacemap.Id != EventManager.JackpotBattle.Spacemap.Id) ? ClanRelationModule.ALLIED : relationType,
+                Invisible,
+                ((EventManager.JackpotBattle.InActiveEvent(this) || Storage.Duel != null || Storage.Uba != null) && sameClan) ? ClanRelationModule.NON_AGGRESSION_PACT : ClanRelationModule.NON_AGGRESSION_PACT,
+                (EventManager.JackpotBattle.InActiveEvent(this) || Storage.Duel != null || Storage.Uba != null) ? ClanRelationModule.AT_WAR : relationType,
                 VisualModifiers.Values.ToList(),
                 new class_11d(class_11d.DEFAULT));
         }

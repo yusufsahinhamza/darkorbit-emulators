@@ -22,6 +22,7 @@ namespace Ow.Game.Objects.Collectables
         public bool Respawnable { get; set; }
         public Player ToPlayer { get; set; }
         public bool Disposed = false;
+        public DateTime addedTime = new DateTime();
 
         public Collectable(int collectableId, Position position, Spacemap spacemap, bool respawnable, Player toPlayer)
         {
@@ -32,14 +33,19 @@ namespace Ow.Game.Objects.Collectables
             Respawnable = respawnable;
             ToPlayer = toPlayer;
             Spacemap.Collectables.TryAdd(Hash, this);
+            addedTime = DateTime.Now;
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
-            TickId = tickId;
+            if (this is CargoBox)
+            {
+                Program.TickManager.AddTick(this, out var tickId);
+                TickId = tickId;
+            }
         }
 
         public void Tick()
         {
+            if (this is CargoBox && addedTime.AddMinutes(2) < DateTime.Now)
+                Dispose();
             /*
             if (!Disposed)
                 foreach (var character in Spacemap.Characters.Values)
@@ -72,6 +78,7 @@ namespace Ow.Game.Objects.Collectables
             Disposed = true;
             var collectable = this;
             Spacemap.Collectables.TryRemove(Hash, out collectable);
+            Program.TickManager.RemoveTick(this);
             GameManager.SendCommandToMap(Spacemap.Id, DisposeBoxCommand.write(Hash, true));
 
             if (Respawnable)
@@ -84,6 +91,7 @@ namespace Ow.Game.Objects.Collectables
             Position = newPos;
             Disposed = false;
             Spacemap.Collectables.TryAdd(Hash, this);
+            Program.TickManager.AddTick(this, out var tickId);
         }
 
         public abstract void Reward(Player player);

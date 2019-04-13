@@ -20,8 +20,7 @@ namespace Ow.Game.Objects
         {
             Spacemap.AddCharacter(this);
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
+            Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
         }
 

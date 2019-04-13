@@ -39,8 +39,7 @@ namespace Ow.Game
         {
             Player = player;
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
+            Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
         }
 
@@ -62,8 +61,8 @@ namespace Ow.Game
                 Player.Pet.Deactivate();
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                 Duel.RemovePlayer(Player);
-                Player.Spacemap.RemoveCharacter(Player);
                 Program.TickManager.RemoveTick(Player);
+                Player.Spacemap.RemoveCharacter(Player);
             }
             catch (Exception e)
             {

@@ -43,8 +43,7 @@ namespace Ow.Game.Objects
 
                 SendInitToAll();
 
-                var tickId = -1;
-                Program.TickManager.AddTick(this, out tickId);
+                Program.TickManager.AddTick(this, out var tickId);
                 TickId = tickId;
             }
             catch (Exception e)

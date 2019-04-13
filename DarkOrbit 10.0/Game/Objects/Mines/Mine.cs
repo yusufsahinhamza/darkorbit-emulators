@@ -14,8 +14,8 @@ namespace Ow.Game.Objects.Mines
     abstract class Mine : Tick
     {
         public const int RANGE = 250;
-        public const int EXPLODE_RANGE = 375;
-        public const int ACTIVATION_TIME = 1500;
+        public const int EXPLODE_RANGE = 350; //11.04.2019 => 375
+        public const int ACTIVATION_TIME = 1750; //11.04.2019 => 1500
 
         public int TickId { get; set; }
         public int MineTypeId { get; set; }
@@ -40,8 +40,7 @@ namespace Ow.Game.Objects.Mines
             Spacemap.Mines.TryAdd(Hash, this);
             activationTime = DateTime.Now;
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
+            Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
         }
 
@@ -49,7 +48,7 @@ namespace Ow.Game.Objects.Mines
 
         public void Tick()
         {
-            if (Active && activationTime.AddMinutes(4) < DateTime.Now)
+            if (Active && activationTime.AddMinutes(3) < DateTime.Now)
                 Remove();
         }
 

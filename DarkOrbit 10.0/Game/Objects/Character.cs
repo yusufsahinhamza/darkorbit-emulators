@@ -74,7 +74,7 @@ namespace Ow.Game.Objects
             MovementStartTime = new DateTime();
             MovementTime = 0;
 
-            if (Clan == null)
+            if (Clan == null || !GameManager.Clans.ContainsKey(Clan.Id))
                 Clan = GameManager.GetClan(0);
         }
 
@@ -105,6 +105,28 @@ namespace Ow.Game.Objects
                 destructionType = DestructionType.PLAYER;
             }
 
+            Destroyed = true;
+            var destroyCommand = ShipDestroyedCommand.write(Id, 0);
+            SendCommandToInRangePlayers(destroyCommand);
+
+            if (this is Player thisPlayer)
+            {
+                if (EventManager.JackpotBattle.InActiveEvent(thisPlayer))
+                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, $"0|A|STM|msg_jackpot_players_left|%COUNT%|{(EventManager.JackpotBattle.Spacemap.Characters.Count - 1)}"); //remove aşşağıda olduğu için böyle olması lazım sanırım
+
+                if (destroyer is Player destroyerPlayer && destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count() <= 13)
+                    destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
+
+                Duel.RemovePlayer(thisPlayer);
+                thisPlayer.SkillManager.DisableAllSkills();
+                thisPlayer.Pet.Deactivate(true);
+                thisPlayer.SendCommand(destroyCommand);
+                thisPlayer.DisableAttack(thisPlayer.Settings.InGameSettings.selectedLaser);
+                thisPlayer.CurrentInRangePortalId = -1;
+                thisPlayer.Storage.InRangeAssets.Clear();
+                thisPlayer.KillScreen(destroyer, destructionType);
+            }
+
             if (destructionType == DestructionType.PLAYER)
             {
                 var destroyerPlayer = destroyer as Player;
@@ -113,8 +135,12 @@ namespace Ow.Game.Objects
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                     mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
 
-                //destroyerPlayer.Storage.KilledPlayerIds ölenin id ye göre grupla count 10 15 den falan büyükse ödül verme ve bir yere kaydet sonra işlem yap bi bok yap
-                if (destroyerPlayer.Storage.DuelOpponent == null)
+                var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
+
+                if (count > 13 && destroyerPlayer.Storage.DuelOpponent == null && destroyerPlayer.Storage.UbaOpponent == null)
+                    destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
+
+                if (count < 13 && destroyerPlayer.Storage.DuelOpponent == null && destroyerPlayer.Storage.UbaOpponent == null)
                 {
                     int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
                     int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost(Ship.Rewards.Honor));
@@ -130,30 +156,7 @@ namespace Ow.Game.Objects
                     destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
                 }
 
-                if (!(this is Pet))
-                    new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position, Spacemap, false, false, destroyerPlayer);
-            }
-
-            Destroyed = true;
-            var destroyCommand = ShipDestroyedCommand.write(Id, 0);
-            SendCommandToInRangePlayers(destroyCommand);
-
-            if (this is Player thisPlayer)
-            {
-                if (EventManager.JackpotBattle.InActiveEvent(thisPlayer))
-                    GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, $"0|A|STM|msg_jackpot_players_left|%COUNT%|{(EventManager.JackpotBattle.Spacemap.Characters.Count - 1)}"); //remove aşşağıda olduğu için böyle olması lazım sanırım
-
-                if (destroyer is Player destroyerPlayer)
-                    destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
-
-                Duel.RemovePlayer(thisPlayer);
-                thisPlayer.SkillManager.DisableAllSkills();
-                thisPlayer.Pet.Deactivate(true);
-                thisPlayer.SendCommand(destroyCommand);
-                thisPlayer.DisableAttack(thisPlayer.Settings.InGameSettings.selectedLaser);
-                thisPlayer.CurrentInRangePortalId = -1;
-                thisPlayer.Storage.InRangeAssets.Clear();
-                thisPlayer.KillScreen(destroyer, destructionType);
+                new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position, Spacemap, false, false, destroyerPlayer);
             }
 
             CurrentHitPoints = 0;
@@ -239,7 +242,7 @@ namespace Ow.Game.Objects
                         }
                         else player.SendCommand(character.GetShipCreateCommand());
 
-                        player.SendPacket($"0|n|INV|{character.Id}|{Convert.ToInt32(character.Invisible)}");
+                        //player.SendPacket($"0|n|INV|{character.Id}|{Convert.ToInt32(character.Invisible)}");
                         var timeElapsed = (DateTime.Now - character.MovementStartTime).TotalMilliseconds;
                         player.SendCommand(MoveCommand.write(character.Id, character.Destination.X, character.Destination.Y, (int)(character.MovementTime - timeElapsed)));
                     }

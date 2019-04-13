@@ -67,6 +67,9 @@ namespace Ow.Net
                     
                     switch (String(json["Action"]))
                     {
+                        case "OnlineCount":
+                            socket.Send(Encoding.UTF8.GetBytes(GameManager.GameSessions.Count.ToString()));
+                            break;
                         case "IsOnline":
                             var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
                             var online = player != null ? true : false;
@@ -179,7 +182,7 @@ namespace Ow.Net
 
         public static void StartDiplomacy(Clan senderClan, Clan targetClan, short diplomacyType)
         {
-            if (senderClan.Id != 0 && targetClan.Id != 0 && (diplomacyType == 1 || diplomacyType == 2 || diplomacyType == 3))
+            if (senderClan.Id != 0 && targetClan.Id != 0 && new int[] {1,2,3}.Contains(diplomacyType))
             {
                 senderClan.Diplomacies.Add(targetClan.Id, (Diplomacy)diplomacyType);
                 targetClan.Diplomacies.Add(senderClan.Id, (Diplomacy)diplomacyType);
@@ -234,7 +237,7 @@ namespace Ow.Net
         {
             if (player.GameSession == null || player == null) return;
 
-            if (player.Storage.IsInEquipZone && player.FactionId != factionId && (factionId == 1 || factionId == 2 || factionId == 3))
+            if (player.Storage.IsInEquipZone && player.FactionId != factionId && new int[] {1,2,3}.Contains(factionId))
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                     mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET factionID = {factionId} WHERE userID = {player.Id}");

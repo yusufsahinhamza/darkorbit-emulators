@@ -64,8 +64,7 @@ namespace Ow.Game
             ParseLimits();
             LoadObjects();
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
+            Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
         }
 
@@ -131,7 +130,7 @@ namespace Ow.Game
                 new BattleStation(this, 0, new Position(1600, 1600), GameManager.GetClan(0));
             }
 
-            if (Id != 101 && Id != 121 && Id != 42)
+            if (new int[] {13,14,15,16}.Contains(Id))
             {
                 for (int i = 0; i <= 85; i++)
                     new BonusBox(AssetTypeModule.BOXTYPE_BONUS_BOX, Position.Random(this, 1000, 19800, 1000, 11800), this, true);
@@ -139,7 +138,7 @@ namespace Ow.Game
 
             if (Id == 101)
             {
-                var poi = new POI("jackpot_poi", POITypes.RADIATION, POIDesigns.SIMPLE, POIShapes.CIRCLE, new List<Position> { new Position(5000, 3200), new Position(1500, 200) }, true, true);
+                var poi = new POI("jackpot_poi", POITypes.RADIATION, POIDesigns.SIMPLE, POIShapes.CIRCLE, new List<Position> { new Position(5000, 3200), new Position(2250, 950) }, true, true);
                 POIs.TryAdd("jackpot_poi", poi);
             }
 

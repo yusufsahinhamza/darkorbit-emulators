@@ -503,7 +503,8 @@ namespace Ow.Chat
             }
             catch (Exception e)
             {
-                Out.WriteLine("ShutdownConnection() void exception: " + e, "ChatClient.cs");
+                //ignore
+                //Out.WriteLine("ShutdownConnection() void exception: " + e, "ChatClient.cs");
             }
         }
 

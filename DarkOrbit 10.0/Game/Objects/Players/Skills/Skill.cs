@@ -25,8 +25,7 @@ namespace Ow.Game.Objects.Players.Skills
         {
             Player = player;
 
-            var tickId = -1;
-            Program.TickManager.AddTick(this, out tickId);
+            Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
         }
 

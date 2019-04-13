@@ -113,8 +113,7 @@ namespace Ow.Net.netty.handlers
 
                 Player.Spacemap.AddCharacter(Player);
 
-                var tickId = -1;
-                Program.TickManager.AddTick(GameSession.Player, out tickId);
+                Program.TickManager.AddTick(GameSession.Player, out var tickId);
                 GameSession.Player.TickId = tickId;
             }
             catch (Exception e)

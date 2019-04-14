@@ -1,0 +1,57 @@
+﻿using Ow.Game.Objects.Players.Managers;
+using Ow.Net.netty.commands;
+using Ow.Utils;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Ow.Game.Objects.Players.Skills
+{
+    class Afterburner : Skill
+    {
+        public override string LootId { get => SkillManager.LIGHTNING; }
+        public override int Id { get => 0; } //find it
+
+        public override int Duration { get => TimeManager.LIGHTNING_DURATION; }
+        public override int Cooldown { get => TimeManager.LIGHTNING_COOLDOWN; }
+
+        public Afterburner(Player player) : base(player) { }
+
+        public override void Tick()
+        {
+            if (Active)
+                if (cooldown.AddMilliseconds(TimeManager.LIGHTNING_DURATION) < DateTime.Now)
+                    Disable();
+        }
+
+        public override void Send()
+        {
+            if (Player.Ship.Id == 18 && cooldown.AddMilliseconds(TimeManager.LIGHTNING_DURATION + TimeManager.LIGHTNING_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            {
+                Player.SkillManager.DisableAllSkills();
+
+                Player.Storage.Lightning = true;
+                Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
+
+                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.TRAVEL_MODE, 0, "", 0, true));
+
+                Player.SendCooldown(SkillManager.LIGHTNING, TimeManager.LIGHTNING_DURATION, true);
+                Active = true;
+                cooldown = DateTime.Now;
+            }
+        }
+
+        public override void Disable()
+        {
+            Player.Storage.Lightning = false;
+            Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
+
+            Player.RemoveVisualModifier(VisualModifierCommand.TRAVEL_MODE);
+
+            Player.SendCooldown(SkillManager.LIGHTNING, TimeManager.LIGHTNING_COOLDOWN);
+            Active = false;
+        }
+    }
+}

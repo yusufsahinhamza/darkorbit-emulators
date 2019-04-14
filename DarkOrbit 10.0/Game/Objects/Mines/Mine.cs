@@ -13,8 +13,8 @@ namespace Ow.Game.Objects.Mines
 {
     abstract class Mine : Tick
     {
-        public const int RANGE = 250;
-        public const int EXPLODE_RANGE = 350; //11.04.2019 => 375
+        public const int RANGE = 200; //15.04.2019 => 250
+        public const int EXPLODE_RANGE = 275; //11.04.2019 => 375
         public const int ACTIVATION_TIME = 1750; //11.04.2019 => 1500
 
         public int TickId { get; set; }

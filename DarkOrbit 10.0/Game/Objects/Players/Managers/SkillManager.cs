@@ -50,6 +50,9 @@ namespace Ow.Game.Objects.Players.Managers
                 case Ship.GOLIATH_VENOM:
                     Player.Storage.Skills.Add(SkillManager.VENOM, new Venom(Player));
                     break;
+                case Ship.VENGEANCE_LIGHTNING:
+                    Player.Storage.Skills.Add(SkillManager.LIGHTNING, new Afterburner(Player));
+                    break;
             }
         }
 

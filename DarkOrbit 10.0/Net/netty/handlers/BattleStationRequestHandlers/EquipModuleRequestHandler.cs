@@ -35,7 +35,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
                 */
-                var module = battleStation.inventoryStationModule.Where(x => x.itemId == read.itemId).First();
+                var module = battleStation.inventoryStationModule.Where(x => x.itemId == read.itemId).FirstOrDefault();
 
                 if (module.itemId == BattleStation.DEFLECTOR_ID && read.slotId != 1 || module.itemId != BattleStation.DEFLECTOR_ID && read.slotId == 1) return;
                 if (module.itemId == BattleStation.HULL_ID && read.slotId != 0 || module.itemId != BattleStation.HULL_ID && read.slotId == 0) return;

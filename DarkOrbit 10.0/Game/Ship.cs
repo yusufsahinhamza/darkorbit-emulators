@@ -22,6 +22,7 @@ namespace Ow.Game
         public static int SPACEBALL_SUMMER = 442;
         public static int SPACEBALL_WINTER = 443;
         public static int SPACEBALL_SOCCER = 444;
+
         public const int GOLIATH_BASTION = 59;
         public const int GOLIATH_ENFORCER = 56;
         public const int GOLIATH_CENTAUR = 110;
@@ -41,20 +42,14 @@ namespace Ow.Game
         public const int GOLIATH_VETERAN = 61;
         public const int GOLIATH_HEZARFEN = 155;
         public const int GOLIATH_INDEPENDENCE = 57;
-        public const int CYBORG = 445;
-        public const int HAMMERCLAW = 446;
-        public const int GOLIATH_SPECTRUM_FROST = 447;
-        public const int GOLIATH_SENTINEL_FROST = 448;
-        public const int GOLIATH_SENTINEL_LEGEND = 449;
-        public const int GOLIATH_SPECTRUM_LEGEND = 450;
-        public const int G_CHAMPION_LEGEND = 451;
-        public const int CYBORG_LAVA = 452;
-        public const int HAMMERCLAW_LAVA = 453;
-        public const int SURGEON = 454;
-        public const int SURGEON_CICADA = 455;
-        public const int SURGEON_LOCUST = 456;
         public const int GOLIATH = 10;
         public const int GOLIATH_RAZER = 153;
+
+        public const int VENGEANCE_AVENGER = 60;
+        public const int VENGEANCE_REVENGE = 58;
+        public const int VENGEANCE_CORSAIR = 17;
+        public const int VENGEANCE_ADEPT = 16;
+        public const int VENGEANCE_LIGHTNING = 18;
 
         public string Name { get; set; }
         public int Id { get; set; }
@@ -75,8 +70,6 @@ namespace Ow.Game
         {
             switch (Id)
             {
-                case HAMMERCLAW:
-                    return pHitPoints += Maths.GetPercentage(pHitPoints, 20);
                 case GOLIATH_CENTAUR:
                     return pHitPoints += Maths.GetPercentage(pHitPoints, 10);
                 case GOLIATH_SATURN:
@@ -90,43 +83,35 @@ namespace Ow.Game
         {
             switch (Id)
             {
-                case GOLIATH_SPECTRUM_FROST:
                 case GOLIATH_SPECTRUM:
                 case GOLIATH_SOLACE:
-                case GOLIATH_SENTINEL_FROST:
                 case GOLIATH_SENTINEL:
                 case GOLIATH_KICK:
                 case GOLIATH_BASTION:
+                case VENGEANCE_AVENGER:
                     return pShieldPoints += Maths.GetPercentage(pShieldPoints, 10);  
-                case GOLIATH_SENTINEL_LEGEND:
-                case GOLIATH_SPECTRUM_LEGEND:
-                    return pShieldPoints += Maths.GetPercentage(pShieldPoints, 15);
                 default:
                     return pShieldPoints;
             }
         }
 
-        public int GetLaserDamageBoost(int pDamage)
+        public int GetLaserDamageBoost(int pDamage, int thisFactionId, int otherFactionId)
         {
             switch (Id)
             {
+                case GOLIATH_PEACEMAKER:
+                case GOLIATH_VANQUISHER:
+                case GOLIATH_SOVEREIGN:
+                    if (otherFactionId != 0 && thisFactionId != otherFactionId)
+                        return pDamage += Maths.GetPercentage(pDamage, 7);
+                    else return pDamage;
                 case GOLIATH_DIMINISHER:
                 case GOLIATH_ENFORCER:
-                case GOLIATH_PEACEMAKER:
                 case GOLIATH_REFEREE:
-                case GOLIATH_SOVEREIGN:
-                case GOLIATH_VANQUISHER:
                 case GOLIATH_VENOM:
+                case VENGEANCE_REVENGE:
+                case VENGEANCE_LIGHTNING:
                     return pDamage += Maths.GetPercentage(pDamage, 5);
-                case SURGEON:
-                case SURGEON_CICADA:
-                case SURGEON_LOCUST:
-                    return pDamage += Maths.GetPercentage(pDamage, 7);
-                case GOLIATH_HEZARFEN:
-                case GOLIATH_INDEPENDENCE:
-                case G_CHAMPION_LEGEND:
-                case CYBORG:
-                    return pDamage += Maths.GetPercentage(pDamage, 10);
                 default:
                     return pDamage;
             }
@@ -136,22 +121,9 @@ namespace Ow.Game
         {
             switch (Id)
             {
-                case SURGEON:
-                case SURGEON_CICADA:
-                case SURGEON_LOCUST:
-                    return pHonor += Maths.GetPercentage(pHonor, 7);
                 case GOLIATH_EXALTED:
+                case VENGEANCE_CORSAIR:
                     return pHonor += Maths.GetPercentage(pHonor, 10);
-                case GOLIATH_GOAL:
-                case GOLIATH_PEACEMAKER:
-                case GOLIATH_SOVEREIGN:
-                case GOLIATH_VANQUISHER:
-                case G_CHAMPION_LEGEND:
-                case GOLIATH_HEZARFEN:
-                case GOLIATH_INDEPENDENCE:
-                case GOLIATH_SPECTRUM_LEGEND:
-                case GOLIATH_SENTINEL_LEGEND:
-                    return pHonor += Maths.GetPercentage(pHonor, 15);
                 default:
                     return pHonor;
             }
@@ -161,22 +133,10 @@ namespace Ow.Game
         {
             switch (Id)
             {
-                case SURGEON:
-                case SURGEON_CICADA:
-                case SURGEON_LOCUST:
-                    return pExperience += Maths.GetPercentage(pExperience, 7);
                 case GOLIATH_VETERAN:
-                    return pExperience += Maths.GetPercentage(pExperience, 10);
                 case GOLIATH_GOAL:
-                case GOLIATH_HEZARFEN:
-                case GOLIATH_INDEPENDENCE:
-                case GOLIATH_SPECTRUM_LEGEND:
-                case GOLIATH_SENTINEL_LEGEND:
-                case GOLIATH_PEACEMAKER:
-                case GOLIATH_SOVEREIGN:
-                case GOLIATH_VANQUISHER:
-                case G_CHAMPION_LEGEND:
-                    return pExperience += Maths.GetPercentage(pExperience, 15);
+                case VENGEANCE_ADEPT:
+                    return pExperience += Maths.GetPercentage(pExperience, 10);
                 default:
                     return pExperience;
             }
@@ -201,6 +161,11 @@ namespace Ow.Game
                     case GOLIATH_SENTINEL:
                     case GOLIATH_VENOM:
                         return GroupPlayerShipModule.ENFORCER;
+                    case VENGEANCE_LIGHTNING:
+                    case VENGEANCE_REVENGE:
+                    case VENGEANCE_AVENGER:
+                    case VENGEANCE_ADEPT:
+                        return GroupPlayerShipModule.REVENGE;
                     default:
                         return GroupPlayerShipModule.DEFAULT;
                 }
@@ -208,18 +173,14 @@ namespace Ow.Game
         }
 
         private static Random random = new Random();
-        public static string GetRandomShipLootId(string currentShipLootId)
+        public static int GetRandomShipId(int currentShipId)
         {
-            var ships = new List<string>();
-            foreach (var ship in GameManager.Ships.Values)
-                ships.Add(ship.LootId);
+            int randomed = random.Next(63, 67);
 
-            int randomed = random.Next(55, 71);
-
-            if (ships[randomed] == currentShipLootId)
-                return GetRandomShipLootId(currentShipLootId);
+            if (randomed == currentShipId)
+                return GetRandomShipId(currentShipId);
             else
-                return ships[randomed];
+                return randomed;
         }
     }
 }

@@ -71,9 +71,6 @@ namespace Ow.Net.netty.handlers
         {
             try
             {
-                using (var mySqlClient = SqlDatabaseManager.GetClient())
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 1 WHERE userID = {Player.Id}");
-
                 if (GameSession == null) return;
 
                 if (!GameManager.GameSessions.ContainsKey(Player.Id))
@@ -98,7 +95,7 @@ namespace Ow.Net.netty.handlers
             try
             {
                 Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
-                if (firstLogin || EventManager.JackpotBattle.InActiveEvent(Player) || Player.Storage.DuelOpponent != null)
+                if (firstLogin || EventManager.JackpotBattle.InActiveEvent(Player) || Player.Storage.Duel != null)
                 {
                     Player.CurrentHitPoints = Player.MaxHitPoints;
                     Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;
@@ -129,7 +126,7 @@ namespace Ow.Net.netty.handlers
                 player.SendCommand(player.GetShipInitializationCommand());
 
                 if (player.Title != "")
-                    player.SendPacket("0|n|t|" + player.Id + "|1|" + player.Title + "");
+                    player.SendPacket($"0|n|t|{player.Id}|1|{player.Title}");
 
                 player.SendPacket(player.DroneManager.GetDronesPacket());
                 player.SendCommand(DroneFormationChangeCommand.write(player.Id, DroneManager.GetSelectedFormationId(player.Settings.InGameSettings.selectedFormation)));
@@ -165,8 +162,6 @@ namespace Ow.Net.netty.handlers
 
                 player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));
                 player.Spacemap.SendObjects(player);
-                player.Spacemap.SendPlayers(player);
-                player.CheckEffects(player);
 
                 //player.SendCommand(VideoWindowCreateCommand.write(1, "l", true, new List<string> { "start_head", "tutorial_video_msg_reward_premium_intro" }, 1, 1));    
 

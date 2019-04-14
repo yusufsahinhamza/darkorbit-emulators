@@ -77,6 +77,7 @@
     <Compile Include="Game\Objects\Npcs\NpcAI.cs" />
     <Compile Include="Game\Objects\Players\Group.cs" />
     <Compile Include="Game\Objects\Players\Managers\AbstractManager.cs" />
+    <Compile Include="Game\Objects\Players\Skills\Afterburner.cs" />
     <Compile Include="Game\Objects\Players\Skills\Venom.cs" />
     <Compile Include="Game\Objects\Players\Skills\Spectrum.cs" />
     <Compile Include="Game\Objects\Players\Skills\Solace.cs" />

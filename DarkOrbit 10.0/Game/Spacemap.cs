@@ -130,7 +130,7 @@ namespace Ow.Game
                 new BattleStation(this, 0, new Position(1600, 1600), GameManager.GetClan(0));
             }
 
-            if (new int[] {13,14,15,16}.Contains(Id))
+            if (new int[] {13,14,15}.Contains(Id))
             {
                 for (int i = 0; i <= 85; i++)
                     new BonusBox(AssetTypeModule.BOXTYPE_BONUS_BOX, Position.Random(this, 1000, 19800, 1000, 11800), this, true);
@@ -185,7 +185,7 @@ namespace Ow.Game
         {
             foreach (var mine in Mines.Values)
             {
-                if (mine.Player == player || player.Storage.DuelOpponent == null || (player.Storage.DuelOpponent != null && mine.Player == player.Storage.DuelOpponent))
+                if (mine.Player == player || player.Storage.Duel == null || (player.Storage.Duel != null && mine.Player == player.Storage.Duel?.GetOpponent(player)))
                 {
                     if (player.Position.DistanceTo(mine.Position) <= 1250)
                     {
@@ -347,16 +347,6 @@ namespace Ow.Game
                 player.SendCommand(poi.GetPOICreateCommand());
         }
 
-        public void SendPlayers(Player Player)
-        {
-            foreach (var character in Characters.Values)
-            {
-                Player.InRangeCharacters.Clear();
-                if (Player.InRange(character, character.RenderRange))
-                    Player.AddInRangeCharacter(character);
-            }
-        }
-
         public void AddAndInitPlayer(Player player)
         {
             AddCharacter(player);
@@ -397,7 +387,7 @@ namespace Ow.Game
             if (success)
             {
                 CharacterRemoved?.Invoke(this, new CharacterArgs(character));
-                foreach (var otherCharacter in Characters.Values)
+                foreach (var otherCharacter in character.InRangeCharacters.Values)
                     otherCharacter.RemoveInRangeCharacter(character);
             }
             return success;

@@ -156,13 +156,13 @@ namespace Ow.Chat
                 return;
             }
 
-            if (gameSession.Player.Storage.DuelOpponent != null)
+            if (gameSession.Player.Storage.Duel != null)
             {
                 Send($"dq%You cant accept duels while your duel continuenigenbeninn.#");
                 return;
             }
 
-            if (inviterPlayer.Storage.DuelOpponent != null)
+            if (inviterPlayer.Storage.Duel != null)
             {
                 Send($"dq%Your opponent is already fighting on duel with another player.#");
                 return;
@@ -399,12 +399,43 @@ namespace Ow.Chat
 
                 Send($"dq%Users online {GameManager.GameSessions.Count}: {users}#");
             }
-            else if (cmd == "/system")
+            else if (cmd == "/system" && Permission == Permissions.ADMINISTRATOR)
             {
                 message = message.Remove(0, 8);
                 GameManager.SendChatSystemMessage(message);
             }
-            else if (cmd == "/id")
+            else if (cmd == "/title" && Permission == Permissions.ADMINISTRATOR)
+            {
+                if (message.Split(' ').Length < 3) return;
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
+                var title = message.Split(' ')[2];
+                var permanent = Convert.ToBoolean(Convert.ToInt32(message.Split(' ')[3]));
+
+                var player = GameManager.GetPlayerById(userId);
+                if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
+
+                player.SetTitle(title, permanent);
+            }
+            else if (cmd == "/rmtitle" && Permission == Permissions.ADMINISTRATOR)
+            {
+                if (message.Split(' ').Length < 3) return;
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
+                var permanent = Convert.ToBoolean(Convert.ToInt32(message.Split(' ')[2]));
+
+                var player = GameManager.GetPlayerById(userId);
+                if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
+
+                player.SetTitle("", permanent);
+            }
+            else if (cmd == "/id" && Permission == Permissions.ADMINISTRATOR)
             {
                 if (message.Split(' ').Length < 2) return;
                 var player = GameManager.GetPlayerByName(message.Split(' ')[1]);
@@ -501,7 +532,7 @@ namespace Ow.Chat
                 var value = this;
                 GameManager.ChatClients.TryRemove(UserId, out value);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //ignore
                 //Out.WriteLine("ShutdownConnection() void exception: " + e, "ChatClient.cs");

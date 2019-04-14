@@ -43,6 +43,9 @@ namespace Ow.Game.Objects.Players.Managers
         public const int SENTINEL_DURATION = 120000;
         public const int SENTINEL_COOLDOWN = 900000;
 
+        public const int LIGHTNING_DURATION = 5000;
+        public const int LIGHTNING_COOLDOWN = 180000;
+
         public const int SPECTRUM_DURATION = 30000;
         public const int SPECTRUM_COOLDOWN = 900000;
 

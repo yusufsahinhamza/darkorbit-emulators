@@ -61,62 +61,62 @@ namespace Ow.Net
                 int count = socket.Receive(buffer);
                 var json = Parse(Encoding.UTF8.GetString(buffer, 0, count));
 
-                if (ValidateJSON(String(json)))
+                var parameters = Parse(json["Parameters"]);
+
+                switch (String(json["Action"]))
                 {
-                    var parameters = Parse(json["Parameters"]);
-                    
-                    switch (String(json["Action"]))
-                    {
-                        case "OnlineCount":
-                            socket.Send(Encoding.UTF8.GetBytes(GameManager.GameSessions.Count.ToString()));
-                            break;
-                        case "IsOnline":
-                            var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                            var online = player != null ? true : false;
-                            socket.Send(Encoding.UTF8.GetBytes(online.ToString()));
-                            break;
-                        case "IsInEquipZone":
-                            player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                            var inEquipZone = player != null ? player.Storage.IsInEquipZone : false;
-                            socket.Send(Encoding.UTF8.GetBytes(inEquipZone.ToString()));
-                            break;
-                        case "BanUser":
-                            BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
-                            break;
-                        case "BuyItem":
-                            BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), Int(parameters["Amount"]));
-                            break;
-                        case "ChangeClanData":
-                            ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), parameters["Name"], parameters["Tag"]);
-                            break;
-                        case "ChangeShip":
-                            ChangeShip(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ShipId"]));
-                            break;
-                        case "ChangeCompany":
-                            ChangeCompany(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["FactionId"]), Int(parameters["UridiumPrice"]), Int(parameters["HonorPrice"]));
-                            break;
-                        case "UpdateStatus":
-                            UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])), Parse(parameters["Status"]));
-                            break;
-                        case "JoinToClan":
-                            JoinToClan(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetClan(Int(parameters["ClanId"])));
-                            break;
-                        case "LeaveFromClan":
-                            LeaveFromClan(GameManager.GetPlayerById(Int(parameters["UserId"])));
-                            break;
-                        case "CreateClan":
-                            CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), Int(parameters["FactionId"]), parameters["Name"], parameters["Tag"]);
-                            break;
-                        case "DeleteClan":
-                            DeleteClan(GameManager.GetClan(Int(parameters["ClanId"])));
-                            break;
-                        case "StartDiplomacy":
-                            StartDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])), Short(parameters["DiplomacyType"]));
-                            break;
-                        case "EndDiplomacy":
-                            EndDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])));
-                            break;
-                    }
+                    case "OnlineIds":
+                        socket.Send(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GameManager.GameSessions.Keys).ToString()));
+                        break;
+                    case "OnlineCount":
+                        socket.Send(Encoding.UTF8.GetBytes(GameManager.GameSessions.Count.ToString()));
+                        break;
+                    case "IsOnline":
+                        var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                        var online = player != null ? true : false;
+                        socket.Send(Encoding.UTF8.GetBytes(online.ToString()));
+                        break;
+                    case "IsInEquipZone":
+                        player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                        var inEquipZone = player != null ? player.Storage.IsInEquipZone : false;
+                        socket.Send(Encoding.UTF8.GetBytes(inEquipZone.ToString()));
+                        break;
+                    case "BanUser":
+                        BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                        break;
+                    case "BuyItem":
+                        BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), Int(parameters["Amount"]));
+                        break;
+                    case "ChangeClanData":
+                        ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), parameters["Name"], parameters["Tag"]);
+                        break;
+                    case "ChangeShip":
+                        ChangeShip(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ShipId"]));
+                        break;
+                    case "ChangeCompany":
+                        ChangeCompany(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["FactionId"]), Int(parameters["UridiumPrice"]), Int(parameters["HonorPrice"]));
+                        break;
+                    case "UpdateStatus":
+                        UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])), Parse(parameters["Status"]));
+                        break;
+                    case "JoinToClan":
+                        JoinToClan(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetClan(Int(parameters["ClanId"])));
+                        break;
+                    case "LeaveFromClan":
+                        LeaveFromClan(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                        break;
+                    case "CreateClan":
+                        CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), Int(parameters["FactionId"]), parameters["Name"], parameters["Tag"]);
+                        break;
+                    case "DeleteClan":
+                        DeleteClan(GameManager.GetClan(Int(parameters["ClanId"])));
+                        break;
+                    case "StartDiplomacy":
+                        StartDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])), Short(parameters["DiplomacyType"]));
+                        break;
+                    case "EndDiplomacy":
+                        EndDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])));
+                        break;
                 }
             }
             catch (Exception) { }
@@ -278,19 +278,6 @@ namespace Ow.Net
 
             player.DroneManager.UpdateDrones(true);
             player.UpdateStatus();
-        }
-
-        public static bool ValidateJSON(string s)
-        {
-            try
-            {
-                JToken.Parse(s);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public static int Int(object value)

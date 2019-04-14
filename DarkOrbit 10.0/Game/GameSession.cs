@@ -63,6 +63,9 @@ namespace Ow.Game
                 Duel.RemovePlayer(Player);
                 Program.TickManager.RemoveTick(Player);
                 Player.Spacemap.RemoveCharacter(Player);
+                Player.Deselection();
+                Player.Storage.InRangeAssets.Clear();
+                Player.InRangeCharacters.Clear();
             }
             catch (Exception e)
             {
@@ -82,9 +85,6 @@ namespace Ow.Game
                     EstDisconnectionTime = DateTime.Now.AddMinutes(2);
                     return;
                 }
-
-                using (var mySqlClient = SqlDatabaseManager.GetClient())
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET online = 0 WHERE userID = {Player.Id}");
 
                 foreach (var session in GameManager.GameSessions.Values)
                 {

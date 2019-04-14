@@ -51,10 +51,11 @@ namespace Ow.Game.Objects.Players
         public bool GodMode = false;
         public bool GroupInitialized { get; set; }
 
+        public bool Lightning = false;
         public bool Sentinel = false;
         public bool Spectrum = false;
-
         public bool Diminisher = false;
+
         public Player UnderDiminisherPlayer { get; set; }
 
         public bool Venom = false;
@@ -177,22 +178,6 @@ namespace Ow.Game.Objects.Players
             {
                 wizardEffect = false;
                 Player.RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
-            }
-        }
-
-        public Player DuelOpponent
-        {
-            get
-            {
-                return Duel?.Players.Where(x => x.Value.Id != Player.Id).FirstOrDefault().Value;
-            }
-        }
-
-        public Player UbaOpponent
-        {
-            get
-            {
-                return Uba?.Players.Where(x => x.Value.Id != Player.Id).FirstOrDefault().Value;
             }
         }
     }

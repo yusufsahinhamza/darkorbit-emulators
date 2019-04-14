@@ -47,27 +47,28 @@ namespace Ow.Game.Objects
         public override async void Click(GameSession gameSession)
         {
             var player = gameSession.Player;
+            var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
+            var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
+
             if (!Working || GameManager.GetSpacemap(TargetSpaceMapId) == null || TargetPosition == null) return;
             if (player.Storage.Jumping) return;
 
             player.Storage.Jumping = true;
-            var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
-            player.SendCommand(apc);
-            await Task.Delay(JUMP_DELAY);
 
-            var pet = player.Pet.Activated;
-            var gearId = player.Pet.GearId;
             player.Pet.Deactivate(true);
-
+            player.Spacemap.RemoveCharacter(player);
             player.CurrentInRangePortalId = -1;
             player.Deselection();
-            player.Spacemap.RemoveCharacter(player);
             player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
             player.SetPosition(TargetPosition);
 
             var targetSpacemap = GameManager.GetSpacemap(TargetSpaceMapId);
             player.Spacemap = targetSpacemap;
+
+            player.SendCommand(apc);
+            await Task.Delay(JUMP_DELAY);
 
             player.Spacemap.AddAndInitPlayer(player);
             player.Storage.Jumping = false;

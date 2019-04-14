@@ -185,7 +185,8 @@ namespace Ow.Game.Objects.Players.Managers
                 {SkillManager.SENTINEL, 0},
                 {SkillManager.SPECTRUM, 0},
                 {SkillManager.DIMINISHER, 0},
-                {SkillManager.VENOM, 0}
+                {SkillManager.VENOM, 0},
+                {SkillManager.LIGHTNING, 0}
         };
 
         public List<BoundKeysBase> BoundKeys = new List<BoundKeysBase>
@@ -340,7 +341,8 @@ namespace Ow.Game.Objects.Players.Managers
 
         public static string[] AbilitiesCategory =
         {
-            SkillManager.SPECTRUM, SkillManager.VENOM, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.DIMINISHER
+            SkillManager.SPECTRUM, SkillManager.VENOM, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.DIMINISHER,
+            SkillManager.LIGHTNING
             /*
                 SkillManager.AEGIS_HP_REPAIR,
                 SkillManager.AEGIS_REPAIR_POD, SkillManager.AEGIS_SHIELD_REPAIR, SkillManager.CITADEL_DRAW_FIRE,
@@ -1077,6 +1079,8 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_1699);
                 case SkillManager.VENOM:
                     return new CooldownTypeModule(CooldownTypeModule.short_1736);
+                case SkillManager.LIGHTNING:
+                    return new CooldownTypeModule(CooldownTypeModule.SPEED_BUFF);
 
                 case AmmunitionManager.R_IC3:
                     return new CooldownTypeModule(CooldownTypeModule.short_1789);
@@ -1202,6 +1206,7 @@ namespace Ow.Game.Objects.Players.Managers
                 case SkillManager.VENOM:
                 case SkillManager.SOLACE:
                 case SkillManager.DIMINISHER:
+                case SkillManager.LIGHTNING:
                     if (Player.Storage.Skills.ContainsKey(pItemId))
                     {
                         var cooldown = (DateTime.Now - Player.Storage.Skills[pItemId].cooldown).TotalMilliseconds;
@@ -1792,7 +1797,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendMine(string mineLootId)
         {
-            if (Player.Storage.IsInDemilitarizedZone || Player.Storage.OnBlockedMinePosition || Player.CurrentInRangePortalId != -1) return;
+            if (Player.Storage.IsInDemilitarizedZone || Player.Storage.OnBlockedMinePosition || Player.CurrentInRangePortalId != -1 || (Player.Storage.Duel != null && Player.Storage.Duel.PeaceArea)) return;
 
             if (Player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {

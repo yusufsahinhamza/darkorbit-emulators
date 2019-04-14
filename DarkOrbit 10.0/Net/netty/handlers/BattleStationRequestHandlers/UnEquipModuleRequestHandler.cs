@@ -28,7 +28,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
 
-                var module = battleStation.equippedStationModule.Where(x => x.itemId == read.itemId).First();
+                var module = battleStation.equippedStationModule.Where(x => x.itemId == read.itemId).FirstOrDefault();
                 battleStation.equippedStationModule.Remove(module);
                 battleStation.inventoryStationModule.Add(module);
                 battleStation.Click(gameSession);

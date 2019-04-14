@@ -44,7 +44,7 @@ namespace Ow.Game.Objects.Stations
         {
             if (InBuildingState && buildTime.AddMinutes(BuildTimeInMinutes) < DateTime.Now)
             {
-                Visuals.Remove(Visuals.Where(x => x.modifier == VisualModifierCommand.BATTLESTATION_CONSTRUCTING).First());
+                Visuals.Remove(Visuals.Where(x => x.modifier == VisualModifierCommand.BATTLESTATION_CONSTRUCTING).FirstOrDefault());
                 //Visuals.Add(new VisualModifierCommand(Id, VisualModifierCommand.BATTLESTATION_DOWNTIME_TIMER, 1800, "", 0, true));
                 PrepareSatellites();
 

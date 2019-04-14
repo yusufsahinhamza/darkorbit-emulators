@@ -20,7 +20,7 @@ namespace Ow.Game.Objects.Mines
             {
                 if (character is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
                 {
-                    if (Player == player || player.Storage.DuelOpponent == null || (player.Storage.DuelOpponent != null && Player == player.Storage.DuelOpponent))
+                    if (Player == player || player.Storage.Duel == null || (player.Storage.Duel != null && Player == player.Storage.Duel?.GetOpponent(player)))
                     {
                         if (player.Attackable())
                             player.CpuManager.DisableCloak();

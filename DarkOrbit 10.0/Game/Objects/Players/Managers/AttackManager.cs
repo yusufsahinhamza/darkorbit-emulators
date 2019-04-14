@@ -306,8 +306,8 @@ namespace Ow.Game.Objects.Players.Managers
 
                 var enemyPlayer = enemy as Player;
 
-                var ship = Ship.GetRandomShipLootId(enemyPlayer.Ship.LootId);
-                enemyPlayer.AddVisualModifier(new VisualModifierCommand(enemyPlayer.Id, VisualModifierCommand.WIZARD_ATTACK, 0, ship, 0, true));
+                var shipId = Ship.GetRandomShipId(enemyPlayer.Ship.Id);
+                enemyPlayer.AddVisualModifier(new VisualModifierCommand(enemyPlayer.Id, VisualModifierCommand.WIZARD_ATTACK, 0, GameManager.GetShip(shipId).LootId, 0, true));
             }
             
         }
@@ -419,7 +419,7 @@ namespace Ow.Game.Objects.Players.Managers
             if (target == null) return false;
 
             short relationType = Player.Clan.Id != 0 && target.Clan.Id != 0 ? Player.Clan.GetRelation(target.Clan) : (short)0;
-            if (target.FactionId == Player.FactionId && relationType != ClanRelationModule.AT_WAR && !(target is Pet pet && pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.DuelOpponent == null)
+            if (target.FactionId == Player.FactionId && relationType != ClanRelationModule.AT_WAR && !(target is Pet pet && pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.Duel == null)
             {
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                 /*
@@ -433,7 +433,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 var targetPlayer = target as Player;
 
-                if (relationType == ClanRelationModule.ALLIED && !(target is Pet && target as Pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.DuelOpponent == null)
+                if (relationType == ClanRelationModule.ALLIED && !(target is Pet && target as Pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.Duel == null)
                 {
                     Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                     /*

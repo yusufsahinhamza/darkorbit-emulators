@@ -32,7 +32,7 @@ namespace Ow.Game.Events
             {
                 Active = true;
 
-                for (int i = 60; i > 0; i--)
+                for (int i = 120; i > 0; i--)
                 {
                     var packet = $"0|A|STD|Jackpot Battle starting in {i} seconds...";
                     GameManager.SendPacketToAll(packet);
@@ -42,7 +42,7 @@ namespace Ow.Game.Events
                     {
                         foreach (var gameSession in GameManager.GameSessions.Values)
                         {
-                            if (gameSession != null && gameSession.Player.Storage.Duel == null && gameSession.Player.RankId != 21)
+                            if (gameSession != null && gameSession.Player.Storage.Duel == null && gameSession.Player.Storage.Uba == null && gameSession.Player.RankId != 21)
                             {
                                 var player = gameSession.Player;
                                 Players.TryAdd(player.Id, player);
@@ -80,15 +80,15 @@ namespace Ow.Game.Events
                 /*
                  * YENİDEN YAZ
                 */
-                if (Spacemap.Characters.Count == 2)
+                if (Spacemap.Characters.Count == 2 && Finalists.Count < 2)
                 {
                     foreach (var player in Spacemap.Characters.Values)
-                        if (!Finalists.Contains(player.Id))
-                            Finalists.Add(player.Id);
+                        Finalists.Add(player.Id);
                 }
-                else if (Spacemap.Characters.Count == 1)
+
+                if (Spacemap.Characters.Count == 1)
                 {
-                    var lastPlayer = Spacemap.Characters.First().Value;
+                    var lastPlayer = Spacemap.Characters.FirstOrDefault().Value;
                     SendRewardAndStop(lastPlayer as Player);
                 }
             }
@@ -133,24 +133,24 @@ namespace Ow.Game.Events
             EndDate = DateTime.Now;
             Program.TickManager.RemoveTick(this);
 
-            player.ChangeData(DataType.URIDIUM, 10000);
-            player.ChangeData(DataType.EXPERIENCE, 1000000);
-            player.ChangeData(DataType.HONOR, 10000);
+            player.ChangeData(DataType.URIDIUM, 25000);
+            player.ChangeData(DataType.EXPERIENCE, 2500000);
+            player.ChangeData(DataType.HONOR, 25000);
 
             GameManager.SendPacketToAll($"0|A|STD|{player.Name} has won the Jacpot Battle!");
             player.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
 
             var title = "title_jackpot_battle_winner";
             var oldWinner = GameManager.GameSessions.FirstOrDefault(x => x.Value?.Player.Title == title).Value?.Player;
-            if (oldWinner != null) oldWinner.Title = "";
-            player.Title = title;
+            if (oldWinner != null) oldWinner.SetTitle("");
 
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
                 mySqlClient.ExecuteNonQuery($"INSERT INTO log_event_jpb (players, finalists, winner_id, start_date, end_date) VALUES ('{JsonConvert.SerializeObject(Players.Keys.ToList())}', '{JsonConvert.SerializeObject(Finalists.ToList())}', {player.Id}, '{StartDate.ToString("yyyy-MM-dd HH:mm:ss.fff")}', '{EndDate.ToString("yyyy-MM-dd HH:mm:ss.fff")}')");
                 mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '' WHERE title = '{title}'");
-                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '{player.Title}' WHERE userID = {player.Id}");
             }
+
+            player.SetTitle(title, true);
 
             await Task.Delay(5000);
             player.SetPosition(player.GetBasePosition());

@@ -27,7 +27,7 @@ namespace Ow.Game.Events
         public Duel(ConcurrentDictionary<int, Player> players)
         {
             Players = players;
-            if (Players.Count > 2) return;
+            if (Players.Count < 2 || Players.Count > 2) return;
 
             foreach (var player in Players.Values)
             {
@@ -76,7 +76,7 @@ namespace Ow.Game.Events
         {
             if (Players.Count == 1)
             {
-                var lastPlayer = Players.First().Value;
+                var lastPlayer = Players.FirstOrDefault().Value;
                 SendRewardAndStop(lastPlayer as Player);
             }
         }
@@ -110,6 +110,11 @@ namespace Ow.Game.Events
                 player.Storage.Duel.Players.TryRemove(player.Id, out player);
                 player.Storage.Duel = null;
             }
+        }
+
+        public Player GetOpponent(Player player)
+        {
+            return Players.Where(x => x.Value.Id != player.Id).FirstOrDefault().Value;
         }
     }
 }

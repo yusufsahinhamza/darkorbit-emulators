@@ -61,7 +61,7 @@ namespace Ow.Game.Objects
             if (attackable is Character character)
             {
                 if (character == null || character.Destroyed) return false;
-                if (this is Player thisPlayer && thisPlayer.Storage.DuelOpponent != null && thisPlayer.Storage.DuelOpponent != attackable) return false;
+                if (this is Player thisPlayer && thisPlayer.Storage.Duel != null && thisPlayer.Storage.Duel?.GetOpponent(thisPlayer) != attackable) return false;
             }
             if (range == -1 || attackable.Spacemap.Options.RangeDisabled) return true;
             return attackable.Id != Id && Position.DistanceTo(attackable.Position) <= range;

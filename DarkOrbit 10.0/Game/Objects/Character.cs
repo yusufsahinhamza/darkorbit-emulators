@@ -137,33 +137,36 @@ namespace Ow.Game.Objects
 
                 var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
 
-                if (count > 13 && destroyerPlayer.Storage.DuelOpponent == null && destroyerPlayer.Storage.UbaOpponent == null)
+                if (count > 13 && destroyerPlayer.Storage.Duel == null && destroyerPlayer.Storage.Uba == null)
                     destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
 
-                if (count < 13 && destroyerPlayer.Storage.DuelOpponent == null && destroyerPlayer.Storage.UbaOpponent == null)
+                if (destroyerPlayer.Storage.Duel == null && destroyerPlayer.Storage.Uba == null)
                 {
-                    int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
-                    int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost(Ship.Rewards.Honor));
-                    int uridium = Ship.Rewards.Uridium;
-                    var changeType = ChangeType.INCREASE;
+                    if (count < 13)
+                    {
+                        int experience = destroyerPlayer.Ship.GetExperienceBoost(Ship.Rewards.Experience);
+                        int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost(Ship.Rewards.Honor));
+                        int uridium = Ship.Rewards.Uridium;
+                        var changeType = ChangeType.INCREASE;
 
-                    short relationType = destroyerPlayer.Clan.Id != 0 && Clan.Id != 0 ? Clan.GetRelation(destroyerPlayer.Clan) : (short)0;
-                    if ((destroyerPlayer.FactionId == FactionId && relationType != ClanRelationModule.AT_WAR && (this is Player player && !(EventManager.JackpotBattle.InActiveEvent(player))) || (this is Pet thisPet && destroyerPlayer.Pet == thisPet)))
-                        changeType = ChangeType.DECREASE;
+                        short relationType = destroyerPlayer.Clan.Id != 0 && Clan.Id != 0 ? Clan.GetRelation(destroyerPlayer.Clan) : (short)0;
+                        if ((destroyerPlayer.FactionId == FactionId && relationType != ClanRelationModule.AT_WAR && (this is Player player && !(EventManager.JackpotBattle.InActiveEvent(player))) || (this is Pet thisPet && destroyerPlayer.Pet == thisPet)))
+                            changeType = ChangeType.DECREASE;
 
-                    destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
-                    destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
-                    destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                        destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
+                        destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
+                        destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                    }
                 }
 
                 new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position, Spacemap, false, false, destroyerPlayer);
             }
 
+            Spacemap.RemoveCharacter(this);
             CurrentHitPoints = 0;
             Deselection();
             InRangeCharacters.Clear();
             VisualModifiers.Clear();
-            Spacemap.RemoveCharacter(this);
 
             if (this is Pet pet)
                 pet.Deactivate(true, true);
@@ -225,12 +228,11 @@ namespace Ow.Game.Objects
                         if (character is Player)
                         {
                             var otherPlayer = character as Player;
-                            player.SendCommand(otherPlayer.GetShipCreateCommand(player.RankId == 21 ? true : false, relationType, sameClan, (EventManager.JackpotBattle.Active && player.Spacemap == EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap == EventManager.JackpotBattle.Spacemap)));
+                            player.SendCommand(otherPlayer.GetShipCreateCommand(player.RankId == 21 ? true : false, relationType, sameClan, (EventManager.JackpotBattle.InActiveEvent(player) && EventManager.JackpotBattle.InActiveEvent(otherPlayer))));
 
-                            if (otherPlayer.Title != "" && !EventManager.JackpotBattle.Active && player.Spacemap != EventManager.JackpotBattle.Spacemap && otherPlayer.Spacemap != EventManager.JackpotBattle.Spacemap)
+                            if (otherPlayer.Title != "" && (!EventManager.JackpotBattle.InActiveEvent(player) && !EventManager.JackpotBattle.InActiveEvent(otherPlayer)))
                                 player.SendPacket($"0|n|t|{otherPlayer.Id}|1|{otherPlayer.Title}");
 
-                            player.CheckEffects(otherPlayer);
                             player.SendPacket(otherPlayer.DroneManager.GetDronesPacket());
                             player.SendCommand(DroneFormationChangeCommand.write(otherPlayer.Id, DroneManager.GetSelectedFormationId(otherPlayer.Settings.InGameSettings.selectedFormation)));
                         }
@@ -283,22 +285,6 @@ namespace Ow.Game.Objects
                 Out.WriteLine("RemoveInRangeCharacter void exception " + e, "Character.cs");
                 return false;
             }
-        }
-
-        public void CheckEffects(Player otherPlayer)
-        {
-            var player = this as Player;
-
-            foreach (var skill in otherPlayer.Storage.Skills.Values)
-                player.SendPacket($"0|SD|{(skill.Active ? "A" : "D")}|R|{skill.Id}|{otherPlayer.Id}");
-
-            //player.SendPacket($"0|n|MAL|{(otherPlayer.Storage.underPLD8 ? "SET" : "REM")}|{otherPlayer.Id}");
-            player.SendPacket($"0|n|fx|{(otherPlayer.Storage.underR_IC3 ? "start" : "end")}|ICY_CUBE|{otherPlayer.Id}");
-
-            if (otherPlayer.Storage.underDCR_250Time < otherPlayer.Storage.underSLM_01Time || !otherPlayer.Storage.underSLM_01)
-                player.SendPacket($"0|n|fx|{(otherPlayer.Storage.underDCR_250 ? "start" : "end")}|SABOTEUR_DEBUFF|{otherPlayer.Id}");
-            else if (otherPlayer.Storage.underSLM_01Time < otherPlayer.Storage.underDCR_250Time || !otherPlayer.Storage.underDCR_250)
-                player.SendPacket($"0|n|fx|{(otherPlayer.Storage.underSLM_01 ? "start" : "end")}|SABOTEUR_DEBUFF|{otherPlayer.Id}");
         }
 
         public void Heal(int amount, int healerId = 0, HealType healType = HealType.HEALTH)

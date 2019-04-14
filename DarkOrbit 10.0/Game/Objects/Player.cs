@@ -12,6 +12,8 @@ using Ow.Game.Events;
 using Ow.Game.Objects.Stations;
 using Ow.Game.Objects.Players;
 using Ow.Net.netty;
+using System.Threading.Tasks;
+using Ow.Managers.MySQLManager;
 
 namespace Ow.Game.Objects
 {
@@ -155,7 +157,7 @@ namespace Ow.Game.Objects
 
         public void OnPlayerMovement()
         {
-            if (Storage.Jumping) return;
+            if (Spacemap == null || Storage.Jumping) return;
             Spacemap.CheckCollectables(this);
             Spacemap.CheckMines(this);
             bool inRadiationChanged = Spacemap.CheckRadiation(this);
@@ -200,6 +202,9 @@ namespace Ow.Game.Objects
 
                 if (Storage.underR_IC3)
                     value -= value;
+
+                if (Storage.Lightning)
+                    value += Maths.GetPercentage(value, 30);
 
                 value += Storage.SpeedBoost;
 
@@ -350,7 +355,7 @@ namespace Ow.Game.Objects
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.MOTH_FORMATION:
-                        return 0.15; // 0.2
+                        return 0.13; // 0.2
                     case DroneManager.DOUBLE_ARROW_FORMATION:
                         return 0.1;
                     case DroneManager.PINCER_FORMATION:
@@ -397,7 +402,7 @@ namespace Ow.Game.Objects
                         value -= Maths.GetPercentage(value, 20);
                         break;
                 }
-                value = Ship.GetLaserDamageBoost(value);
+                value = Ship.GetLaserDamageBoost(value, FactionId, SelectedCharacter.FactionId);
                 return value;
             }
         }
@@ -486,6 +491,18 @@ namespace Ow.Game.Objects
             Settings.InGameSettings.currentConfig = CurrentConfig;
             DroneManager.UpdateDrones();
             UpdateStatus();
+        }
+
+        public void SetTitle(string title, bool permanent = false)
+        {
+            Title = title;
+            var packet = Title != "" ? $"0|n|t|{Id}|1|{Title}" : $"0|n|trm|{Id}";
+            SendPacket(packet);
+            SendPacketToInRangePlayers(packet);
+
+            if (permanent)
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '{Title}' WHERE userID = {Id}");
         }
 
         public byte[] GetBeaconCommand()
@@ -666,25 +683,28 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void ChangeShip(int shipId)
+        public async void ChangeShip(int shipId)
         {
             var player = this;
+            var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
+
             if (player.Storage.Jumping) return;
 
             player.Storage.Jumping = true;
 
-            var pet = player.Pet.Activated;
-            var gearId = player.Pet.GearId;
             player.Pet.Deactivate(true);
-
             player.SkillManager.DisableAllSkills();
             player.Ship = GameManager.GetShip(shipId);
             player.SkillManager.InitiateSkills();
+
+            player.Spacemap.RemoveCharacter(player);
             player.CurrentInRangePortalId = -1;
             player.Deselection();
-            player.Spacemap.RemoveCharacter(player);
             player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
+
+            await Task.Delay(Portal.JUMP_DELAY);
 
             player.Spacemap.AddAndInitPlayer(player);
             player.Storage.Jumping = false;
@@ -696,25 +716,26 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void Jump(int mapId, Position targetPosition)
+        public async void Jump(int mapId, Position targetPosition)
         {
             var player = this;
+            var pet = player.Pet.Activated;
+            var gearId = player.Pet.GearId;
 
             player.Storage.Jumping = true;
 
-            var pet = player.Pet.Activated;
-            var gearId = player.Pet.GearId;
             player.Pet.Deactivate(true);
-
+            player.Spacemap.RemoveCharacter(player);
             player.CurrentInRangePortalId = -1;
             player.Deselection();
-            player.Spacemap.RemoveCharacter(player);
             player.Storage.InRangeAssets.Clear();
             player.InRangeCharacters.Clear();
             player.SetPosition(targetPosition);
 
             var targetSpacemap = GameManager.GetSpacemap(mapId);
             player.Spacemap = targetSpacemap;
+
+            await Task.Delay(Portal.JUMP_DELAY);
 
             player.Spacemap.AddAndInitPlayer(player);
             player.Storage.Jumping = false;

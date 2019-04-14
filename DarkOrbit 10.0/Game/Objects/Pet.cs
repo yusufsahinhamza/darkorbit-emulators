@@ -207,8 +207,8 @@ namespace Ow.Game.Objects
                     Owner.SendPacket("0|PET|D");
                     Activated = false;
 
-                    InRangeCharacters.Clear();
                     Spacemap.RemoveCharacter(this);
+                    InRangeCharacters.Clear();
                     Program.TickManager.RemoveTick(this);
                 }
                 else

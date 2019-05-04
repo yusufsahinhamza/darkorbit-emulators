@@ -1,0 +1,53 @@
+package simulator.netty.handlers;
+
+import mysql.QueryManager;
+import net.game_server.GameServerClientConnection;
+import net.game_server.GameSession;
+import simulator.map_entities.movable.Player;
+import simulator.netty.ClientCommand;
+import utils.Log;
+
+/**
+Created by LEJYONER on 15/09/2017.
+*/
+
+public class CollectBoxRequestHandler
+        implements ICommandHandler {
+
+    private final GameServerClientConnection mGameServerClientConnection;
+    
+    public CollectBoxRequestHandler(final GameServerClientConnection pGameServerClientConnection,
+                                          final ClientCommand pCollectBoxRequest) {
+        this.mGameServerClientConnection = pGameServerClientConnection;
+    }
+
+    @Override
+    public void execute() {
+        Log.pt("COLLECT BOX REQUEST HANDLER");
+        final GameSession gameSession = this.mGameServerClientConnection.getGameSession();
+        final Player player = gameSession.getPlayer();      
+        if (gameSession != null) { 
+        	if(player != null) {
+        		String boxHash = player.boxHash;
+        		int alienID = player.alienID;
+        		
+        		if(boxHash != "" && alienID != 0) {
+		        	player.sendPacketToBoundSessions("0|2|" + boxHash + "");
+		        	if(alienID == 79) {
+			        	player.sendPacketToBoundSessions("0|A|STD|1 Indoctrine-Oil aldın.");
+			        	player.getAccount().changeIOil(1);
+		        	} else if (alienID == 80) {
+			        	player.sendPacketToBoundSessions("0|A|STD|2 Indoctrine-Oil aldın.");
+			        	player.getAccount().changeIOil(2);
+		        	} else if (alienID == 35) {
+			        	player.sendPacketToBoundSessions("0|A|STD|4 Indoctrine-Oil aldın.");
+			        	player.getAccount().changeIOil(4);
+		        	}
+		        	QueryManager.saveAccount(player.getAccount());
+		        	player.alienID = 0;
+		        	player.boxHash = "";
+        		}
+        	}
+        }
+    }
+}

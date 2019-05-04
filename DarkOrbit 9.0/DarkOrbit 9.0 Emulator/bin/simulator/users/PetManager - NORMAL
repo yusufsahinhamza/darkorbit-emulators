@@ -1,0 +1,553 @@
+package simulator.users;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import simulator.map_entities.movable.MovableMapEntity;
+import simulator.map_entities.movable.Player;
+import simulator.netty.clientCommands.PetGearTypeModule;
+import simulator.netty.serverCommands.AttackLaserRunCommand;
+import simulator.netty.serverCommands.ClanRelationModule;
+import simulator.netty.serverCommands.MoveCommand;
+import simulator.netty.serverCommands.PetActivationCommand;
+import simulator.netty.serverCommands.PetGearAddCommand;
+import simulator.netty.serverCommands.PetGearRemoveCommand;
+import simulator.netty.serverCommands.PetHeroActivationCommand;
+import simulator.netty.serverCommands.PetStatusCommand;
+import simulator.netty.serverCommands.ShipDestroyCommand;
+import simulator.netty.serverCommands.ShipRemoveCommand;
+import simulator.netty.serverCommands.UpdateMenuItemCooldownGroupTimerCommand;
+import simulator.netty.serverCommands.class_365;
+import simulator.system.clans.Diplomacy;
+import utils.MathUtils;
+
+/**
+ Created by LEJYONER on 25/06/2017.
+ */
+
+public class PetManager
+        extends AbstractAccountInternalManager {
+
+    public static final String PET_OPEN               = "equipment_extra_cpu_sle-01";
+    public static final String PET_PASSIVE_MODE       = "equipment_extra_cpu_sle-02";
+    public static final String PET_GUARD_MODE         = "equipment_extra_cpu_sle-03";
+    public static final String PET_REPAIR_MODULE      = "equipment_extra_cpu_sle-04";
+    public static final String PET_KAMIKAZE_MODULE    = "equipment_extra_hmd-07";
+    
+    public static final List<String> petCategory = Arrays.asList(/**PET_OPEN, PET_PASSIVE_MODE, PET_GUARD_MODE, PET_REPAIR_MODULE, PET_KAMIKAZE_MODULE*/);
+    
+    private long mRepairModuleCooldownEndTime    = 0L;
+    private long mKamikazeModuleCooldownEndTime  = 0L;
+    private long mRepairModuleLastRepairTime     = 0L;
+    private long mRepairModuleEffectFinishTime   = 0L;
+    private long mLastDamageTime         = 0L;
+    
+    private static final int   PET_REPAIR_MODULE_COOLDOWN     = 15000;
+    private static final int   PET_REPAIR_MODULE_DURATION     = 5000;
+    private static final int   PET_KAMIKAZE_MODULE_COOLDOWN   = 30000;
+    
+    private String  mPetsJSON;
+    private boolean mPetOpened                         = false;
+    private boolean mPassiveModeActived                = true;
+    private boolean mGuardModeActived                = false;
+    private boolean mKamikazeModuleActived             = false;
+    private boolean mRepairModuleEffectActivated    = false;
+    private int mPetID;
+    private int X;
+    private int Y;
+    
+    public PetManager(final Account pAccount) {
+        super(pAccount);
+        Random randomGenerator = new Random();
+		this.setPetID(1 + randomGenerator.nextInt(999999999));
+    }
+    
+    public void onTickCheckMethods() {
+    	this.checkKamikazeModule();
+        this.checkRepairModule();
+        this.checkGuardModule();
+        this.generateNextMovement();
+    }       
+    
+    public void checkKamikazeModule() {
+    	final Player player = this.getAccount().getPlayer();
+    	final long currentTime = System.currentTimeMillis();
+    	if(player.getLockedTarget() instanceof Player) {
+    		final Player lockedplayer = (Player) player.getLockedTarget();
+    	if(this.getKamikazeModuleActived() == true) {
+    		if(player.getLockedTarget() != null) { 
+    			if(player.getLockedTarget().getMapEntityId() != this.getPetID()) { 
+    				if(!player.getLockedTarget().isInSecureZone()) {    					  					
+    		            for (final MovableMapEntity thisMapEntity : player.getInRangeMovableMapEntities()) {
+    		            	if(thisMapEntity instanceof Player) {
+    		            		final Player otherPlayers = (Player) thisMapEntity;
+    		            		if(otherPlayers.getLaserAttack().isAttackInProgress() && otherPlayers.getLockedTarget() == player) {    		            			   		            				    		            				
+    		            		        if (MathUtils.hypotenuse(X - lockedplayer.getCurrentPositionX(),
+    		            		        		Y - lockedplayer.getCurrentPositionY()) >=
+    		            		            100) {    	
+    		            		        	
+    		            		            for (MovableMapEntity inRangeEntity : this.getAccount().getPlayer().getInRangeMovableMapEntities()) {
+    		            		            	if(inRangeEntity instanceof Player) {
+    		            		            		((Player) inRangeEntity).sendCommandToBoundSessions(new MoveCommand(this.getPetID(), lockedplayer.getCurrentPositionX(), lockedplayer.getCurrentPositionY(), this.getDuration()));   
+    		            		            	}               		           	
+    		            		            }
+    		            		            player.sendCommandToBoundSessions(new MoveCommand(this.getPetID(), lockedplayer.getCurrentPositionX(), lockedplayer.getCurrentPositionY(), this.getDuration())); 
+	 	        	
+    		            		        	this.UpdateXy(lockedplayer.getCurrentPositionX(), lockedplayer.getCurrentPositionY());	        	
+    		            				} else {
+    		            		        if (MathUtils.hypotenuse(X - lockedplayer.getCurrentPositionX(),
+    		            		        		Y - lockedplayer.getCurrentPositionY()) <=
+    		            		            75) {
+    		            		        	player.getAccount().getPetManager().setKamikazeModuleActived(false);
+    		            		        	player.getAccount().getPetManager().setPetOpened(false);
+    		            		        	
+    		            		            for (MovableMapEntity inRangeEntity : this.getAccount().getPlayer().getInRangeMovableMapEntities()) {
+    		            		            	if(inRangeEntity instanceof Player) {
+    		            		            		((Player) inRangeEntity).sendCommandToBoundSessions(new ShipDestroyCommand(this.getPetID(), 1));  
+    		            		            	}               		           	
+    		            		            }
+    		            		            player.sendCommandToBoundSessions(new ShipDestroyCommand(this.getPetID(), 1));  
+    		            		            
+    		            		            this.setKamikazeModuleCooldownEndTime(currentTime + PET_KAMIKAZE_MODULE_COOLDOWN);
+    		            		            player.sendPacketToBoundSessions("0|PET|D");
+    		            		            
+    		            		            for (final MovableMapEntity movableMapEntity : player.getInRangeMovableMapEntities()) {
+    		            		                	if(movableMapEntity instanceof Player) {
+    		            		                	if(((Player) movableMapEntity).canBeShoot()) {
+    		            		                    if (movableMapEntity instanceof Player) {
+    		            		                        final Player targetPlayer = (Player) movableMapEntity;
+    		            		                        if(targetPlayer.getCurrentHitPoints() < 75000) {
+    		            		                        final int damage = 75000;
+    		            		                        targetPlayer.addHitPointsDamage(player, damage);
+    		            		                    	if(targetPlayer.getCurrentHitPoints() <= 0 || damage >= targetPlayer.getCurrentHitPoints()) {
+    		            		                    		targetPlayer.destroy(player);
+    		            		                    	   }
+    		            		                        } else {
+    		            			                        final int damage = (int) (0.29 * targetPlayer.getCurrentHitPoints());
+    		            			                        targetPlayer.addHitPointsDamage(player, damage);
+    		            			                    	if(targetPlayer.getCurrentHitPoints() <= 0 || damage >= targetPlayer.getCurrentHitPoints()) {
+    		            			                    		targetPlayer.destroy(player);
+    		            			                    	}
+    		            		                         } 
+    		            		                      }
+    		            		                   }
+    		            		                }
+    		            		             }
+    		            		          } 
+    		            		       }
+    		            				    		            				    		            				    		            				    		            			
+    		            		} else {
+    		            			player.getAccount().getPetManager().setKamikazeModuleActived(false);
+    		            		}
+    		            		
+    		            	   }
+    		            	}   		                
+    	} else {
+    		player.getAccount().getPetManager().setKamikazeModuleActived(false);
+    	}
+     } else {
+ 		player.getAccount().getPetManager().setKamikazeModuleActived(false);
+ 	}
+    	} else {
+    		player.getAccount().getPetManager().setKamikazeModuleActived(false);
+    	}
+      }
+    }
+    }
+    
+    public int getPetID() {
+    	return this.mPetID;
+    }
+    
+    public void setPetID(final int pPetID) {
+    	this.mPetID = pPetID;
+    }
+    
+    private int getDuration() {
+        final int distanceX = this.getAccount().getPlayer().getCurrentPositionX() - X;
+        final int distanceY = this.getAccount().getPlayer().getCurrentPositionY() - Y;
+
+        //distance to travel
+        final double distance = MathUtils.hypotenuse(distanceX, distanceY);
+
+        return (int) (1000.0D * distance / this.getAccount().getPlayer().getSpeed());
+    }
+    
+    private void generateNextMovement() { 
+    	
+    	if(!this.getKamikazeModuleActived()) {
+    		if(this.getPetOpened()) {
+    	final Player player = this.getAccount().getPlayer();   
+        int petx = player.getCurrentPositionX() + 100;
+        int pety = player.getCurrentPositionY() - 100;  
+        
+        for (MovableMapEntity inRangeEntity : this.getAccount().getPlayer().getInRangeMovableMapEntities()) {
+        	if(inRangeEntity instanceof Player) {
+        		((Player) inRangeEntity).sendCommandToBoundSessions(new MoveCommand(this.getPetID(), petx, pety, this.getDuration()));  
+        	}               		           	
+        }
+        player.sendCommandToBoundSessions(new MoveCommand(this.getPetID(), petx, pety, this.getDuration()));
+        
+    	this.UpdateXy(petx, pety);
+    	}
+      }
+    }
+    
+    private void UpdateXy(int a, int b) {
+        int newPosX = a;
+        int newPosY = b;
+        int oldx = X;
+        int oldy = Y;
+        int distance = (int) Math.sqrt(Math.pow(oldx - newPosX, 2.0D) + Math.pow(oldy - newPosY, 2.0D));
+        int speed = (int) (300 * 0.37D);
+        int dir = (int) (Math.atan2(newPosY - oldy, newPosX - oldx) * 180.0D / (Math.PI));
+
+        if (distance >= speed)
+        {
+            oldx += (speed * Math.cos((Math.PI * dir) / 180));
+            oldy += (speed * Math.sin((Math.PI * dir) / 180));
+            X = oldx;
+            Y = oldy;
+        }
+        else
+        {
+            X = newPosX;
+            Y = newPosY;
+        }
+    }
+    
+    public void sendPetOpen() { 
+    	/**
+    	final Player player = this.getAccount().getPlayer();
+    	if(this.getAccount().isAdmin() || this.getAccount().havePet()) {
+    	if(this.getPetOpened() == false) {
+    		
+    		player.sendCommandToBoundSessions(new PetStatusCommand(this.getPetID(), 15, 999, 999, 999, 999, 999, 999, 999, 999, 999, this.getAccount().getPetName() != null ? this.getAccount().getPetName() : "PET.10"));
+    		player.sendCommandToBoundSessions(new PetGearAddCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.PASSIVE), 0, 0, true));
+    		player.sendCommandToBoundSessions(new PetGearAddCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.GUARD), 0, 0, true));
+    		player.sendCommandToBoundSessions(new PetGearAddCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.COMBO_SHIP_REPAIR), 0, 0, true));
+    		player.sendCommandToBoundSessions(new PetGearAddCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.KAMIKAZE), 0, 0, true));
+    		player.sendCommandToBoundSessions(new PetHeroActivationCommand(this.getAccount().getUserId(), this.getAccount().getPetManager().getPetID(), (short) 22, 3, this.getAccount().getPetName() != null ? this.getAccount().getPetName() : "PET.10", (short)this.getAccount().getFactionId(), this.getAccount().getClanId(), 15, this.getAccount().getClanTag(), player.getCurrentPositionX(), player.getCurrentPositionY(), 300, new class_365(class_365.DEFAULT)));           
+            
+            for (final MovableMapEntity thisMapEntity : player.getInRangeMovableMapEntities()) {
+            	if(thisMapEntity instanceof Player) {
+            		final Player otherPlayer = (Player) thisMapEntity;   
+            		
+                    short relationType = 0;
+                    short sameClan = 0;
+            		
+                    if(this.getAccount().getClan() != null && otherPlayer.getAccount().getClan() != null){
+                        List<Diplomacy> dips = player.getAccount().getClan().getDiplomacies();
+                        int userCLAN = otherPlayer.getAccount().getClanId();
+                        for(Diplomacy dip : dips){
+                            if(dip.clanID1 == userCLAN || dip.clanID2 == userCLAN){
+                            	relationType = (short) dip.relationType;
+                            }
+                        }
+                    }
+                    if(otherPlayer.getAccount().getClanId() == this.getAccount().getClanId()
+                            && player.getAccount().getClanId() != 0 && player.getAccount().getClanId() != -1){
+                    	relationType = (short) 1;
+                    	sameClan = (short) 1;
+                    }            		            		
+            		          		
+            		otherPlayer.sendCommandToBoundSessions(new PetActivationCommand(player.getAccount().getUserId(), this.getPetID(), 22, 3, this.getAccount().getPetName() != null ? this.getAccount().getPetName() : "PET.10", this.getAccount().getFactionId(), this.getAccount().getClanId(), 15, this.getAccount().getClanTag(), new ClanRelationModule(relationType), player.getCurrentPositionX(), player.getCurrentPositionY(), 300, false, true, new class_365(sameClan))); 
+            	}
+                        
+        }
+            if(player.getAccount().isCloaked()) {
+            	final String cloakPacketForPet = "0|n|INV|" + player.getAccount().getPetManager().getPetID() + "|1";
+            	player.getAccount().getPlayer().sendPacketToBoundSessions(cloakPacketForPet);
+            	player.getAccount().getPlayer().sendPacketToInRange(cloakPacketForPet);
+            }
+            
+            
+    	this.setPetOpened(true);
+    	final String petOpenedMessage = "0|A|STM|msg_pet_activated";
+        player.sendPacketToBoundSessions(petOpenedMessage);
+    	} else if (this.getPetOpened() == true) {    		
+    		
+            for (final MovableMapEntity thisMapEntity : player.getInRangeMovableMapEntities()) {
+            	if(thisMapEntity instanceof Player) {
+                    final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(this.getPetID());
+                    ((Player) thisMapEntity).sendCommandToBoundSessions(shipRemoveCommand); 
+                    player.sendCommandToBoundSessions(shipRemoveCommand); 
+            	}
+            }
+            
+    		this.setPetOpened(false);
+        	final String petClosedMessage = "0|A|STM|msg_pet_deactivated";
+            player.sendPacketToBoundSessions(petClosedMessage);
+            this.setPassiveModeActived(true);
+     //       this.setRepairModuleEffectFinishTime(0);
+            player.sendPacketToBoundSessions("0|PET|D");
+    	}
+    	} else {
+        	final String petOpenedMessage = "0|A|STD|Bir P.E.T.'e sahip değilsin!";
+            player.sendPacketToBoundSessions(petOpenedMessage);
+    	}
+    	*/
+    }
+    
+    public void sendPassiveMode() {
+    	final Player player = this.getAccount().getPlayer();
+    	if(this.getPetOpened() == true) {
+    		    this.setPassiveModeActived(true);
+    	    	final String petNowOnPasiveMode = "0|A|STD|Pasif mod etkinleştirildi";
+    	        player.sendPacketToBoundSessions(petNowOnPasiveMode);
+    	        this.setGuardModeActived(false);
+    	} else {
+        	final String petDontActive = "0|A|STD|PET'in aktif değil!";
+            player.sendPacketToBoundSessions(petDontActive);
+    	}
+    }
+    
+    public void sendGuardMode() {
+    	final Player player = this.getAccount().getPlayer();
+    	if(this.getPetOpened() == true) {
+    		this.setPassiveModeActived(false);
+        	final String petDontActive = "0|A|STM|msg_pet_guard_mode_activated";
+            player.sendPacketToBoundSessions(petDontActive);          
+            this.setGuardModeActived(true);       	
+    	} else {
+        	final String petDontActive = "0|A|STD|PET'in aktif değil!";
+            player.sendPacketToBoundSessions(petDontActive);
+    	}
+    	
+    }
+    
+    public AttackLaserRunCommand createAttackLaserRunCommand() {
+    	final Player player = this.getAccount().getPlayer();
+        return new AttackLaserRunCommand(this.getPetID(), player.getLockedTarget().getMapEntityId(),
+        		                         player.getLaserAttack().getSelectedLaser(), true, false);
+    }
+    
+    public void sendRepairModule() {
+        final long currentTime = System.currentTimeMillis();
+        final Player player = this.getAccount().getPlayer();
+        if (currentTime - this.getRepairModuleCooldownEndTime() >= 0) {
+        	if(this.getPetOpened() == true) {
+        		if (player.getCurrentHitPoints() != player.getMaximumHitPoints()) {
+        		if ((currentTime - player.getLastDamagedTime()) >= 10000) {
+        	player.sendCommandToBoundSessions(new PetGearRemoveCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.COMBO_SHIP_REPAIR), 0, 0));
+        	player.sendCommandToBoundSessions(new PetGearAddCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.COMBO_SHIP_REPAIR), 0, 0, false));
+        	this.setRepairModuleEffectActivated(true);
+        	this.setRepairModuleEffectFinishTime(currentTime + PET_REPAIR_MODULE_DURATION);
+            this.setRepairModuleCooldownEndTime(currentTime + PET_REPAIR_MODULE_DURATION + PET_REPAIR_MODULE_COOLDOWN);
+            player.sendCommandToBoundSessions(new UpdateMenuItemCooldownGroupTimerCommand(
+                    player.getAccount().getAmmunitionManager().getCooldownType(PET_REPAIR_MODULE),
+                    player.getAccount().getAmmunitionManager().getItemTimerState(""), PET_REPAIR_MODULE_DURATION,
+                    PET_REPAIR_MODULE_DURATION));
+        		} else {
+                	final String petRepairModuleWarning = "0|A|STD|Alınan son hasardan 10 saniye sonra Gemi Tamiri kullanılabilir!";
+                    player.sendPacketToBoundSessions(petRepairModuleWarning);
+        		}
+        	  }
+        	} else {
+            	final String petDontActive = "0|A|STD|PET'in aktif değil!";
+                player.sendPacketToBoundSessions(petDontActive);
+        	}
+        }
+    }
+    
+    public void sendKamikazeModule() {
+        final long currentTime = System.currentTimeMillis();
+        final Player player = this.getAccount().getPlayer();
+        if (currentTime - this.getKamikazeModuleCooldownEndTime() >= 0) {
+        	if(this.getPetOpened() == true) {
+        		if(player.getLockedTarget() != null) {
+        			if((currentTime - player.getLastDamagedTime()) >= 0) {
+        				this.setKamikazeModuleActived(true);
+        		        }
+        			} else {
+                    	final String petSelectAnyEnemy = "0|A|STD|Kamikaze patlatmak için bir düşman seç!";
+                        player.sendPacketToBoundSessions(petSelectAnyEnemy);
+        			}
+        		} else {
+                	final String petDontActive = "0|A|STD|PET'in aktif değil!";
+                    player.sendPacketToBoundSessions(petDontActive);
+            	}
+        	} else {
+            	final String petKamikazeCooldownLoading = "0|A|STD|Kamikaze modülünün yükleme süresi bitmedi!";
+                player.sendPacketToBoundSessions(petKamikazeCooldownLoading);
+        	}
+        }
+    
+    public void checkGuardModule() {
+        final Player player = this.getAccount()
+                .getPlayer();
+        final long currentTime = System.currentTimeMillis();
+    	if(this.getGuardModeActived()) {
+    	if(player.getLaserAttack().isAttackInProgress()) {
+    		if ((currentTime - this.getLastDamageTime()) >= 1000) {
+                if (MathUtils.hypotenuse(
+                        player.getCurrentPositionX() - player.getLockedTarget().getCurrentPositionX(),
+                        player.getCurrentPositionY() - player.getLockedTarget().getCurrentPositionY()) <=
+                    700) {
+            final AttackLaserRunCommand laserRunCommand = this.createAttackLaserRunCommand();
+            player.sendCommandToBoundSessions(laserRunCommand);
+            player.sendCommandToInRange(laserRunCommand);
+            
+            if(player.getLockedTarget() instanceof Player) {
+                final Player lockedPlayer = (Player) player.getLockedTarget();
+	            if(!lockedPlayer.canBeShoot()) {
+		            final int damage = 0;
+		            player.getLockedTarget().addHitPointsDamage(player, damage);
+	            } else {
+	                final int damage = 5000;
+	                player.getLockedTarget().addHitPointsDamage(player, damage);
+	            }
+            } else {
+                final int damage = 10000;
+                player.getLockedTarget().addHitPointsDamage(player, damage);	
+            }
+            this.setLastDamageTime(currentTime);
+            
+            final String cloakPacket = "0|n|INV|" + this.getPetID() + "|0";
+            player.sendPacketToBoundSessions(cloakPacket);
+            player.sendPacketToInRange(cloakPacket);
+                }
+            
+    		}
+    	}
+    	}
+    }
+ 
+    public void checkRepairModule() {
+        final Player player = this.getAccount()
+                                  .getPlayer();
+        final long currentTime = System.currentTimeMillis();
+        if (this.isRepairModuleActivated()) {
+        	if(this.getPetOpened() == true) {
+            if ((currentTime - this.getRepairModuleLastRepairTime()) >= 1000) {
+                int heal = 20000;   
+                player.healEntity(heal, player.HEAL_HITPOINTS);
+                this.setRepairModuleLastRepairTime(currentTime);
+          }
+        }
+      } else if (this.isRepairModuleEffectActivated()) {
+    	  player.sendCommandToBoundSessions(new PetGearRemoveCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.COMBO_SHIP_REPAIR), 0, 0));
+    	  player.sendCommandToBoundSessions(new PetGearAddCommand(new simulator.netty.serverCommands.PetGearTypeModule(PetGearTypeModule.COMBO_SHIP_REPAIR), 0, 0, true));
+          player.sendCommandToBoundSessions(new UpdateMenuItemCooldownGroupTimerCommand(
+                  player.getAccount().getAmmunitionManager().getCooldownType(PET_REPAIR_MODULE),
+                  player.getAccount().getAmmunitionManager().getItemTimerState(PET_REPAIR_MODULE), PET_REPAIR_MODULE_COOLDOWN,
+                  PET_REPAIR_MODULE_COOLDOWN));
+    	  this.setRepairModuleEffectActivated(false);
+      }
+    }
+    
+    public int getPetX() {
+    	return this.X;
+    }
+    
+    public int getPetY() {
+    	return this.Y;
+    }
+    
+    public long getLastDamageTime() {
+        return mLastDamageTime;
+    }
+
+    public void setLastDamageTime(final long pLastDamageTime) {
+    	this.mLastDamageTime = pLastDamageTime;
+    }
+    
+    public boolean isRepairModuleEffectActivated() {
+        return mRepairModuleEffectActivated;
+    }
+
+    public void setRepairModuleEffectActivated(final boolean pRepairModuleEffectActivated) {
+        mRepairModuleEffectActivated = pRepairModuleEffectActivated;
+    }
+    
+    public boolean getKamikazeModuleActived() {
+    	return this.mKamikazeModuleActived;
+    }
+    
+    public void setKamikazeModuleActived(final boolean pKamikazeModuleActived)
+    {
+    	this.mKamikazeModuleActived = pKamikazeModuleActived;
+    }
+    
+    private boolean isRepairModuleActivated() {
+        return (System.currentTimeMillis() - this.getRepairModuleEffectFinishTime()) < 0;
+    }
+    
+    public long getRepairModuleEffectFinishTime() {
+        return this.mRepairModuleEffectFinishTime;
+    }
+
+    public void setRepairModuleEffectFinishTime(final long pRepairModuleEffectFinishTime) {
+        this.mRepairModuleEffectFinishTime = pRepairModuleEffectFinishTime;
+    }
+    
+    public long getRepairModuleLastRepairTime() {
+        return this.mRepairModuleLastRepairTime;
+    }
+
+    public void setRepairModuleLastRepairTime(final long pRepairModuleLastRepairTime) {
+    	this.mRepairModuleLastRepairTime = pRepairModuleLastRepairTime;
+    }
+      
+    public long getKamikazeModuleCooldownEndTime() {
+        return this.mKamikazeModuleCooldownEndTime;
+    }
+
+    public void setKamikazeModuleCooldownEndTime(final long pKamikazeModuleCooldownEndTime) {
+    	this.mKamikazeModuleCooldownEndTime = pKamikazeModuleCooldownEndTime;
+    }
+    
+    public long getRepairModuleCooldownEndTime() {
+        return this.mRepairModuleCooldownEndTime;
+    }
+
+    public void setRepairModuleCooldownEndTime(final long pRepairModuleCooldownEndTime) {
+    	this.mRepairModuleCooldownEndTime = pRepairModuleCooldownEndTime;
+    }
+    
+  //  public Pet getPet() {
+  //  	return this.mMyPet;
+  //  }
+    
+    public boolean getGuardModeActived() {
+    	return this.mGuardModeActived;
+    }
+    
+    public void setGuardModeActived(final boolean pGuardModeActived)
+    {
+    	this.mGuardModeActived = pGuardModeActived;
+    }
+    
+    public boolean getPassiveModeActived() {
+    	return this.mPassiveModeActived;
+    }
+    
+    public void setPassiveModeActived(final boolean pPassiveModeActived)
+    {
+    	this.mPassiveModeActived = pPassiveModeActived;
+    }
+    
+    public boolean getPetOpened() {
+    	return this.mPetOpened;
+    }
+    
+    public void setPetOpened(final boolean pPetOpened)
+    {
+    	this.mPetOpened = pPetOpened;
+    }
+    
+	@Override
+	public void setFromJSON(final String pSkillsJSON) {
+		this.mPetsJSON = pSkillsJSON;
+	}
+
+	@Override
+	public void setNewAccount() {
+	}
+
+	@Override
+	public String packToJSON() {
+		return this.mPetsJSON;
+	}
+}

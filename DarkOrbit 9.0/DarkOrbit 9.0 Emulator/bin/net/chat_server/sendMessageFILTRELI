@@ -1,0 +1,1102 @@
+    public void sendMessage(String message) {
+    	try{
+        if (!message.startsWith("/")) {
+            String packet = null;
+            
+            if (this.user.isAdmin()) {
+                packet = "j%" + room + "@" + this.user.getShipUsername() + "@" + message.substring(0, message.length() - 1);
+            } else if (this.user.isCm()) {
+                packet = "j%" + room + "@" + "[CM] "+this.user.getShipUsername()+"" + "@" + message.substring(0, message.length() - 1) + "@" + "3"; 
+            } else if (QueryManager.checkChatBanned(this.user.getUserId())) {          	
+                final GameSession pGameSession = GameManager.getGameSession(this.user.getUserId());
+          		    packet = "dq%You have been banned from the chat.#";
+                ServerUtils.sendChatAndUpdaterPackets(pGameSession.getChatClientConnection().socket, packet + "#");                        
+            } else {
+                //Normal user
+                packet = "a%" + room + "@" + this.user.getShipUsername() + "@" + message.substring(0, message.length() - 1);
+            }
+            
+            //Check if user is in a clan
+            if (!this.user.getClanTag()
+                          .equals("") && !this.user.isAdmin() && !this.user.isCm()) {
+                //User is in a clan, let's add the clan tag to the packet
+                packet += "@" + user.getClanTag();
+            }
+            
+            final GameSession pGameSession = GameManager.getGameSession(this.user.getUserId());           	
+                //Check if user is in same room
+                ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                if (chatClientConnection != null) {
+                    if (chatClientConnection.room == this.room) {
+                        //Send packet
+                    	if(!message.toLowerCase().contains("amk") 
+                    			 && !message.toLowerCase().contains("anne") 
+                    			 && !message.toLowerCase().contains("ananı")
+                    			 && !message.toLowerCase().contains("anneni")
+                    			 && !message.toLowerCase().contains("skm")
+                    			 && !message.toLowerCase().contains("sikeyim")
+                    			 && !message.toLowerCase().contains("sikem")
+                    			 && !message.toLowerCase().contains("oç")
+                    			 && !message.toLowerCase().contains("0c")
+                    			 && !message.toLowerCase().contains("oc")
+                    			 && !message.toLowerCase().contains("bacı")
+                    			 && !message.toLowerCase().contains("bacını")
+                    			 && !message.toLowerCase().contains("yarrak")
+                    			 && !message.toLowerCase().contains("aq")
+                    			 && !message.toLowerCase().contains("piç")
+                    			 && !message.toLowerCase().contains("pic")
+                    			 && !message.toLowerCase().contains("p!c")
+                    			 && !message.toLowerCase().contains("orospu")
+                    			 && !message.toLowerCase().contains("orospu çocuğu")
+                    			 && !message.toLowerCase().contains("evladı")
+                    			 && !message.toLowerCase().contains("göt")
+                    			 && !message.toLowerCase().contains("yarak")
+                    			 && !message.toLowerCase().contains("amq")
+                    			 && !message.toLowerCase().contains("sikerim")
+                    			 && !message.toLowerCase().contains("siktir")
+                    			 && !message.toLowerCase().contains("mk")) {
+                    	if(!QueryManager.checkChatBanned(this.user.getUserId())) {
+                    	//	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|ASDAS");
+                            for (final GameSession pGameSession1 : GameManager.getGameSessions()) {
+                                ChatClientConnectionFILTRELI chatClientConnection1 = pGameSession1.getChatClientConnection();
+                                if (chatClientConnection1 != null) {
+                                    if (chatClientConnection1.room == this.room) {
+                                    	ServerUtils.sendChatAndUpdaterPackets(chatClientConnection1.socket, packet + "#");
+                                    }
+                                }
+                            }
+                    		
+                    	}
+                    	} else {
+                    		                  		
+                    		final Player player = this.user.getPlayer();
+                    		player.sendPacketToBoundSessions("0|A|STD|Chat filtre sistemine yakalandınız!");
+                            String packet2 = "at%#";                          
+                            final GameSession pGameSession2 = GameManager.getGameSession(player.getAccount().getUserId());
+                            if(pGameSession2 != null){
+                                ChatClientConnectionFILTRELI chatClientConnection2 = pGameSession2.getChatClientConnection();
+                                if (chatClientConnection2 != null) {
+                                    if (chatClientConnection2.room == this.room) {
+                                        ServerUtils.sendChatAndUpdaterPackets(chatClientConnection2.socket, packet2 + "#");
+                                    }
+                                }
+                            }
+                            QueryManager.saveAccount(player.getAccount());
+                        	SimpleDateFormat tarihFormati = new SimpleDateFormat("dd MMMM yyyy / HH:mm", new Locale("tr"));
+                            String tarih = tarihFormati.format(new Date());
+                            final String Tarih = ""+tarih+"";
+                            QueryManager.saveBanned(Tarih, player, this.user.getPlayer(), "Chat filtresine yakalandı", false);
+                            
+                    	}
+                    }
+                } 
+            
+        	
+        } else {
+            message = message.substring(0, message.length() - 1);
+            try {
+                if (message.startsWith("/ban") && (this.user.isAdmin() || this.user.isCm())) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final String sebep = message.substring(4 + username.length(), message.length());
+                    
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                            if(player.getAccount().getShipUsername().equals(username)) { 
+                            	if(player.getAccount().getUserId() != this.user.getUserId()) {
+                        	player.sendPacketToBoundSessions("0|A|STD|Chatiniz Administrator tarafından yasaklandı!");
+                            String packet = "at%#";                        
+                            final GameSession pGameSession = GameManager.getGameSession(player.getAccount().getUserId());
+                            if(pGameSession != null){
+                                ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                                if (chatClientConnection != null) {
+                                    if (chatClientConnection.room == this.room) {
+                                        ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet + "#");
+                                    }
+                                }
+                            }
+                            Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncu chatten banlandı!");
+                            QueryManager.saveAccount(player.getAccount());
+                            
+                        	SimpleDateFormat tarihFormati = new SimpleDateFormat("dd MMMM yyyy / HH:mm", new Locale("tr"));
+                            String tarih = tarihFormati.format(new Date());
+                            final String Tarih = ""+tarih+"";
+                            QueryManager.saveBanned(Tarih, player, this.user.getPlayer(), sebep, false);
+                        }
+                      }
+                    }
+                  }
+                }
+                    
+                    String packet = "dq%"+ username +" yasaklandı.#";                           
+                    for(GameSession pGameSession : GameManager.getGameSessions()) {
+                    if(pGameSession != null){
+                        ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                        if (chatClientConnection != null) {
+                            if (chatClientConnection.room == this.room) {
+                                ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet + "#");
+                            }
+                        }
+                    }
+                 }
+                    
+              } else if (message.startsWith("/unban") && (this.user.isAdmin() || this.user.isCm())) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        		if(player.getAccount().getUserId() != this.user.getUserId()) {                         
+                            player.sendPacketToBoundSessions("0|A|STD|Chat banınız Administrator tarafından kaldırıldı!");                            
+                            Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncunun chat banı kaldırıldı!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                }
+              } else if (message.startsWith("/kick") && (this.user.isAdmin() || this.user.isCm())) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        		if(player.getAccount().getUserId() != this.user.getUserId()) {
+                            String packet = "as%#"; 
+                            final GameSession pGameSession = GameManager.getGameSession(player.getAccount().getUserId());
+                            if(pGameSession != null){
+                                ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                                if (chatClientConnection != null) {
+                                    if (chatClientConnection.room == this.room) {
+                                        ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet + "#");
+                                    }
+                                }
+                            }
+                            Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncu chatten kicklendi!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                }
+                    
+                    String packet = "dq%"+ username +" atıldı.#";                           
+                    for(GameSession pGameSession : GameManager.getGameSessions()) {
+                    if(pGameSession != null){
+                        ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                        if (chatClientConnection != null) {
+                            if (chatClientConnection.room == this.room) {
+                                ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet + "#");
+                            }
+                        }
+                    }
+                 }
+                    
+              } else if (message.startsWith("/w") && !QueryManager.checkChatBanned(this.user.getUserId())) {
+                	
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        		if(player.getAccount().getUserId() != this.user.getUserId()) {                       		
+                            final GameSession pGameSession = GameManager.getGameSession(this.user.getUserId());
+                            if(pGameSession != null){
+                                ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                                if (chatClientConnection != null) {
+                                    if (chatClientConnection.room == this.room) {
+                                        ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, "cw%" + username + "@ " + message.substring(4 + username.length(), message.length()) + "#");
+                                    }
+                                }
+                            }  
+                            final GameSession pGameSession2 = GameManager.getGameSession(player.getAccount().getUserId());
+                            if(pGameSession2 != null){
+                                ChatClientConnectionFILTRELI chatClientConnection = pGameSession2.getChatClientConnection();
+                                if (chatClientConnection != null) {
+                                    if (chatClientConnection.room == this.room) {
+                                        ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, "cv%" + this.user.getShipUsername() + "@ " + message.substring(4 + username.length(), message.length()) + "#");
+                                    }
+                                 }
+                              }   
+                           }
+                        }
+                     }
+                  }
+               } 	
+            } else if (message.startsWith("/başlık") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final String titleID = strings[2];
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        		this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+"'a "+titleID+" başlığı verildi!");
+                        	player.getAccount().setTitle(titleID);
+                        	final String packet = "0|n|t|" + player.getAccount().getUserId() + "|0|" + titleID;
+                            player.sendPacketToBoundSessions(packet);
+                            player.sendPacketToInRange(packet);
+                            Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncuya "+titleID+" başlığı verildi!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                }
+                else if(message.startsWith("/credits") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final int credits = Integer.parseInt(strings[2]);
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        	player.getAccount().changeCredits(credits);
+                        	player.sendPacketToBoundSessions("0|LM|ST|CRE|" + credits + "|" + player.getAccount()
+                                    .getCredits());
+                        	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+"'a "+credits+" credits verildi!");
+                        	
+                        	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncuya "+credits+" credits verildi!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/uridium") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final int uridium = Integer.parseInt(strings[2]);
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        	player.getAccount().changeUridium(uridium);
+                        	player.sendPacketToBoundSessions("0|LM|ST|URI|" + uridium + "|" + player.getAccount()
+                                    .getUridium());
+                        	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+"'a "+uridium+" uridium verildi!");
+                        	
+                        	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncuya "+uridium+" uridium verildi!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/premium") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final int premium = Integer.parseInt(strings[2]);
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        	if(premium == 1)
+                        	{
+                        		if(player.getAccount().isPremiumAccount())
+                        		{
+                        			Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncunun premium avantajları zaten aktif!");
+                        		}
+                        		else
+                        		{
+                        			player.getAccount().setPremiumAccount(true);
+                        			player.sendPacketToBoundSessions("0|A|STD|Premium avantajlarınız eklendi!");
+                        		Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncuya premium avantajları eklendi!");
+                        		}
+                        		
+                            	QueryManager.saveAccount(player.getAccount());
+                        	}
+                        	else
+                        	{
+                        		player.getAccount().setPremiumAccount(false);
+                        		player.sendPacketToBoundSessions("0|A|STD|Premium avantajlarınız kaldırıldı!");
+                        		Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncudan premium avantajları alındı!");
+                        		QueryManager.saveAccount(player.getAccount());
+                        	}
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/hasar") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final int hasar = Integer.parseInt(strings[2]);
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        	player.getAccount().getEquipmentManager().setDamageConfig1(hasar);
+                        	player.getAccount().getEquipmentManager().setDamageConfig2(hasar);
+                        	player.sendPacketToBoundSessions("0|A|STD|Geminize "+hasar+" hasar eklendi!");
+                        	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncuya "+hasar+" hasar eklendi!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/hız") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final int hiz = Integer.parseInt(strings[2]);
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        	player.getAccount().getEquipmentManager().setSpeedConfig1(hiz);
+                        	player.getAccount().getEquipmentManager().setSpeedConfig2(hiz);
+                        	player.sendCommandToBoundSessions(player.getSetSpeedCommand());
+                        	player.sendPacketToBoundSessions("0|A|STD|Geminize "+hiz+" hız eklendi!");
+                        	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncuya "+hiz+" hız eklendi!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/taşı") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final short mapID = Short.parseShort(strings[2]);
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        		this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+"' "+mapID+"' ID'li haritaya taşındı!");
+                                for(Alien al: player.getCurrentSpaceMap().getAllAliens()){
+                                    for (final MovableMapEntity movableMapEntity : al.getInRangeMovableMapEntities()) {
+                                        if (movableMapEntity instanceof Player) {
+                                            Player pl = ((Player) movableMapEntity);
+                                            if(pl.getAccount().getUserId() == player.getAccount().getUserId()){
+                                                al.setLockedTarget(null);
+                                            }
+                                        }
+                                    }
+                                }
+                                if(player.getAccount().getPetManager().getPetOpened() == true) {
+                                	player.getAccount().getPetManager().sendPetOpen();
+                                }
+                                for(MovableMapEntity inRangeEntity : player.getInRangeMovableMapEntities()) {
+                                	if(inRangeEntity instanceof Player) {
+                                		final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(player.getMapEntityId());
+                                		final Player otherPlayer = (Player) inRangeEntity;
+                                		otherPlayer.sendCommandToBoundSessions(shipRemoveCommand);
+                                		otherPlayer.removeInRangeMapEntity(player);
+                                	}
+                                }
+                                player.removeAllInRangeMapIntities();
+                                player.getCurrentSpaceMap()
+                                      .removePlayer(player.getMapEntityId());
+                                player.getMovement()
+                                      .setMovementInProgress(false);
+                                player.setPositionXY(0, 0);
+                                player.setCurrentSpaceMap(mapID);
+                                player.setCurrentInRangePortalId(DefaultAssignings.INVALID_ID);
+                                player.setJumping(false);
+                                GameManager.tryJump(player.getMapEntityId(), mapID);
+                                
+                        	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncu '"+mapID+"' ID'li haritaya taşındı!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/jpbattle") && this.user.isAdmin()) {
+                    for (int i = 10; i > 0; i--) {
+                        try {
+                        	ServerUtils.sendPacketToAllUsers("0|A|STD|Jackpot Battle {"+ i +"} saniye sonra başlayacaktır!");
+                            Thread.sleep(1000);                                          
+                        } catch (InterruptedException e) {
+                            Log.p("Server shutdown interrupted", e.getMessage());
+                        }
+                    }
+                    
+                    for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                     	final Account account = gameSessionAll.getAccount(); 
+                        if (account != null) {
+                            final Player player = account.getPlayer();
+                            if (player != null) {
+                                for(Alien al: player.getCurrentSpaceMap().getAllAliens()){
+                                    for (final MovableMapEntity movableMapEntity : al.getInRangeMovableMapEntities()) {
+                                        if (movableMapEntity instanceof Player) {
+                                            Player pl = ((Player) movableMapEntity);
+                                            if(pl.getAccount().getUserId() == player.getAccount().getUserId()){
+                                                al.setLockedTarget(null);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(player.getAccount().getUserId());
+                                for (MovableMapEntity inRangeEntity : player.getCurrentSpaceMap().getAllPlayers()) {
+                                	if(inRangeEntity != null) {
+                                		if(inRangeEntity instanceof Player) {
+                                        	Player inRangePlayers = (Player) inRangeEntity;
+                                        	inRangePlayers.sendCommandToBoundSessions(shipRemoveCommand);
+                                		}
+                                	}
+                                }
+                                
+                                if(player.getAccount().getPetManager().getPetOpened() == true) {
+                                	player.getAccount().getPetManager().sendPetOpen();
+                                }
+                                player.getCurrentSpaceMap()
+                            	      .removePlayer(player.getMapEntityId());
+                                player.getMovement()
+                            	      .setMovementInProgress(false);
+                                            if(player.getAccount().getFactionId() == 1) {
+                                            	player.setPositionXY(1000, 1000);
+                                            } else if (player.getAccount().getFactionId() == 2) {
+                                            	player.setPositionXY(19700, 1000);
+                                            } else if (player.getAccount().getFactionId() == 3) {
+                                            	player.setPositionXY(10000, 11300);
+                                            }
+                                player.setCurrentSpaceMap((short) 42);
+                                player.setCurrentInRangePortalId(-1);
+                                player.setJumping(false);
+                                try {
+            						Thread.sleep(250);
+            					} catch (InterruptedException e) {
+            					}
+                                GameManager.tryJump(player.getMapEntityId(), (short) 42);
+                                player.getAccount().getDroneManager().sendLastDroneFormationChange();
+                                player.getAccount().getDroneManager().sendDroneFormationChangeForPortal();
+                                //event içeriği son	
+                                    
+                            	Log.pt("Event başlatıldı!");
+                                QueryManager.saveAccount(player.getAccount());
+                            }
+                        }
+                    }                                 
+                } else if(message.startsWith("/patlat") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+
+                    for(GameSession account : GameManager.getGameSessions()){ 
+                    if (account != null) {
+                        final Player player = account.getPlayer();
+                        if (player != null) {
+                        	if(player.getAccount().getShipUsername().equals(username)) {
+                        		
+                        		this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+" patlatıldı!");
+                        		player.setDestroyed(true);
+                        		player.getLaserAttack().setAttackInProgress(false);
+                        		player.setLockedTarget(null);
+                        		
+                                if(player.getAccount().getPetManager().getPetOpened() == true) {
+                                	player.getAccount().getPetManager().sendPetOpen();
+                                }
+                                
+                                final SpaceMap spaceMap = SpaceMapStorage.getSpaceMap((short) 42);
+                                if(player.getCurrentSpaceMapId() == 42) {
+                                final int kalanOyuncu = (spaceMap.getAllPlayers().size()) - 1;
+                                final String geriSayim = "0|LM|ST|SLE|"+ kalanOyuncu;
+                                ServerUtils.sendPacketToAllUsers(geriSayim);
+                                }
+                                
+                                final ShipDestroyCommand shipDestroyCommand = new ShipDestroyCommand(player.getMapEntityId(), 1);
+                                player.sendCommandToBoundSessions(shipDestroyCommand);
+                                player.sendCommandToInRange(shipDestroyCommand);
+                                
+                                final Vector<KillScreenOptionModule> killScreenOptionModules = new Vector<>();
+                                final KillScreenOptionModule killScreenOptionModule =
+                                        new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.BASIC_REPAIR),
+                                                                   new PriceModule(PriceModule.URIDIUM, 0), true, 0,
+                                                                   new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
+                                                                                                       new ClientUITooltipTextFormatModule(
+                                                                                                               ClientUITooltipTextFormatModule.LOCALIZED),
+                                                                                                       new Vector<MessageWildcardReplacementModule>()),
+                                                                   new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
+                                                                                                       new ClientUITooltipTextFormatModule(
+                                                                                                               ClientUITooltipTextFormatModule.LOCALIZED),
+                                                                                                       new Vector<MessageWildcardReplacementModule>()),
+                                                                   new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
+                                                                                                       new ClientUITooltipTextFormatModule(
+                                                                                                               ClientUITooltipTextFormatModule.LOCALIZED),
+                                                                                                       new Vector<MessageWildcardReplacementModule>()),
+                                                                   new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free",
+                                                                                                       new ClientUITooltipTextFormatModule(
+                                                                                                               ClientUITooltipTextFormatModule.LOCALIZED),
+                                                                                                       new Vector<MessageWildcardReplacementModule>()));
+                                killScreenOptionModules.add(killScreenOptionModule);
+                                final KillScreenPostCommand killScreenPostCommand =
+                                        new KillScreenPostCommand(this.user.getShipUsername(), "http://localhost/indexInternal.es?action=internalDock",
+                                                                  "MISC", new DestructionTypeModule(DestructionTypeModule.PLAYER),
+                                                                  killScreenOptionModules);
+                                player.sendCommandToBoundSessions(killScreenPostCommand);
+                                player.setInEquipZone(true);                             
+                                QueryManager.saveAccount(player.getAccount());
+                                
+                        	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncu admin tarafından patlatıldı!");
+                            QueryManager.saveAccount(player.getAccount());
+                        }
+                      }
+                    }
+                  }
+                } else if(message.startsWith("/stta") && this.user.isAdmin()) {
+                	
+                ServerUtils.sendPacketToAllUsers("0|A|STD|"+ message.substring(5, message.length()) +"");
+                    
+                } else if(message.startsWith("/restart") && this.user.isAdmin()) {
+                    final int saniye = 30;
+                    
+                    this.restartGame(saniye);
+                    
+                }  else if(message.startsWith("/m_restart") && this.user.isAdmin()) {
+                	String[] strings = message.split(" ");
+                	final int saniye = Integer.parseInt(strings[1]);  
+                    
+                    this.restartGame(saniye);
+                    
+                } else if(message.startsWith("/ship") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final String username = strings[1];
+                    final int shipID = Integer.parseInt(strings[2]);                    
+                    for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                    	final Account account = gameSessionAll.getAccount();             	
+                        if (account != null) {
+                            final Player player = account.getPlayer();
+                            if (player != null) {
+                            	if(player.getAccount().getShipUsername().equals(username)) {
+                            	 player.changePlayerShip(ShipFactory.getPlayerShip(shipID));
+                            	}
+                            }
+                        }
+                    }
+                } else if(message.startsWith("/npc") && this.user.isAdmin()) {
+                    String[] strings = message.split(" ");
+                    final int shipID = Integer.parseInt(strings[1]);
+                    final int amount = Integer.parseInt(strings[2]);
+                                      
+                    final GameSession gameSession = GameManager.getGameSession(this.user.getUserId());
+                    	final Account account = gameSession.getAccount();             	
+                        if (account != null) {
+                            final Player player = account.getPlayer();
+                            if (player != null) { 
+                                for (int i = amount; i > 0; i--) {
+                                    final Alien alien = new Alien(shipID, player.getCurrentSpaceMap());
+									player.getCurrentSpaceMap()
+									.addAlien(alien);
+                              }                                
+                        } 
+                     }
+                  
+               } else if (message.startsWith("/gameban") && this.user.isAdmin()) {
+                   String[] strings = message.split(" ");
+                   final String username = strings[1];
+                   final String sebep = message.substring(4 + username.length(), message.length());
+                   
+                   for(GameSession account : GameManager.getGameSessions()){ 
+                   if (account != null) {
+                       final Player player = account.getPlayer();
+                       if (player != null) {
+                           if(player.getAccount().getShipUsername().equals(username)) { 
+                           	if(player.getAccount().getUserId() != this.user.getUserId()) {
+                           		this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+" oyundan yasaklandı!");
+                       	   player.sendPacketToBoundSessions("0|A|STD|Hesabınız Administrator tarafından yasaklandı!");
+                               String packet = "at%#" + room + "@" + this.user.getShipUsername() + "@" + message.substring(0, message.length() - 1);
+	                   		player.setDestroyed(true);
+	                   		player.getLaserAttack().setAttackInProgress(false);
+	                   		player.setLockedTarget(null);
+                   		
+                           if(player.getAccount().getPetManager().getPetOpened() == true) {
+                           	player.getAccount().getPetManager().sendPetOpen();
+                           }
+                           for(MovableMapEntity inRangeEntity : player.getInRangeMovableMapEntities()) {
+                           	if(inRangeEntity instanceof Player) {
+                           		final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(player.getMapEntityId());
+                           		final Player otherPlayer = (Player) inRangeEntity;
+                           		otherPlayer.sendCommandToBoundSessions(shipRemoveCommand);
+                           		otherPlayer.removeInRangeMapEntity(player);
+                           	}
+                           }
+                           player.removeAllInRangeMapIntities();
+                           final SpaceMap spaceMap = SpaceMapStorage.getSpaceMap((short) 42);
+                           if(player.getCurrentSpaceMapId() == 42) {
+                           final int kalanOyuncu = (spaceMap.getAllPlayers().size()) - 1;
+                           final String geriSayim = "0|LM|ST|SLE|"+ kalanOyuncu;
+                           ServerUtils.sendPacketToAllUsers(geriSayim);
+                           }
+                           
+                           final ShipDestroyCommand shipDestroyCommand = new ShipDestroyCommand(player.getMapEntityId(), 1);
+                           player.sendCommandToBoundSessions(shipDestroyCommand);
+                           player.sendCommandToInRange(shipDestroyCommand);
+                           
+                           final GameSession gameSession = GameManager.getGameSession(player.getAccount().getUserId());
+                           gameSession.close();
+                           
+                           player.getAccount().setOnline(false);
+                           player.setInEquipZone(true);                             
+                           QueryManager.saveAccount(player.getAccount());
+                           
+                           final GameSession pGameSession = GameManager.getGameSession(player.getAccount().getUserId());
+                           if(pGameSession != null){
+                               ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                               if (chatClientConnection != null) {
+                                   if (chatClientConnection.room == this.room) {
+                                       //Send packet
+                                       ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet + "#");
+                                   }
+                               }
+                           }
+                           Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncu oyundan banlandı!");
+                           QueryManager.saveAccount(player.getAccount());
+                           
+                       	SimpleDateFormat tarihFormati = new SimpleDateFormat("dd MMMM yyyy / HH:mm", new Locale("tr"));
+                           String tarih = tarihFormati.format(new Date());
+                           final String Tarih = ""+tarih+"";
+                           QueryManager.saveBanned(Tarih, player, this.user.getPlayer(), sebep, true);
+                       }
+                     }
+                   }
+                 }
+               }
+             } else if(message.startsWith("/enable_shoot") && this.user.isAdmin()) { 
+                 for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                 	final Account account = gameSessionAll.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                         Settings.SHOOT_ENABLED = true;
+                         player.sendPacketToBoundSessions("0|A|STD|Ateş etme etkinleştirildi!");
+                         }
+                     }
+                 }                 
+            } else if(message.startsWith("/disable_shoot") && this.user.isAdmin()) { 
+                for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                 	final Account account = gameSessionAll.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                        	 Settings.SHOOT_ENABLED = false;
+                        	 player.sendPacketToBoundSessions("0|A|STD|Ateş etme kapatıldı!");
+                         }
+                     }
+                }                       	 
+            }  else if(message.startsWith("/enable_friend-shoot") && this.user.isAdmin()) { 
+                 for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                 	final Account account = gameSessionAll.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                         Settings.FRIEND_SHOOT_ENABLED = true;
+                         player.sendPacketToBoundSessions("0|A|STD|Dost ateşi etkinleştirildi!");
+                         }
+                     }
+                 }                 
+            } else if(message.startsWith("/disable_friend-shoot") && this.user.isAdmin()) { 
+                for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                 	final Account account = gameSessionAll.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                        	 Settings.FRIEND_SHOOT_ENABLED = false;
+                        	 player.sendPacketToBoundSessions("0|A|STD|Dost ateşi kapatıldı!");
+                         }
+                     }
+                }                       	 
+            } else if(message.startsWith("/enable_x2") && this.user.isAdmin()) { 
+                for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                 	final Account account = gameSessionAll.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+              	         Settings.REWARD_DOUBLER_ENABLED = true;
+              	         player.sendPacketToBoundSessions("0|A|STD|x2 Uridium etkinleştirildi!");
+                         }
+                     }
+                }
+            } else if(message.startsWith("/disable_x2") && this.user.isAdmin()) {
+                for (GameSession gameSessionAll : GameManager.getGameSessions()) {
+                 	final Account account = gameSessionAll.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+              	         Settings.REWARD_DOUBLER_ENABLED = false;
+              	       player.sendPacketToBoundSessions("0|A|STD|x2 Uridium kapatıldı!");
+                         }
+                     }
+                }
+            } else if(message.startsWith("/start_spaceball") && this.user.isAdmin()) { 
+            	 				ServerUtils.sendPacketToAllUsers("0|A|STD|Spaceball started!");
+            	                Settings.SPACEBALL_ENABLED = true;            	                
+                                final Spaceball spaceball = new Spaceball(Settings.SPACEBALL_TYPE, SpaceMapStorage.getSpaceMap((short) 16));
+                                spaceball.getCurrentSpaceMap()
+								.addSpaceball(spaceball);                                   
+                                
+                                for (GameSession gameSession : GameManager.getGameSessions()) {
+                                 	final Account account = gameSession.getAccount(); 
+                                 	final ClientSettingsManager clientSettingsManager = account.getClientSettingsManager();
+                                     if (account != null) {
+                                         final Player player = account.getPlayer();
+                                         if (player != null) {
+                                        	 player.sendCommandToBoundSessions(clientSettingsManager.getClientUIMenuBarsCommand());
+                                         }
+                                     }
+                                }
+                                                                                             
+            } else if(message.startsWith("/stop_spaceball") && this.user.isAdmin()) { 
+            	ServerUtils.sendPacketToAllUsers("0|A|STD|Spaceball is over!");
+            	Settings.SPACEBALL_ENABLED = false;
+                SpaceMap spaceMap = SpaceMapStorage.getSpaceMap((short) 16);
+                if (spaceMap != null) {
+                    final Collection<MovableMapEntity> allMapEntities = spaceMap.getAllMovableMapEntities()
+                            .values();
+                      for (final MovableMapEntity thisMapEntity : allMapEntities) {
+                    	  if(thisMapEntity instanceof Spaceball) {                    		  
+                    		  final Spaceball spaceball = (Spaceball) thisMapEntity;                    		  
+                              for (final MovableMapEntity thisMapEntity2 : spaceball.getInRangeMovableMapEntities()) {
+                              	if(thisMapEntity2 instanceof Player) {
+                              		final Player player = (Player) thisMapEntity2;
+                              		if(player.getLockedTarget() == spaceball) {
+                              		player.getLaserAttack().setAttackInProgress(false);
+                              		player.setLockedTarget(null);
+                              		player.sendCommandToBoundSessions(new ShipDeselectionCommand());
+                              		}
+                              	}
+
+                              }
+                              spaceball.setPositionXY(21000, 13200);
+                              spaceball.setSelectedFactionID(0);
+                              spaceball.setMMODamage(0);
+                              spaceball.setEICDamage(0);
+                              spaceball.setVRUDamage(0);
+                              spaceball.getCurrentSpaceMap().removeSpaceball(spaceball.getMapEntityId());
+                              spaceball.getCurrentSpaceMap().removeSpaceballForAllInRangeMapIntities(spaceball.getMapEntityId());
+                              final ShipDestroyCommand shipDestroyCommand = new ShipDestroyCommand(spaceball.getMapEntityId(), 1);
+                              spaceball.sendCommandToInRange(shipDestroyCommand);
+                    	  }
+                      }
+                }    
+                for (GameSession gameSession : GameManager.getGameSessions()) {
+                 	final Account account = gameSession.getAccount(); 
+                 	final ClientSettingsManager clientSettingsManager = account.getClientSettingsManager();
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                        	 player.sendCommandToBoundSessions(clientSettingsManager.getClientUIMenuBarsCommand());
+                         }
+                     }
+                }
+            } else if(message.startsWith("/komutlar") && this.user.isAdmin()) { 
+                	GameSession gameSession = GameManager.getGameSession(this.user.getUserId());               
+                 	final Account account = gameSession.getAccount();             	
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                        	 String packet   = "dq%/ban [kullanıcı adı].#";
+                        	 String packet2  = "dq%/unban [kullanıcı adı].#";
+                        	 String packet3  = "dq%/kick [kullanıcı adı].#";
+                        	 String packet4  = "dq%/gameban [kullanıcı adı].#";
+                        	 String packet5  = "dq%/stta [yazı].#";
+                        	 String packet6  = "dq%/taşı [kullanıcı adı] [map id].#";
+                        	 String packet7  = "dq%/uridium [kullanıcı adı] [miktar].#";
+                        	 String packet8  = "dq%/credits [kullanıcı adı] [miktar].#";
+                        	 String packet9  = "dq%/başlık [kullanıcı adı] [başlık id].#";
+                        	 String packet10 = "dq%/hasar [kullanıcı adı] [hasar].#";
+                        	 String packet11 = "dq%/hız [kullanıcı adı] [hız].#";
+                        	 String packet12 = "dq%/start_spaceball.#";
+                        	 String packet13 = "dq%/stop_spaceball.#";
+                        	 String packet14 = "dq%/x2_enable.#";
+                        	 String packet15 = "dq%/x2_disable.#";
+                        	 String packet16 = "dq%/friendshootenable.#";
+                        	 String packet17 = "dq%/friendshootdisable.#";
+                        	 String packet18 = "dq%/npc [npc id] [miktar].#";
+                        	 String packet19 = "dq%/patlat [kullanıcı adı].#";
+                        	 String packet20 = "dq%/restart.#";
+                        	 String packet21 = "dq%/premium [kullanıcı adı] [1 veya 0].#";
+                             final GameSession pGameSession = GameManager.getGameSession(player.getAccount().getUserId());
+                             if(pGameSession != null){
+                                 ChatClientConnectionFILTRELI chatClientConnection = pGameSession.getChatClientConnection();
+                                 if (chatClientConnection != null) {
+                                     if (chatClientConnection.room == this.room) {
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet2 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet3 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet4 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet5 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet6 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet7 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet8 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet9 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet10 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet11 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet12 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet13 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet14 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet15 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet16 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet17 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet18 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet19 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet20 + "#");
+                                         ServerUtils.sendChatAndUpdaterPackets(chatClientConnection.socket, packet21 + "#");
+                                     }
+                                 }
+                             }
+                         }
+                     }                      	 
+            } else if(message.startsWith("/danom") && this.user.isAdmin()) {
+                final SpaceMap spaceMap = SpaceMapStorage.getSpaceMap(this.user.getPlayer().getCurrentSpaceMapId());
+                
+                for (Alien aliens : spaceMap.getAllAliens()) {
+                	final ShipDestroyCommand shipDestroyCommand = new ShipDestroyCommand(aliens.getMapEntityId(), 1);
+                	aliens.setLockedTarget(null);
+                	aliens.getLaserAttack().setAttackInProgress(false);
+                    spaceMap.removeAlien(aliens.getAlienId());
+                    
+                    for (MovableMapEntity movableMapEntity : aliens.getInRangeMovableMapEntities()) {
+                    	if(movableMapEntity != null) {
+                    		if(movableMapEntity instanceof Player) {
+                    			((Player) movableMapEntity).sendCommandToBoundSessions(shipDestroyCommand);
+                    		}
+                    	}
+                    }
+                                   
+            }
+            } else if(message.startsWith("/h_taşı") && this.user.isAdmin()) {
+                String[] strings = message.split(" ");
+                final short mapID = Short.parseShort(strings[1]);
+                
+                for (GameSession gameSession : GameManager.getGameSessions()) {
+                 	final Account account = gameSession.getAccount(); 
+                     if (account != null) {
+                         final Player player = account.getPlayer();
+                         if (player != null) {
+                             for(Alien al: player.getCurrentSpaceMap().getAllAliens()){
+                                 for (final MovableMapEntity movableMapEntity : al.getInRangeMovableMapEntities()) {
+                                     if (movableMapEntity instanceof Player) {
+                                         Player pl = ((Player) movableMapEntity);
+                                         if(pl.getAccount().getUserId() == player.getAccount().getUserId()){
+                                             al.setLockedTarget(null);
+                                         }
+                                     }
+                                 }
+                             }
+                             if(player.getAccount().getPetManager().getPetOpened() == true) {
+                             	player.getAccount().getPetManager().sendPetOpen();
+                             }
+                             for(MovableMapEntity inRangeEntity : player.getInRangeMovableMapEntities()) {
+                             	if(inRangeEntity instanceof Player) {
+                             		final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(player.getMapEntityId());
+                             		final Player otherPlayer = (Player) inRangeEntity;
+                             		otherPlayer.sendCommandToBoundSessions(shipRemoveCommand);
+                             		otherPlayer.removeInRangeMapEntity(player);
+                             	}
+                             }
+                             player.removeAllInRangeMapIntities();
+                             player.getCurrentSpaceMap()
+                                   .removePlayer(player.getMapEntityId());
+                             player.getMovement()
+                                   .setMovementInProgress(false);
+                             if(player.getAccount().getFactionId() == 1) {
+                             	player.setPositionXY(1000, 1000);
+                             } else if (player.getAccount().getFactionId() == 2) {
+                             	player.setPositionXY(19700, 1000);
+                             } else if (player.getAccount().getFactionId() == 3) {
+                             	player.setPositionXY(10000, 11300);
+                             }
+                             player.setCurrentInRangePortalId(DefaultAssignings.INVALID_ID);
+                             player.setCurrentSpaceMap(mapID);
+                             player.setJumping(false);
+                             GameManager.tryJump(player.getMapEntityId(), mapID);
+                         }
+                     }
+                }
+            } else if(message.startsWith("/p_ban") && this.user.isAdmin()) {
+                String[] strings = message.split(" ");
+                final String username = strings[1];
+                final int yuzde = Integer.parseInt(strings[2]);
+
+                for(GameSession account : GameManager.getGameSessions()){ 
+                if (account != null) {
+                    final Player player = account.getPlayer();
+                    if (player != null) {
+                    	if(player.getAccount().getShipUsername().equals(username)) {                  		
+                    		if(yuzde == 2 || yuzde == 4) {
+                    			
+                    	final long uridium = player.getAccount().getUridium() - player.getAccount().getUridium() / yuzde;
+                    	final long honor = player.getAccount().getHonor() - player.getAccount().getHonor() / yuzde;
+                    	final long killedGoliath = honor / 512;
+                    	player.getAccount().setKilledGoliath(killedGoliath);
+                        player.getAccount().setHonor(honor);
+                        player.sendPacketToBoundSessions("0|LM|ST|HON|-" + honor + "|" + player.getAccount() .getHonor());
+                    	player.getAccount().setUridium(uridium);
+                    	player.sendPacketToBoundSessions("0|LM|ST|URI|-" + uridium + "|" + player.getAccount().getUridium());
+                    	
+                    	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+" kesintileri yapıldı!");
+                    	
+                    	Log.pt("'"+player.getAccount().getUserId()+"' ID'li ve '"+player.getAccount().getUsername()+"' kullanıcı adlı oyuncunun puanları "+yuzde+"'ye bölündü!");
+                        QueryManager.saveAccount(player.getAccount());
+                    }
+                    	}
+                  }
+                }
+              }
+            } else if(message.startsWith("/id") && this.user.isAdmin()) {
+                String[] strings = message.split(" ");
+                final String username = strings[1];
+
+                for(GameSession account : GameManager.getGameSessions()){ 
+                if (account != null) {
+                    final Player player = account.getPlayer();
+                    if (player != null) {
+                    	if(player.getAccount().getShipUsername().equals(username)) {                  		                   				
+                    	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+username+" adlı oyuncunun ID'si: "+player.getAccount().getUserId()+"");
+                    }
+                  }
+                }
+              }
+            } else if(message.startsWith("/duel") && this.user.isAdmin()) {
+                String[] strings = message.split(" ");
+                final String username = strings[1];
+
+                if(this.user.getPlayer().getDuelUser() == null) {
+                for(GameSession account : GameManager.getGameSessions()){ 
+                if (account != null) {
+                    final Player player = account.getPlayer();
+                    if (player != null) {
+                    	if(player.getAccount().getShipUsername().equals(username)) {                  		
+                    	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|"+player.getAccount().getShipUsername()+" adlı oyuncuya meydan okudun!");
+                    	player.sendPacketToBoundSessions("0|A|STD|"+this.user.getShipUsername()+" sana meydan okuyor!");
+                    	player.setDuelUser(this.user.getPlayer());
+                    }
+                  }
+                }
+              }
+                } else {
+                	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|Zaten bir meydan okuman bulunuyor!");
+                }
+            } else if(message.startsWith("/a") && this.user.isAdmin()) {
+
+                if(this.user.getPlayer().getDuelUser() != null) {
+                for(GameSession account : GameManager.getGameSessions()){ 
+                if (account != null) {
+                    final Player player = account.getPlayer();
+                    if (player != null) {
+                    	if(player.getAccount().getShipUsername().equals(this.user.getPlayer().getDuelUser().getAccount().getShipUsername())) {                  		                   				
+                    		
+                    		if(this.user.getPlayer().isInSecureZone() && player.isInSecureZone()) {
+                    		
+                            for(Alien al: player.getCurrentSpaceMap().getAllAliens()){
+                                for (final MovableMapEntity movableMapEntity : al.getInRangeMovableMapEntities()) {
+                                    if (movableMapEntity instanceof Player) {
+                                        Player pl = ((Player) movableMapEntity);
+                                        if(pl.getAccount().getUserId() == player.getAccount().getUserId()){
+                                            al.setLockedTarget(null);
+                                        }
+                                    }
+                                }
+                            }
+                            if(player.getAccount().getPetManager().getPetOpened() == true) {
+                            	player.getAccount().getPetManager().sendPetOpen();
+                            }
+                            for(MovableMapEntity inRangeEntity : player.getInRangeMovableMapEntities()) {
+                            	if(inRangeEntity instanceof Player) {
+                            		final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(player.getMapEntityId());
+                            		final Player otherPlayer = (Player) inRangeEntity;
+                            		otherPlayer.sendCommandToBoundSessions(shipRemoveCommand);
+                            		otherPlayer.removeInRangeMapEntity(player);
+                            	}
+                            }
+                            player.removeAllInRangeMapIntities();
+                            player.getCurrentSpaceMap()
+                                  .removePlayer(player.getMapEntityId());
+                            player.getMovement()
+                                  .setMovementInProgress(false);
+                            player.setPositionXY(800, 3100);
+                            player.setCurrentSpaceMap((short)101);
+                            player.setCurrentInRangePortalId(DefaultAssignings.INVALID_ID);
+                            player.setJumping(false);
+                            GameManager.tryJump(player.getMapEntityId(), (short)101);
+                    		
+                    		
+                    		
+                    		
+                            final Player thisPlayer = this.user.getPlayer();
+                            
+                            for(Alien al: thisPlayer.getCurrentSpaceMap().getAllAliens()){
+                                for (final MovableMapEntity movableMapEntity : al.getInRangeMovableMapEntities()) {
+                                    if (movableMapEntity instanceof Player) {
+                                        Player pl = ((Player) movableMapEntity);
+                                        if(pl.getAccount().getUserId() == thisPlayer.getAccount().getUserId()){
+                                            al.setLockedTarget(null);
+                                        }
+                                    }
+                                }
+                            }
+                            if(thisPlayer.getAccount().getPetManager().getPetOpened() == true) {
+                            	thisPlayer.getAccount().getPetManager().sendPetOpen();
+                            }
+                            for(MovableMapEntity inRangeEntity : thisPlayer.getInRangeMovableMapEntities()) {
+                            	if(inRangeEntity instanceof Player) {
+                            		final ShipRemoveCommand shipRemoveCommand = new ShipRemoveCommand(thisPlayer.getMapEntityId());
+                            		final Player otherPlayer = (Player) inRangeEntity;
+                            		otherPlayer.sendCommandToBoundSessions(shipRemoveCommand);
+                            		otherPlayer.removeInRangeMapEntity(thisPlayer);
+                            	}
+                            }
+                            thisPlayer.removeAllInRangeMapIntities();
+                            thisPlayer.getCurrentSpaceMap()
+                                  .removePlayer(thisPlayer.getMapEntityId());
+                            thisPlayer.getMovement()
+                                  .setMovementInProgress(false);
+                            thisPlayer.setPositionXY(9700, 3100);
+                            thisPlayer.setCurrentSpaceMap((short)101);
+                            thisPlayer.setCurrentInRangePortalId(DefaultAssignings.INVALID_ID);
+                            thisPlayer.setJumping(false);
+                            GameManager.tryJump(thisPlayer.getMapEntityId(), (short)101);
+                            
+                            
+                    		}
+                    }
+                  }
+                }
+              }
+                } else {
+                	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|Bir meydan okuman yok!");
+                }
+            }  else if(message.startsWith("/r") && this.user.isAdmin()) {
+
+                if(this.user.getPlayer().getDuelUser() != null) {
+                for(GameSession account : GameManager.getGameSessions()){ 
+                if (account != null) {
+                    final Player player = account.getPlayer();
+                    if (player != null) {
+                    		this.user.getPlayer().getDuelUser().sendPacketToBoundSessions("0|A|STD|"+this.user.getShipUsername()+" meydan okumanı reddetti!");
+                    		this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|Meydan okumayı reddettin!");
+                    		this.user.getPlayer().setDuelUser(null);
+                    }
+                }
+                }
+                } else {
+                	this.user.getPlayer().sendPacketToBoundSessions("0|A|STD|Bir meydan okuman yok!");
+                }
+            }
+            } catch (Exception e) {           	
+            }
+        }
+    }  catch(Exception e) {
+    }
+    }

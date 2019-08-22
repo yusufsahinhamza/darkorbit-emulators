@@ -229,24 +229,6 @@ namespace Ow.Managers
             }
         }
 
-        public static void LoadChatRooms()
-        {
-            using (var mySqlClient = SqlDatabaseManager.GetClient())
-            {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM chat_rooms");
-                foreach (DataRow row in data.Rows)
-                {
-                    int id = Convert.ToInt32(row["Id"]);
-                    string name = Convert.ToString(row["Name"]);
-                    int tabOrder = Convert.ToInt32(row["TabOrder"]);
-                    int companyId = Convert.ToInt32(row["CompanyId"]);
-
-                    var chat = new Chat.Room(id, name, tabOrder, companyId);
-                    Chat.Room.Rooms.Add(chat.Id, chat);
-                }
-            }
-        }
-
         public static int GetChatPermission(int userId)
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())

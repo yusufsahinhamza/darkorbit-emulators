@@ -20,13 +20,14 @@ namespace Ow.Game.Objects.Players.Techs
         public DateTime cooldown = new DateTime();
         public void Send()
         {
-            return;
+            /*
             if (cooldown.AddMilliseconds(TimeManager.CHAIN_IMPULSE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.AttackManager.ECI();
                 Player.SendCooldown(TechManager.TECH_CHAIN_IMPULSE, TimeManager.CHAIN_IMPULSE_COOLDOWN);
                 cooldown = DateTime.Now;
             }
+            */
         }
     }
 }

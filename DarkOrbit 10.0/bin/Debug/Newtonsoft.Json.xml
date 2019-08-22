@@ -1514,7 +1514,7 @@
             Converts the <see cref="T:System.Decimal"/> to its JSON string representation.
             </summary>
             <param name="value">The value to convert.</param>
-            <returns>A JSON string representation of the <see cref="T:System.SByte"/>.</returns>
+            <returns>A JSON string representation of the <see cref="T:System.Decimal"/>.</returns>
         </member>
         <member name="M:Newtonsoft.Json.JsonConvert.ToString(System.Guid)">
             <summary>
@@ -2161,6 +2161,12 @@
             Gets or sets the member serialization.
             </summary>
             <value>The member serialization.</value>
+        </member>
+        <member name="P:Newtonsoft.Json.JsonObjectAttribute.MissingMemberHandling">
+            <summary>
+            Gets or sets the missing member handling used when deserializing this object.
+            </summary>
+            <value>The missing member handling.</value>
         </member>
         <member name="P:Newtonsoft.Json.JsonObjectAttribute.ItemNullValueHandling">
             <summary>
@@ -8103,6 +8109,13 @@
             </summary>
             <param name="token">The token to read from.</param>
         </member>
+        <member name="M:Newtonsoft.Json.Linq.JTokenReader.#ctor(Newtonsoft.Json.Linq.JToken,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Newtonsoft.Json.Linq.JTokenReader"/> class.
+            </summary>
+            <param name="token">The token to read from.</param>
+            <param name="initialPath">The initial path of the token. It is prepended to the returned <see cref="P:Newtonsoft.Json.Linq.JTokenReader.Path"/>.</param>
+        </member>
         <member name="M:Newtonsoft.Json.Linq.JTokenReader.Read">
             <summary>
             Reads the next JSON token from the underlying <see cref="T:Newtonsoft.Json.Linq.JToken"/>.
@@ -10199,6 +10212,13 @@
             </summary>
             <value>The converter.</value>
         </member>
+        <member name="P:Newtonsoft.Json.Serialization.JsonContract.InternalConverter">
+            <summary>
+            Gets the internally resolved <see cref="T:Newtonsoft.Json.JsonConverter"/> for the contract's type.
+            This converter is used as a fallback converter when no other converter is resolved.
+            Setting <see cref="P:Newtonsoft.Json.Serialization.JsonContract.Converter"/> will always override this converter.
+            </summary>
+        </member>
         <member name="P:Newtonsoft.Json.Serialization.JsonContract.OnDeserializedCallbacks">
             <summary>
             Gets or sets all methods called immediately after deserialization of the object.
@@ -10343,6 +10363,12 @@
             Gets or sets the object member serialization.
             </summary>
             <value>The member object serialization.</value>
+        </member>
+        <member name="P:Newtonsoft.Json.Serialization.JsonObjectContract.MissingMemberHandling">
+            <summary>
+            Gets or sets the missing member handling used when deserializing this object.
+            </summary>
+            <value>The missing member handling.</value>
         </member>
         <member name="P:Newtonsoft.Json.Serialization.JsonObjectContract.ItemRequired">
             <summary>
@@ -10509,6 +10535,11 @@
             Gets or sets a value indicating whether this <see cref="T:Newtonsoft.Json.Serialization.JsonProperty"/> is required.
             </summary>
             <value>A value indicating whether this <see cref="T:Newtonsoft.Json.Serialization.JsonProperty"/> is required.</value>
+        </member>
+        <member name="P:Newtonsoft.Json.Serialization.JsonProperty.IsRequiredSpecified">
+            <summary>
+            Gets a value indicating whether <see cref="P:Newtonsoft.Json.Serialization.JsonProperty.Required"/> has a value specified.
+            </summary>
         </member>
         <member name="P:Newtonsoft.Json.Serialization.JsonProperty.IsReference">
             <summary>
@@ -10759,6 +10790,26 @@
             </summary>
             <param name="name">The property name to resolve.</param>
             <returns>The resolved property name.</returns>
+        </member>
+        <member name="M:Newtonsoft.Json.Serialization.NamingStrategy.GetHashCode">
+            <summary>
+            Hash code calculation
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Newtonsoft.Json.Serialization.NamingStrategy.Equals(System.Object)">
+            <summary>
+            Object equality implementation
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Newtonsoft.Json.Serialization.NamingStrategy.Equals(Newtonsoft.Json.Serialization.NamingStrategy)">
+            <summary>
+            Compare to another NamingStrategy
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
         </member>
         <member name="T:Newtonsoft.Json.Serialization.ObjectConstructor`1">
             <summary>

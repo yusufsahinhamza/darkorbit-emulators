@@ -7,7 +7,7 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class ClientUIMenuBarsCommand
+    class ParseFeaturesMenuData
     {
         public const short ID = 11623;
 

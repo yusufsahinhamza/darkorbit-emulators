@@ -91,6 +91,24 @@ namespace Ow.Game.Objects.Players.Managers
         public bool varE3N = true;
     }
 
+    public class Window
+    {
+        public int x { get; set; }
+        public int y { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
+        public bool maximixed { get; set; }
+
+        public Window(int x, int y, int width, int height, bool maximixed)
+        {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.maximixed = maximixed;
+        }
+    }
+
     public class WindowBase
     {
         public bool hideAllWindows = false;
@@ -107,6 +125,25 @@ namespace Ow.Game.Objects.Players.Managers
         public string premiumSlotBarLayoutType = "0";
         public string proActionBarPosition = "50,85|0,120";
         public string proActionBarLayoutType = "0";
+
+        public Dictionary<string, Window> windows = new Dictionary<string, Window>()
+        {
+            { "user", new Window(30, 30, 212, 88, false) },
+            { "ship", new Window(30, 30, 212, 88, false) },
+            { "ship_warp", new Window(50, 50, 300, 210, false) },
+            { "chat", new Window(10, 10, 300, 150, false) },
+            { "group", new Window(50, 50, 196, 200, false) },
+            { "minimap", new Window(30, 30, 238, 180, false) },
+            { "spacemap", new Window(10, 10, 650, 475, false) },
+            { "log", new Window(30, 30, 240, 150, false) },
+            { "pet", new Window(50, 50, 260, 130, false) },
+            { "spaceball", new Window(10, 10, 170, 70, false) },
+            { "booster", new Window(10, 10, 110, 150, false) },
+            { "traininggrounds", new Window(10, 10, 320, 320, false) },
+            { "settings", new Window(50, 50, 400, 470, false) },
+            { "help", new Window(10, 10, 219, 121, false) },
+            { "logout", new Window(50, 50, 200, 200, false) }
+        };
     }
 
     public class BoundKeysBase
@@ -116,12 +153,12 @@ namespace Ow.Game.Objects.Players.Managers
         public int parameter { get; set; }
         public List<int> keyCodes { get; set; }
 
-        public BoundKeysBase(short ActionType, short CharCode, int Parameter, List<int> KeyCodes)
+        public BoundKeysBase(short actionType, short charCode, int parameter, List<int> keyCodes)
         {
-            actionType = ActionType;
-            charCode = CharCode;
-            parameter = Parameter;
-            keyCodes = KeyCodes;
+            this.actionType = actionType;
+            this.charCode = charCode;
+            this.parameter = parameter;
+            this.keyCodes = keyCodes;
         }
     }
 
@@ -169,24 +206,24 @@ namespace Ow.Game.Objects.Players.Managers
 
         public Dictionary<string, int> Cooldowns = new Dictionary<string, int>
         {
-                {AmmunitionManager.SMB_01, 0},
-                {AmmunitionManager.ISH_01, 0},
-                {AmmunitionManager.EMP_01, 0},
-                {AmmunitionManager.ACM_01, 0}, //tüm mayın tipleri için
-                {AmmunitionManager.DCR_250, 0},
-                {AmmunitionManager.PLD_8, 0},
-                {AmmunitionManager.R_IC3, 0},
-                {TechManager.TECH_ENERGY_LEECH, 0},
-                {TechManager.TECH_CHAIN_IMPULSE, 0},
-                {TechManager.TECH_PRECISION_TARGETER, 0},
-                {TechManager.TECH_BACKUP_SHIELDS, 0},
-                {TechManager.TECH_BATTLE_REPAIR_BOT, 0},
-                {SkillManager.SOLACE, 0},
-                {SkillManager.SENTINEL, 0},
-                {SkillManager.SPECTRUM, 0},
-                {SkillManager.DIMINISHER, 0},
-                {SkillManager.VENOM, 0},
-                {SkillManager.LIGHTNING, 0}
+                { AmmunitionManager.SMB_01, 0 },
+                { AmmunitionManager.ISH_01, 0 },
+                { AmmunitionManager.EMP_01, 0 },
+                { AmmunitionManager.ACM_01, 0 }, //tüm mayın tipleri için
+                { AmmunitionManager.DCR_250, 0 },
+                { AmmunitionManager.PLD_8, 0 },
+                { AmmunitionManager.R_IC3, 0 },
+                { TechManager.TECH_ENERGY_LEECH, 0 },
+                { TechManager.TECH_CHAIN_IMPULSE, 0 },
+                { TechManager.TECH_PRECISION_TARGETER, 0 },
+                { TechManager.TECH_BACKUP_SHIELDS, 0 },
+                { TechManager.TECH_BATTLE_REPAIR_BOT, 0 },
+                { SkillManager.SOLACE, 0 },
+                { SkillManager.SENTINEL, 0 },
+                { SkillManager.SPECTRUM, 0 },
+                { SkillManager.DIMINISHER, 0 },
+                { SkillManager.VENOM, 0 },
+                { SkillManager.LIGHTNING, 0 }
         };
 
         public List<BoundKeysBase> BoundKeys = new List<BoundKeysBase>
@@ -230,11 +267,11 @@ namespace Ow.Game.Objects.Players.Managers
         };
 
         public Dictionary<short, string> SlotBarItems = new Dictionary<short, string>() {
-            {1, AmmunitionManager.UCB_100}
+            { 1, AmmunitionManager.UCB_100 }
         };
 
         public Dictionary<short, string> PremiumSlotBarItems = new Dictionary<short, string>() {
-            {1, DroneManager.DEFAULT_FORMATION}
+            { 1, DroneManager.DEFAULT_FORMATION }
         };
 
         public Dictionary<short, string> ProActionBarItems = new Dictionary<short, string>();
@@ -409,19 +446,15 @@ namespace Ow.Game.Objects.Players.Managers
             leftItems.Add("group", "title_group");
             leftItems.Add("minimap", "title_map");
             leftItems.Add("spacemap", "title_spacemap");
-            //leftItems.Add("quests", "title_quests");
-            //leftItems.Add("refinement", "title_refinement");
             leftItems.Add("log", "title_log");
             if(Player.RankId == 21)
                 leftItems.Add("pet", "title_pet");
             if (EventManager.Spaceball.Active)
                 leftItems.Add("spaceball", "title_spaceball");
-            //leftItems.Add("contacts", "title_contactlist");
             if (Player.RankId == 21)
                 leftItems.Add("booster", "title_booster");
             if (Player.RankId == 21)
                 leftItems.Add("traininggrounds", "title_traininggrounds");
-            //leftItems.Add("jackpot_status_ui", "title_jackpot_status_ui");
 
             var topLeftMenuBarItems = new List<ClientUIMenuBarItemModule>();
 
@@ -430,16 +463,16 @@ namespace Ow.Game.Objects.Players.Managers
                 string itemID = entryLeft.Key;
                 string baseKey = entryLeft.Value;
 
-                var tf_localized =
-                        new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
-                var tooltips = new List<ClientUITooltipModule>();
-                var textReplacementModules = new List<ClientUITextReplacementModule>();
-                tooltips.Add(new ClientUITooltipModule(tf_localized, ClientUITooltipModule.STANDARD, baseKey,
-                                                       textReplacementModules));
-                var tooltipsCommand = new ClientUITooltipsCommand(tooltips);
-                var menuBarItem = new ClientUIMenuBarItemModule(true, tooltipsCommand, itemID);
+                if (windowSettings.windows.ContainsKey(itemID))
+                {
+                    var tooltips = new List<ClientUITooltipModule>();
+                    tooltips.Add(new ClientUITooltipModule(new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), ClientUITooltipModule.STANDARD, baseKey,
+                                                           new List<ClientUITextReplacementModule>()));
+                    var tooltipsCommand = new ClientUITooltipsCommand(tooltips);
+                    var menuBarItem = new UpdateWindowItemCommand(windowSettings.windows[itemID].maximixed, windowSettings.windows[itemID].height, true, windowSettings.windows[itemID].y, windowSettings.windows[itemID].x, new ClientUITooltipsCommand(new List<ClientUITooltipModule>()), baseKey, windowSettings.windows[itemID].width, new ClientUITooltipsCommand(new List<ClientUITooltipModule>()), itemID);
 
-                topLeftMenuBarItems.Add(menuBarItem);
+                    topLeftMenuBarItems.Add(menuBarItem);
+                }
             }
 
             var topLeftMenuBar = new ClientUIMenuBarModule(ClientUIMenuBarModule.GAME_FEATURE_BAR, topLeftMenuBarItems, windowSettings.gameFeatureBarPosition, windowSettings.gameFeatureBarLayoutType);
@@ -459,21 +492,22 @@ namespace Ow.Game.Objects.Players.Managers
                 string itemID = entryLeft.Key;
                 string baseKey = entryLeft.Value;
 
-                var tf_localized =
-                        new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
-                var tooltips = new List<ClientUITooltipModule>();
-                var textReplacementModules = new List<ClientUITextReplacementModule>();
-                tooltips.Add(new ClientUITooltipModule(tf_localized, (short)0, baseKey, textReplacementModules));
-                var tooltipsCommand = new ClientUITooltipsCommand(tooltips);
-                var menuBarItem = new ClientUIMenuBarItemModule(true, tooltipsCommand, itemID);
+                if (windowSettings.windows.ContainsKey(itemID) || itemID == "fullscreen")
+                {
+                    var tooltips = new List<ClientUITooltipModule>();
+                    tooltips.Add(new ClientUITooltipModule(new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), ClientUITooltipModule.STANDARD, baseKey, 
+                                                           new List<ClientUITextReplacementModule>()));
+                    var tooltipsCommand = new ClientUITooltipsCommand(tooltips);
+                    var menuBarItem = itemID == "fullscreen" ? new UpdateWindowItemCommand(false, 0, true, 0, 0, new ClientUITooltipsCommand(new List<ClientUITooltipModule>()), baseKey, 0, new ClientUITooltipsCommand(new List<ClientUITooltipModule>()), itemID) : new UpdateWindowItemCommand(windowSettings.windows[itemID].maximixed, windowSettings.windows[itemID].height, true, windowSettings.windows[itemID].y, windowSettings.windows[itemID].x, new ClientUITooltipsCommand(new List<ClientUITooltipModule>()), baseKey, windowSettings.windows[itemID].width, new ClientUITooltipsCommand(new List<ClientUITooltipModule>()), itemID);
 
-                topRightMenuBarItems.Add(menuBarItem);
+                    topRightMenuBarItems.Add(menuBarItem);
+                }
             }
 
             var topRightMenuBar = new ClientUIMenuBarModule(ClientUIMenuBarModule.GENERIC_FEATURE_BAR, topRightMenuBarItems, windowSettings.genericFeatureBarPosition, windowSettings.genericFeatureBarLayoutType);
             menuBarsCommand.Add(topRightMenuBar);
 
-            Player.SendCommand(ClientUIMenuBarsCommand.write(menuBarsCommand));
+            Player.SendCommand(ParseFeaturesMenuData.write(menuBarsCommand));
         }
 
         public void SendSlotBarCommand()

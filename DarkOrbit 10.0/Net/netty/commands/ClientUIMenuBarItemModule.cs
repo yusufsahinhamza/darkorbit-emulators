@@ -7,29 +7,28 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class ClientUIMenuBarItemModule
+    abstract class ClientUIMenuBarItemModule
     {
-        public static short ID = 5748;
+        public abstract byte[] write();
 
         public String itemId = "";
         public bool visible = false;
         public ClientUITooltipsCommand toolTip;
 
-        public ClientUIMenuBarItemModule(bool pVisible, ClientUITooltipsCommand pTooltipCommand, String pItemId)
+        public ClientUIMenuBarItemModule(bool visible, ClientUITooltipsCommand toolTip, String itemId)
         {
-            this.visible = pVisible;
-            this.toolTip = pTooltipCommand;
-            this.itemId = pItemId;
+            this.visible = visible;
+            this.toolTip = toolTip;
+            this.itemId = itemId;
         }
 
-        public byte[] write()
+        protected byte[] super(ByteArray param1)
         {
-            var param1 = new ByteArray(ID);
             param1.writeShort(11362);
-            param1.write(toolTip.write());
+            param1.write(this.toolTip.write());
             param1.writeUTF(this.itemId);
             param1.writeBoolean(this.visible);
-            return param1.Message.ToArray();
+            return param1.ToByteArray();
         }
     }
 }

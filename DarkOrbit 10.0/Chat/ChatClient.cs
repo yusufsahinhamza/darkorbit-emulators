@@ -85,6 +85,20 @@ namespace Ow.Chat
             }
         }
 
+        public static void LoadChatRooms()
+        {
+            var rooms = new List<Room> {
+                new Chat.Room(1, "Global", 0, -1),
+                new Chat.Room(2, "MMO", 1, 1),
+                new Chat.Room(3, "EIC", 2, 2),
+                new Chat.Room(4, "VRU", 3, 3),
+                new Chat.Room(5, "Clan Search", 5, -1)
+            };
+
+            foreach (var room in rooms)
+                Chat.Room.Rooms.Add(room.Id, room);
+        }
+
         public void Execute(string message)
         {
             try

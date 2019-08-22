@@ -39,7 +39,7 @@
       <HintPath>..\..\..\..\Documents\Visual Studio 2015\Projects\SpaciumOrbit v2\SpaciumOrbit v2\bin\Debug\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -302,7 +302,7 @@
     <Compile Include="Net\netty\commands\BeaconCommand.cs" />
     <Compile Include="Net\netty\commands\QualitySettingsModule.cs" />
     <Compile Include="Net\netty\commands\ShipCreateCommand.cs" />
-    <Compile Include="Net\netty\commands\ClientUIMenuBarsCommand.cs" />
+    <Compile Include="Net\netty\commands\ParseFeaturesMenuData.cs" />
     <Compile Include="Net\netty\commands\ClientUITooltipsCommand.cs" />
     <Compile Include="Net\netty\commands\UpdateMenuItemCooldownGroupTimerCommand.cs" />
     <Compile Include="Net\netty\commands\ActivatePortalCommand.cs" />
@@ -345,6 +345,7 @@
     <Compile Include="Net\netty\handlers\UbaRequestHandlers\UbaMatchmakingAcceptRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\UbaRequestHandlers\UbaMatchmakingCancelRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\UbaRequestHandlers\UbaMatchmakingRequestHandler.cs" />
+    <Compile Include="Net\netty\handlers\SendWindowUpdateRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\WindowSettingsRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\KillsceenRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\AttackAbortLaserRequestHandler.cs" />
@@ -376,6 +377,7 @@
     <Compile Include="Net\netty\requests\GroupRequests\GroupRejectInvitationRequest.cs" />
     <Compile Include="Net\netty\requests\BattleStationRequests\EquipModuleRequest.cs" />
     <Compile Include="Net\netty\requests\BattleStationRequests\BuildStationRequest.cs" />
+    <Compile Include="Net\netty\requests\SendWindowUpdateRequest.cs" />
     <Compile Include="Net\netty\requests\PetGearActivationRequest.cs" />
     <Compile Include="Net\netty\requests\GroupRequests\GroupAcceptInvitationRequest.cs" />
     <Compile Include="Net\netty\requests\ProActionBarRequest.cs" />

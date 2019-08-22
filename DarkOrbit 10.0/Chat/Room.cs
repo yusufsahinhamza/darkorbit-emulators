@@ -26,7 +26,7 @@ namespace Ow.Chat
 
         public static void AddRooms()
         {
-            QueryManager.LoadChatRooms();
+            ChatClient.LoadChatRooms();
         }
 
         public override string ToString()

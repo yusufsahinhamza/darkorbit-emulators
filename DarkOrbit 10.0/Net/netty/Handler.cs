@@ -34,6 +34,7 @@ namespace Ow.Net.netty
             Commands.Add(DisplaySettingsRequest.ID, new DisplaySettingsRequestHandler());
             Commands.Add(GameplaySettingsRequest.ID, new GameplaySettingsRequestHandler());
             Commands.Add(QualitySettingsRequest.ID, new QualitySettingsRequestHandler());
+            Commands.Add(SendWindowUpdateRequest.ID, new SendWindowUpdateRequestHandler());
             Commands.Add(WindowSettingsRequest.ID, new WindowSettingsRequestHandler());
             Commands.Add(UserKeyBindingsUpdateRequest.ID, new UserKeyBindingsUpdateHandler());
             Commands.Add(AssetHandleClickRequest.ID, new AssetHandleClickHandler());

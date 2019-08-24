@@ -18,19 +18,26 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            var activatableStationaryMapEntity = player.Spacemap.GetActivatableMapEntity(read.battleStationId);
+            var battleStation = (BattleStation)player.Spacemap.GetActivatableMapEntity(read.battleStationId);
 
-            if (activatableStationaryMapEntity != null && activatableStationaryMapEntity is BattleStation battleStation)
+            if (battleStation != null)
             {
-                if (player.Position.DistanceTo(activatableStationaryMapEntity.Position) > 700)
+                if (player.Position.DistanceTo(battleStation.Position) > 700)
                 {
                     player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.OUT_OF_RANGE));
                     return;
                 }
 
-                var module = battleStation.equippedStationModule.Where(x => x.itemId == read.itemId).FirstOrDefault();
-                battleStation.equippedStationModule.Remove(module);
-                battleStation.inventoryStationModule.Add(module);
+                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.ModuleModule.itemId == read.itemId).FirstOrDefault();
+
+                if (module.OwnerId != player.Id)
+                {
+                    player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
+                    return;
+                }
+
+                module.Remove();
+
                 battleStation.Click(gameSession);
             }
         }

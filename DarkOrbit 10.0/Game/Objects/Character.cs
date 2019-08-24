@@ -117,7 +117,6 @@ namespace Ow.Game.Objects
                 if (destroyer is Player destroyerPlayer && destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count() <= 13)
                     destroyerPlayer.Storage.KilledPlayerIds.Add(Id);
 
-                Duel.RemovePlayer(thisPlayer);
                 thisPlayer.SkillManager.DisableAllSkills();
                 thisPlayer.Pet.Deactivate(true);
                 thisPlayer.SendCommand(destroyCommand);

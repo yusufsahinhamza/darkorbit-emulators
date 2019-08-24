@@ -29,12 +29,12 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
 
-                if (battleStation.equippedStationModule.Count != 10 || battleStation.InBuildingState) return;
+                if (battleStation.EquippedStationModule[player.Clan.Id].Count != 10 || battleStation.InBuildingState || battleStation.Clan.Id != 0) return;
 
+                battleStation.InBuildingState = true;
                 battleStation.Clan = player.Clan;
                 battleStation.FactionId = battleStation.Clan.FactionId;
                 battleStation.BuildTimeInMinutes = read.buildTimeInMinutes;
-                battleStation.InBuildingState = true;
 
                 var tickId = battleStation.TickId;
                 Program.TickManager.AddTick(battleStation, out tickId);

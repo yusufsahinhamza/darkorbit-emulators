@@ -99,7 +99,7 @@ namespace Ow.Game.Events
                         mine.Value.Remove();
 
                     player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
-                    player.Storage.Duel = null;
+                    RemovePlayer(player);
                 }
         }
 

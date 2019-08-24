@@ -255,28 +255,25 @@ namespace Ow.Game
 
                 if (activateButton)
                 {
-                    if (entity is Portal portal && !portal.Working) status = MapAssetActionAvailableCommand.OFF;
+                    if (entity is Portal portal && !portal.Working)
+                        status = MapAssetActionAvailableCommand.OFF;
+
+                    if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && !battleStation.InBuildingState && battleStation.Clan.Id != Player.Clan.Id)
+                        status = MapAssetActionAvailableCommand.OFF;
+
                     if (entity is BattleStation && status == MapAssetActionAvailableCommand.OFF)
                     {                      
                         //TODO: Find close ui command end send it
                     }
 
-                    var tooltipItemBars = new List<ClientUITooltipModule>();
-
-                    var class521_localized_1 =
-                     new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED);
-
-                    var slotBarItemStatusTooltip_1 =
-                    new ClientUITooltipModule(class521_localized_1, ClientUITooltipModule.STANDARD, "q2_condition_JUMP", new List<ClientUITextReplacementModule>());
-
-                    tooltipItemBars.Add(slotBarItemStatusTooltip_1);
+                    var portalTooltip = new List<ClientUITooltipModule>();
+                    portalTooltip.Add(new ClientUITooltipModule(new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), ClientUITooltipModule.STANDARD, "q2_condition_JUMP", new List<ClientUITextReplacementModule>()));
 
                     var assetAction =
                             MapAssetActionAvailableCommand.write(entity.Id,
                                                                status,
                                                                inRange,
-                                                               new ClientUITooltipsCommand(
-                                                                       entity is Portal ? tooltipItemBars : new List<ClientUITooltipModule>()),
+                                                               new ClientUITooltipsCommand(entity is Portal ? portalTooltip : new List<ClientUITooltipModule>()),
                                                                new class_h45()
                             );
 

@@ -25,6 +25,7 @@ namespace Ow.Game.Objects.Players
         public ConcurrentDictionary<int, Player> DuelInvites = new ConcurrentDictionary<int, Player>();
         public List<int> KilledPlayerIds = new List<int>();
         public Dictionary<string, Skill> Skills = new Dictionary<string, Skill>();
+        public List<StationModuleModule> BattleStationModules = new List<StationModuleModule>();
 
         public bool UbaMatchmakingAccepted = false;
         public Duel Duel { get; set; }

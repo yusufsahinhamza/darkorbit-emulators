@@ -1,5 +1,6 @@
 ﻿using Ow.Game;
 using Ow.Game.Objects.Stations;
+using Ow.Game.Objects.Stations.BattleStations;
 using Ow.Net.netty.commands;
 using Ow.Net.netty.requests.BattleStationRequests;
 using System;
@@ -28,24 +29,42 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
 
-                /*
-                if (!battleStation.ModuleInstallationState)
+                if (battleStation.EquippedStationModule.ContainsKey(player.Clan.Id))
                 {
-                    player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.CONCURRENT_EQUIP));
-                    return;
+                    if (battleStation.EquippedStationModule[player.Clan.Id].Where(x => !x.Installed && x.OwnerId == player.Id).ToList().Count > 0)
+                    {
+                        player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.EQUIP_OF_SAME_PLAYER_RUNNING));
+                        return;
+                    }
+
+                    var equippedModule = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.ModuleModule.slotId == read.slotId).FirstOrDefault();
+
+                    if (equippedModule != null)
+                    {
+                        if (equippedModule.OwnerId != player.Id)
+                        {
+                            player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
+                            return;
+                        }
+
+                        battleStation.EquippedStationModule[player.Clan.Id].Remove(equippedModule);
+                    }
                 }
-                */
-                var module = battleStation.inventoryStationModule.Where(x => x.itemId == read.itemId).FirstOrDefault();
+
+                var module = player.Storage.BattleStationModules.Where(x => x.itemId == read.itemId).FirstOrDefault();
 
                 if (module.itemId == BattleStation.DEFLECTOR_ID && read.slotId != 1 || module.itemId != BattleStation.DEFLECTOR_ID && read.slotId == 1) return;
                 if (module.itemId == BattleStation.HULL_ID && read.slotId != 0 || module.itemId != BattleStation.HULL_ID && read.slotId == 0) return;
 
-                battleStation.inventoryStationModule.Remove(module);
                 module.slotId = read.slotId;
-                //module.installationSecondsLeft = 60;
-                //battleStation.ModuleInstallationSeconds = DateTime.Now;
-                battleStation.equippedStationModule.Add(module);
+                module.installationSecondsLeft = module.installationSeconds;
+                
+                if (!battleStation.EquippedStationModule.ContainsKey(player.Clan.Id))
+                    battleStation.EquippedStationModule[player.Clan.Id] = new List<Module>();
+
+                battleStation.EquippedStationModule[player.Clan.Id].Add(new Module(battleStation, module, player.Id));
                 battleStation.Click(gameSession);
+                //send command to other players
             }
         }
     }

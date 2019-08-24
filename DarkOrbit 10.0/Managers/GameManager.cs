@@ -3,6 +3,7 @@ using Ow.Game;
 using Ow.Game.Events;
 using Ow.Game.Objects;
 using Ow.Game.Objects.Players;
+using Ow.Game.Objects.Stations;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace Ow.Managers
         public static ConcurrentDictionary<int, ChatClient> ChatClients = new ConcurrentDictionary<int, ChatClient>();
         public static ConcurrentDictionary<int, GameSession> GameSessions = new ConcurrentDictionary<int, GameSession>();
         public static ConcurrentDictionary<int, Spacemap> Spacemaps = new ConcurrentDictionary<int, Spacemap>();
+        public static ConcurrentDictionary<string, BattleStation> BattleStations = new ConcurrentDictionary<string, BattleStation>();
         public static ConcurrentDictionary<int, Ship> Ships = new ConcurrentDictionary<int, Ship>();
         public static ConcurrentDictionary<int, Clan> Clans = new ConcurrentDictionary<int, Clan>();
         public static List<Group> Groups = new List<Group>();

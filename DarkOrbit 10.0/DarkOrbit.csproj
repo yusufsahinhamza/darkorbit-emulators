@@ -110,6 +110,7 @@
     <Compile Include="Game\Objects\POI.cs" />
     <Compile Include="Game\Objects\Portal.cs" />
     <Compile Include="Game\Objects\Stations\BattleStation.cs" />
+    <Compile Include="Game\Objects\Stations\BattleStations\Module.cs" />
     <Compile Include="Game\Objects\Stations\OreTradeStation.cs" />
     <Compile Include="Game\Objects\Stations\QuestGiverStation.cs" />
     <Compile Include="Game\Objects\Stations\HomeStation.cs" />
@@ -159,6 +160,7 @@
     <Compile Include="Net\mysql\QueryException.cs" />
     <Compile Include="Net\mysql\TransactionException.cs" />
     <Compile Include="Net\mysql\TransactionQueryReactor.cs" />
+    <Compile Include="Net\netty\commands\OutOfBattleStationRangeCommand.cs" />
     <Compile Include="Net\netty\commands\RemovePortalCommand.cs" />
     <Compile Include="Net\netty\commands\AssetInfoCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationBuildingStateCommand.cs" />

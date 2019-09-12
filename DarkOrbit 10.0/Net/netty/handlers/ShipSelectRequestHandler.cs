@@ -18,7 +18,7 @@ namespace Ow.Net.netty.handlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            player.SelectShip(read.targetID);
+            player.SelectEntity(read.targetID);
         }
     }
 }

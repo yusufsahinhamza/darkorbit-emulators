@@ -18,7 +18,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            var battleStation = (BattleStation)player.Spacemap.GetActivatableMapEntity(read.battleStationId);
+            var battleStation = player.Spacemap.GetActivatableMapEntity(read.battleStationId) as BattleStation;
 
             if (battleStation != null)
             {
@@ -28,17 +28,20 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
 
-                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.ModuleModule.itemId == read.itemId).FirstOrDefault();
+                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.Module.itemId == read.itemId).FirstOrDefault();
 
-                if (module.OwnerId != player.Id)
+                if (module != null)
                 {
-                    player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
-                    return;
+                    if (module.OwnerId != player.Id)
+                    {
+                        player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
+                        return;
+                    }
+
+                    module.Remove();
+
+                    battleStation.Click(gameSession);
                 }
-
-                module.Remove();
-
-                battleStation.Click(gameSession);
             }
         }
     }

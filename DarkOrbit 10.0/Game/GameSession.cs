@@ -57,7 +57,7 @@ namespace Ow.Game
             {
                 QueryManager.SavePlayer.Information(Player);
                 Player.SaveSettings();
-                Player.Group?.UpdatePlayer(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
+                Player.Group?.UpdateTarget(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
                 Player.Pet.Deactivate();
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                 Duel.RemovePlayer(Player);
@@ -105,7 +105,7 @@ namespace Ow.Game
                 var gameSession = this;
                 Program.TickManager.RemoveTick(this);
                 GameManager.GameSessions.TryRemove(Player.Id, out gameSession);
-                Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
+                Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)
             {

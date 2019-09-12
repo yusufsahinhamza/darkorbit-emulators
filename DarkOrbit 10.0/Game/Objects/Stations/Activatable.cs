@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Stations
 {
-    abstract class Activatable
+    abstract class Activatable : Attackable
     {
         public const int ACTIVATED_RANGE = 500;
 
@@ -19,22 +19,47 @@ namespace Ow.Game.Objects.Stations
 
         public abstract void Click(GameSession gameSession);
 
-        public abstract short GetAssetType();
+        public abstract short AssetTypeId { get; }
 
-        public Spacemap Spacemap { get; set; }
-        public Position Position { get; set; }
-        public Clan Clan { get; set; }
-        public int Id { get; set; }
-        public int FactionId { get; set; }
+        public override string Name { get; set; }
+        public override Clan Clan { get; set; }
+        public override Position Position { get; set; }
+        public override Spacemap Spacemap { get; set; }
+        public override int FactionId { get; set; }
+        public override int CurrentHitPoints { get; set; }
+        public override int MaxHitPoints { get; set; }
+        public override int CurrentNanoHull { get; set; }
+        public override int MaxNanoHull { get; set; }
+        public override int CurrentShieldPoints { get; set; }
+        public override int MaxShieldPoints { get; set; }
+        public override double ShieldAbsorption { get; set; }
+        public override double ShieldPenetration { get; set; }
 
-        public Activatable(Spacemap spacemap, int factionId, Position position, Clan clan)
+        public Activatable(Spacemap spacemap, int factionId, Position position, Clan clan) : base(Randoms.CreateRandomID())
         {
             Spacemap = spacemap;
-            Id = Randoms.CreateRandomID();
             FactionId = factionId;
             Position = position;
             Clan = clan;
-            Spacemap.Activatables.TryAdd(Id, this);
+
+            if (!(this is Satellite))
+                Spacemap.Activatables.TryAdd(Id, this);
+        }
+
+        public AssetTypeModule GetAssetType()
+        {
+            return new AssetTypeModule(AssetTypeId);
+        }
+
+        public override void Tick()
+        {
+            if (!Destroyed)
+            {
+                if (this is BattleStation battleStation)
+                    battleStation.Tick();
+                else if (this is Satellite satellite)
+                    satellite.Tick();
+            }
         }
     }
 }

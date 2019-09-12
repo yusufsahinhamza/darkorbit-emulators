@@ -85,7 +85,7 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void UpdatePlayer(Player player, List<command_i3O> updates)
+        public void UpdateTarget(Player player, List<command_i3O> updates)
         {
             foreach (var member in Members.Values)
             {

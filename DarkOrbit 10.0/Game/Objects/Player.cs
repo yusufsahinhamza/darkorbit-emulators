@@ -402,7 +402,7 @@ namespace Ow.Game.Objects
                         value -= Maths.GetPercentage(value, 20);
                         break;
                 }
-                value = Ship.GetLaserDamageBoost(value, FactionId, SelectedCharacter.FactionId);
+                //value = Ship.GetLaserDamageBoost(value, FactionId, SelectedCharacter.FactionId);
                 return value;
             }
         }
@@ -651,35 +651,65 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void SelectShip(int targetId)
+        public void SelectEntity(int entityId)
         {
             if (AttackManager.Attacking)
                 DisableAttack(SettingsManager.Player.Settings.InGameSettings.selectedLaser);
 
             try
             {
-                foreach (var entry in InRangeCharacters.Values.Where(entry => entry.Id == targetId))
+                if (InRangeCharacters.ContainsKey(entityId))
                 {
-                    if (entry is Player && ((entry as Player).AttackManager.EmpCooldown.AddMilliseconds(TimeManager.EMP_DURATION) > DateTime.Now)) return;
-                    Selected = entry;
+                    var character = InRangeCharacters.Values.Where(x => x.Id == entityId).FirstOrDefault();
 
-                    SendCommand(ShipSelectionCommand.write(
-                        entry.Id,
-                        entry.Ship.Id,
-                        entry.CurrentShieldPoints,
-                        entry.MaxShieldPoints,
-                        entry.CurrentHitPoints,
-                        entry.MaxHitPoints,
-                        0,
-                        0,
-                        entry is Player ? true : false));
+                    if (character != null)
+                    {
+                        if (character is Player player && (player.AttackManager.EmpCooldown.AddMilliseconds(TimeManager.EMP_DURATION) > DateTime.Now)) return;
+                        Selected = character;
 
-                    Group?.UpdatePlayer(this, new List<command_i3O> { new GroupPlayerTargetModule(new GroupPlayerShipModule(entry.Ship.GroupShipId), entry.Name, new GroupPlayerInformationsModule(entry.CurrentHitPoints, entry.MaxHitPoints, entry.CurrentShieldPoints, entry.MaxShieldPoints, entry.CurrentNanoHull, entry.MaxNanoHull)) });
+                        SendCommand(ShipSelectionCommand.write(
+                            character.Id,
+                            character.Ship.Id,
+                            character.CurrentShieldPoints,
+                            character.MaxShieldPoints,
+                            character.CurrentHitPoints,
+                            character.MaxHitPoints,
+                            0,
+                            0,
+                            character is Player ? true : false));
+                    }
+                }
+                else if (Storage.InRangeAssets.ContainsKey(entityId))
+                {
+                    var asset = Storage.InRangeAssets.Values.Where(x => x.Id == entityId).FirstOrDefault();
+
+                    if (asset != null && (asset is BattleStation || asset is Satellite))
+                    {
+                        Selected = asset;
+
+                        SendCommand(AssetInfoCommand.write(
+                            asset.Id,
+                            asset.GetAssetType(),
+                            asset is Satellite satellite ? satellite.DesignId : 0,
+                            0,
+                            asset.CurrentHitPoints,
+                            asset.MaxHitPoints,
+                            asset.MaxShieldPoints > 0 ? true : false,
+                            asset.CurrentShieldPoints,
+                            asset.MaxShieldPoints
+                            ));
+                    }
+                }
+
+                if (Selected != null)
+                {
+                    //TODO
+                    Group?.UpdateTarget(this, new List<command_i3O> { new GroupPlayerTargetModule(new GroupPlayerShipModule(Selected is Player player ? player.Ship.GroupShipId : GroupPlayerShipModule.NONE), "", new GroupPlayerInformationsModule(Selected.CurrentHitPoints, Selected.MaxHitPoints, Selected.CurrentShieldPoints, Selected.MaxShieldPoints, Selected.CurrentNanoHull, Selected.MaxNanoHull)) });
                 }
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.StackTrace);
+                Out.WriteLine(e.ToString());
             }
         }
 
@@ -838,7 +868,8 @@ namespace Ow.Game.Objects
 
         public int GetBaseMapId()
         {
-            return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
+            return 1;
+            //return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
         }
 
         public Position GetBasePosition()
@@ -918,14 +949,14 @@ namespace Ow.Game.Objects
         {
             AttackManager.Attacking = true;
             SendCommand(AddMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), itemId, new class_K18(class_K18.ACTIVE), new class_I1W(false, 0)));
-            Group?.UpdatePlayer(this, new List<command_i3O> { new GroupPlayerAttackingModule(true) });
+            Group?.UpdateTarget(this, new List<command_i3O> { new GroupPlayerAttackingModule(true) });
         }
 
         public void DisableAttack(string itemId)
         {
             AttackManager.Attacking = false;
             SendCommand(RemoveMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), itemId, new class_K18(class_K18.ACTIVE)));
-            Group?.UpdatePlayer(this, new List<command_i3O> { new GroupPlayerAttackingModule(false) });
+            Group?.UpdateTarget(this, new List<command_i3O> { new GroupPlayerAttackingModule(false) });
         }
 
         public Position GetNearestPortalPosition()

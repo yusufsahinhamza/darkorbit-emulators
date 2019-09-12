@@ -172,7 +172,7 @@ namespace Ow.Game.Events
                
         }
 
-        public async void SendReward(Player player)
+        public void SendReward(Player player)
         {
 
         }

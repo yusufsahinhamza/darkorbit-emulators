@@ -12,23 +12,16 @@ namespace Ow.Game.Objects.Stations
 {
     class OreTradeStation : Activatable
     {
-        private static String ASSET_NAME = "OreTrade";
-        private static short ASSET_TYPE = AssetTypeModule.ORE_TRADE_STATION;
-        private static short DESIGN_ID = 0;
+        public override short AssetTypeId => AssetTypeModule.ORE_TRADE_STATION;
 
         public OreTradeStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan) { }
 
-        public override short GetAssetType() { return ASSET_TYPE; }
-
-        public override void Click(GameSession gameSession)
-        {
-
-        }
+        public override void Click(GameSession gameSession) { }
 
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
-            return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), ASSET_NAME,
-                                          FactionId, "", Id, DESIGN_ID, 0,
+            return AssetCreateCommand.write(GetAssetType(), "OreTrade",
+                                          FactionId, "", Id, 0, 0,
                                           Position.X, Position.Y, 0, true, true, true, false,
                                           new ClanRelationModule(clanRelationModule),
                                           new List<VisualModifierCommand>());

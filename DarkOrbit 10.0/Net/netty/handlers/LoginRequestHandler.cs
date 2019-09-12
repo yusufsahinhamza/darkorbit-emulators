@@ -94,7 +94,7 @@ namespace Ow.Net.netty.handlers
         {
             try
             {
-                Console.Title = $"RisingBattle | {GameManager.GameSessions.Count} users online";
+                Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
                 if (firstLogin || EventManager.JackpotBattle.InActiveEvent(Player) || Player.Storage.Duel != null)
                 {
                     Player.CurrentHitPoints = Player.MaxHitPoints;

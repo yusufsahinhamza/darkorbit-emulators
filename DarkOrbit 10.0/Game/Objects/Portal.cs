@@ -28,6 +28,8 @@ namespace Ow.Game.Objects
         public static int JUMP_DELAY = 1000;
         public static int SECURE_ZONE_RANGE = 1500;
 
+        public override short AssetTypeId => 0;
+
         public Position TargetPosition { get; set; }
         public int TargetSpaceMapId { get; set; }
         public int GraphicsId { get; set; }
@@ -87,14 +89,11 @@ namespace Ow.Game.Objects
             GameManager.SendCommandToMap(Spacemap.Id, RemovePortalCommand.write(Id));
         }
 
-        public override short GetAssetType() { return 0; }
-
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
             return CreatePortalCommand.write(Id, FactionId, GraphicsId,
                                            Position.X, Position.Y, true,
                                            Visible, new List<int>());
         }
-
     }
 }

@@ -12,13 +12,9 @@ namespace Ow.Game.Objects.Stations
 {
     class RepairStation : Activatable
     {
-        private static String ASSET_NAME = "RepairDock";
-        private static short ASSET_TYPE = AssetTypeModule.REPAIR_STATION;
-        private static short DESIGN_ID = 0;
+        public override short AssetTypeId => AssetTypeModule.REPAIR_STATION;
 
         public RepairStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan) { }
-
-        public override short GetAssetType() { return ASSET_TYPE; }
 
         public override void Click(GameSession gameSession)
         {
@@ -34,8 +30,8 @@ namespace Ow.Game.Objects.Stations
 
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
-            return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), ASSET_NAME,
-                                          FactionId, "", Id, DESIGN_ID, 0,
+            return AssetCreateCommand.write(GetAssetType(), "RepairDock",
+                                          FactionId, "", Id, 0, 0,
                                           Position.X, Position.Y, 0, true, true, true, true,
                                           new ClanRelationModule(clanRelationModule),
                                           new List<VisualModifierCommand>());

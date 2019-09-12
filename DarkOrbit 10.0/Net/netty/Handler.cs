@@ -56,6 +56,7 @@ namespace Ow.Net.netty
             Commands.Add(EquipModuleRequest.ID, new EquipModuleRequestHandler());
             Commands.Add(BuildStationRequest.ID, new BuildStationRequestHandler());
             Commands.Add(UnEquipModuleRequest.ID, new UnEquipModuleRequestHandler());
+            Commands.Add(EmergencyRepairRequest.ID, new EmergencyRepairRequestHandler());
 
             Commands.Add(2244, new RepairStationRequestHandler());
             Commands.Add(10343, new LogoutCancelRequestHandler());
@@ -96,7 +97,7 @@ namespace Ow.Net.netty
                     Commands[parser.ID].execute(gameSession, bytes);
                     gameSession.LastActiveTime = DateTime.Now;
                 }
-                //else Out.WriteLine("Unknown command ID: " + parser.ID);
+                else Out.WriteLine("Unknown command ID: " + parser.ID);
             }
             catch (Exception e)
             {

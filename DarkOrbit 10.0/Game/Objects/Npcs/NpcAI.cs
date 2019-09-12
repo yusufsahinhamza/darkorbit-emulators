@@ -8,6 +8,6 @@ namespace Ow.Game.Objects.Npcs
 {
     class NpcAI
     {
-        //yarrak
+        //yarrak :D
     }
 }

@@ -12,23 +12,16 @@ namespace Ow.Game.Objects.Stations
 {
     class QuestGiverStation : Activatable
     {
-        private static String ASSET_NAME = "Morgus Petterson";
-        private static short ASSET_TYPE = AssetTypeModule.QUESTGIVER;
-        private static short DESIGN_ID = 3;
+        public override short AssetTypeId => AssetTypeModule.QUESTGIVER;
 
         public QuestGiverStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan) { }
 
-        public override short GetAssetType() { return ASSET_TYPE; }
-
-        public override void Click(GameSession gameSession)
-        {
-
-        }
+        public override void Click(GameSession gameSession) { }
 
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
-            return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), ASSET_NAME,
-                                          FactionId, "", Id, DESIGN_ID, 0,
+            return AssetCreateCommand.write(GetAssetType(), "Morgus Petterson",
+                                          FactionId, "", Id, 3, 0,
                                           Position.X, Position.Y, 0, true, true, true, false,
                                           new ClanRelationModule(clanRelationModule),
                                           new List<VisualModifierCommand>());

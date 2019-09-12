@@ -111,7 +111,7 @@ namespace Ow.Managers
                     string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
                     var querySet = mySqlClient.ExecuteQueryRow(sql);
 
-                    Player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase() { Config1Hitpoints = Player.Ship.BaseHitpoints, Config2Hitpoints = Player.Ship.BaseHitpoints, Config1Speed = 300, Config2Speed = 300 }; //TODO: GGA
+                    Player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase() { Config1Hitpoints = Player.Ship.BaseHitpoints, Config2Hitpoints = Player.Ship.BaseHitpoints, Config1Speed = 300, Config2Speed = 300 }; //TODO: GGA (i dont remember what i said )
                 }
             }
             catch (Exception e)

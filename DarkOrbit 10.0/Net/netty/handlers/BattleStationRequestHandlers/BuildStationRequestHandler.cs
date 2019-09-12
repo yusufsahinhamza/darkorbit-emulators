@@ -19,11 +19,11 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            var activatableStationaryMapEntity = player.Spacemap.GetActivatableMapEntity(read.battleStationId);
+            var battleStation = player.Spacemap.GetActivatableMapEntity(read.battleStationId) as BattleStation;
 
-            if (activatableStationaryMapEntity != null && activatableStationaryMapEntity is BattleStation battleStation)
+            if (battleStation != null)
             {
-                if (player.Position.DistanceTo(activatableStationaryMapEntity.Position) > 700)
+                if (player.Position.DistanceTo(battleStation.Position) > 700)
                 {
                     player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.OUT_OF_RANGE));
                     return;
@@ -31,19 +31,22 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
 
                 if (battleStation.EquippedStationModule[player.Clan.Id].Count != 10 || battleStation.InBuildingState || battleStation.Clan.Id != 0) return;
 
+                if (battleStation.Destroyed)
+                    battleStation.Destroyed = false;
+
                 battleStation.InBuildingState = true;
                 battleStation.Clan = player.Clan;
+
+                foreach (var module in battleStation.EquippedStationModule[player.Clan.Id])
+                    module.Clan = player.Clan;
+
                 battleStation.FactionId = battleStation.Clan.FactionId;
-                battleStation.BuildTimeInMinutes = read.buildTimeInMinutes;
-
-                var tickId = battleStation.TickId;
-                Program.TickManager.AddTick(battleStation, out tickId);
-
+                battleStation.BuildTimeInMinutes = 0;
                 battleStation.buildTime = DateTime.Now;
 
-                var visualCommand = new VisualModifierCommand(battleStation.Id, VisualModifierCommand.BATTLESTATION_CONSTRUCTING, 0, "", 0, true);
-                battleStation.Visuals.Add(visualCommand);
-                GameManager.SendCommandToMap(battleStation.Spacemap.Id, visualCommand.writeCommand());
+                Program.TickManager.AddTick(battleStation, out var tickId);
+
+                battleStation.AddVisualModifier(new VisualModifierCommand(battleStation.Id, VisualModifierCommand.BATTLESTATION_CONSTRUCTING, 0, "", 0, true));
 
                 player.SendCommand(BattleStationBuildingStateCommand.write(battleStation.Id, battleStation.Id, battleStation.Name, battleStation.BuildTimeInMinutes * 60, 3600, battleStation.Clan.Name, new FactionModule((short)battleStation.FactionId)));
             }

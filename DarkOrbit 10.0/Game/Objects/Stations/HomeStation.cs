@@ -19,10 +19,9 @@ namespace Ow.Game.Objects.Stations
 
     class HomeStation : Activatable
     {
-        private static String ASSET_NAME = "HQ";
-        private static short ASSET_TYPE = AssetTypeModule.BASE_COMPANY;
-        private static short DESIGN_ID = 0;
         public static int SECURE_ZONE_RANGE = 1500;
+
+        public override short AssetTypeId => AssetTypeModule.BASE_COMPANY;
 
         public RepairStation RepairStation { get; set; }
         public HangarStation HangarStation { get; set; }
@@ -36,28 +35,18 @@ namespace Ow.Game.Objects.Stations
 
         public void PrepareStations()
         {
-                var rPosition = new Position(Position.X + 0, Position.Y + -1080);
-                var repairStation =
-                        new RepairStation(Spacemap, FactionId, rPosition, Clan);
-                RepairStation = repairStation;
+            var rPosition = new Position(Position.X + 0, Position.Y + -1080);
+            RepairStation = new RepairStation(Spacemap, FactionId, rPosition, Clan);
 
-                var hPosition = new Position(Position.X + +1080, Position.Y + 0);
-                var hangarStation =
-                        new HangarStation(Spacemap, FactionId, hPosition, Clan);
-                HangarStation = hangarStation;
+            var hPosition = new Position(Position.X + +1080, Position.Y + 0);
+            HangarStation = new HangarStation(Spacemap, FactionId, hPosition, Clan);
 
-                var qPosition = new Position(Position.X + 0, Position.Y + 1080);
-                var questGiverStation =
-                        new QuestGiverStation(Spacemap, FactionId, qPosition, Clan);
-                QuestGiverStation = questGiverStation;
+            var qPosition = new Position(Position.X + 0, Position.Y + 1080);
+            QuestGiverStation = new QuestGiverStation(Spacemap, FactionId, qPosition, Clan);
 
-                var oPosition = new Position(Position.X + -1080, Position.Y + -1);
-                var oreTradeStation =
-                        new OreTradeStation(Spacemap, FactionId, oPosition, Clan);
-                OreTradeStation = oreTradeStation;
+            var oPosition = new Position(Position.X + -1080, Position.Y + -1);
+            OreTradeStation = new OreTradeStation(Spacemap, FactionId, oPosition, Clan);
         }
-
-        public override short GetAssetType() { return ASSET_TYPE; }
 
         public override void Click(GameSession gameSession)
         {
@@ -66,8 +55,8 @@ namespace Ow.Game.Objects.Stations
 
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
         {
-            return AssetCreateCommand.write(new AssetTypeModule(ASSET_TYPE), ASSET_NAME,
-                                          FactionId, "", Id, DESIGN_ID, 0,
+            return AssetCreateCommand.write(GetAssetType(), "HQ",
+                                          FactionId, "", Id, 0, 0,
                                           Position.X, Position.Y, 0, true, true, true, false,
                                           new ClanRelationModule(clanRelationModule),
                                           new List<VisualModifierCommand>());

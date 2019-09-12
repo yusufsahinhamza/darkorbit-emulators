@@ -27,9 +27,10 @@ namespace Ow.Game.Objects.Players.Managers
         {
             if (Attacking)
             {
-                var enemy = Player.Selected as Character;
-                if (enemy == null) return;
-                if (!TargetDefinition(enemy)) return;
+                var target = Player.Selected;
+
+                if (target == null) return;
+                if (!TargetDefinition(target)) return;
 
                 if (CheckLaserAttackTime())
                 {
@@ -45,13 +46,13 @@ namespace Ow.Game.Objects.Players.Managers
                     if (Player.Storage.Spectrum)
                         damage -= Maths.GetPercentage(damage, 50);
 
-                    if (enemy is Player)
+                    if (target is Player)
                     {
-                        if ((enemy as Player).Storage.Spectrum)
+                        if ((target as Player).Storage.Spectrum)
                             damage -= Maths.GetPercentage(damage, 80);
                     }
 
-                    Damage(Player, enemy, DamageType.LASER, damage, Player.ShieldPenetration);
+                    Damage(Player, target, DamageType.LASER, damage, Player.ShieldPenetration);
 
                     if (Player.Storage.AutoRocket)
                         RocketAttack();
@@ -63,7 +64,7 @@ namespace Ow.Game.Objects.Players.Managers
                             LaunchRocketLauncher();
                     RocketLauncher.Reload();
 
-                    UpdateAttacker(enemy, Player);
+                    UpdateAttacker(target, Player);
 
                     if (Player.Settings.InGameSettings.selectedLaser == AmmunitionManager.RSB_75)
                     {
@@ -79,7 +80,7 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime lastRocketAttack = new DateTime();
         public void RocketAttack()
         {
-            var enemy = Player.SelectedCharacter;
+            var enemy = Player.Selected;
             if (enemy == null) return;
 
             if (Player.Settings.InGameSettings.selectedRocket != AmmunitionManager.WIZ_X)
@@ -118,7 +119,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void LaunchRocketLauncher()
         {
-            var enemy = Player.SelectedCharacter;
+            var enemy = Player.Selected;
             if (enemy == null) return;
             if (!TargetDefinition(enemy, false)) return;
 
@@ -137,13 +138,13 @@ namespace Ow.Game.Objects.Players.Managers
             UpdateAttacker(enemy, Player);
         }
 
-        public void UpdateAttacker(Character target, Player player)
+        public void UpdateAttacker(Attackable target, Player player)
         {
             if (target.MainAttacker == null)
                 target.MainAttacker = player;
 
-            if (!target.Attackers.ContainsKey(Player.Id))
-                target.Attackers.TryAdd(Player.Id, new Attacker(player));
+            if (!target.Attackers.ContainsKey(player.Id))
+                target.Attackers.TryAdd(player.Id, new Attacker(player));
             else
                 target.Attackers[player.Id].Refresh();
         }
@@ -414,7 +415,7 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime outOfRangeCooldown = new DateTime();
         public DateTime inAttackCooldown = new DateTime();
         public DateTime peaceAreaCooldown = new DateTime();
-        public bool TargetDefinition(Character target, bool sendMessage = true, bool isRocketAttack = false)
+        public bool TargetDefinition(Attackable target, bool sendMessage = true, bool isRocketAttack = false)
         {
             if (target == null) return false;
 
@@ -442,7 +443,7 @@ namespace Ow.Game.Objects.Players.Managers
                         */
                     return false;
                 }
-
+                
                 if (targetPlayer.Group != null)
                 {
                     if (Player.Group != null && Player.Group.Members.ContainsKey(target.Id))
@@ -536,7 +537,7 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public void Absorbation(Player attacker, Character target, DamageType damageType, int damage)
+        public void Absorbation(Player attacker, Attackable target, DamageType damageType, int damage)
         {
             if (attacker.Storage.invincibilityEffect)
                 attacker.Storage.DeactiveInvincibilityEffect();
@@ -581,7 +582,7 @@ namespace Ow.Game.Objects.Players.Managers
             Player.UpdateStatus();
         }
 
-        public void Damage(Player attacker, Character target, DamageType damageType, int damage, double shieldPenetration, bool deactiveCloak = true)
+        public void Damage(Player attacker, Attackable target, DamageType damageType, int damage, double shieldPenetration, bool deactiveCloak = true)
         {
             if (damageType == DamageType.MINE && target is Player && (target as Player).Storage.invincibilityEffect) return;
 
@@ -759,7 +760,7 @@ namespace Ow.Game.Objects.Players.Managers
             target.UpdateStatus();
         }
 
-        public void AttackMissed(Character target, DamageType damageType)
+        public void AttackMissed(Attackable target, DamageType damageType)
         {
             var attackMissedCommand = AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 0);
             var attackMissedCommandToInRange = AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 1);

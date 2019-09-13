@@ -28,8 +28,6 @@ namespace Ow.Game.Objects
         public static int JUMP_DELAY = 1000;
         public static int SECURE_ZONE_RANGE = 1500;
 
-        public override short AssetTypeId => 0;
-
         public Position TargetPosition { get; set; }
         public int TargetSpaceMapId { get; set; }
         public int GraphicsId { get; set; }

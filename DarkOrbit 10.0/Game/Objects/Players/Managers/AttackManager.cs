@@ -481,7 +481,8 @@ namespace Ow.Game.Objects.Players.Managers
                 {
                     if (sendMessage)
                     {
-                        Player.SendPacket("0|A|STM|outofrange");
+                        if (!isRocketAttack) //not sure
+                            Player.SendPacket("0|A|STM|outofrange");
 
                         if (target is Player)
                             (target as Player).SendPacket("0|A|STM|attescape");
@@ -647,13 +648,16 @@ namespace Ow.Game.Objects.Players.Managers
                 if (target is Player && (target as Player).Storage.Diminisher)
                     if ((target as Player).Storage.UnderDiminisherPlayer == Player)
                         damageShd += Maths.GetPercentage(damage, 30);
-            }
 
-            if (damageType == DamageType.LASER)
-            {
                 var laserRunCommand = AttackLaserRunCommand.write(Player.Id, target.Id, GetSelectedLaser(), false, true);
                 Player.SendCommand(laserRunCommand);
                 Player.SendCommandToInRangePlayers(laserRunCommand);
+
+                if (Player.Settings.InGameSettings.selectedLaser != AmmunitionManager.CBO_100)
+                {
+                    if (Player.Storage.EnergyLeech)
+                        Player.TechManager.EnergyLeech.ExecuteHeal(damage);
+                }
             }
 
             if (damage == 0)
@@ -687,15 +691,6 @@ namespace Ow.Game.Objects.Players.Managers
                 }
 
                 Player.CurrentShieldPoints += sabDamage;
-            }
-
-            if (damageType == DamageType.LASER)
-            {
-                if (Player.Settings.InGameSettings.selectedLaser != AmmunitionManager.CBO_100)
-                {
-                    if (Player.Storage.EnergyLeech)
-                        Player.TechManager.EnergyLeech.ExecuteHeal(damage);
-                }
             }
 
             if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints == 0)

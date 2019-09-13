@@ -12,9 +12,7 @@ namespace Ow.Game.Objects.Stations
 {
     class RepairStation : Activatable
     {
-        public override short AssetTypeId => AssetTypeModule.REPAIR_STATION;
-
-        public RepairStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan) { }
+        public RepairStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan, AssetTypeModule.REPAIR_STATION) { }
 
         public override void Click(GameSession gameSession)
         {

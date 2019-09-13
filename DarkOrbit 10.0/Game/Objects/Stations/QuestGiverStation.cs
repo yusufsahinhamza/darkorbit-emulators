@@ -12,9 +12,7 @@ namespace Ow.Game.Objects.Stations
 {
     class QuestGiverStation : Activatable
     {
-        public override short AssetTypeId => AssetTypeModule.QUESTGIVER;
-
-        public QuestGiverStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan) { }
+        public QuestGiverStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan, AssetTypeModule.QUESTGIVER) { }
 
         public override void Click(GameSession gameSession) { }
 

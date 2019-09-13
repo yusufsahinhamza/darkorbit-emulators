@@ -1,5 +1,7 @@
-﻿using Ow.Game;
+﻿using Newtonsoft.Json;
+using Ow.Game;
 using Ow.Game.Movements;
+using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
@@ -11,38 +13,75 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Stations
 {
+    public class SatelliteBase
+    {
+        public int OwnerId { get; set; }
+        public int ItemId { get; set; }
+        public int SlotId { get; set; }
+        public int DesignId { get; set; }
+        public short Type { get; set; }
+        public int CurrentHitPoints { get; set; }
+        public int MaxHitPoints { get; set; }
+        public int CurrentShieldPoints { get; set; }
+        public int MaxShieldPoints { get; set; }
+        public int InstallationSecondsLeft { get; set; }
+        public bool Installed { get; set; }
+
+        public SatelliteBase(int ownerId, int itemId, int slotId, int designId, short type, int currentHp, int maxHp, int currentShd, int maxShd, int installationSecondsLeft, bool installed)
+        {
+            OwnerId = ownerId;
+            ItemId = itemId;
+            SlotId = slotId;
+            DesignId = designId;
+            Type = type;
+            CurrentHitPoints = currentHp;
+            MaxHitPoints = maxHp;
+            CurrentShieldPoints = currentShd;
+            MaxShieldPoints = maxShd;
+            InstallationSecondsLeft = installationSecondsLeft;
+            Installed = installed;
+        }
+    }
+
     class Satellite : Activatable
     {
         public int DesignId { get; set; }
         public BattleStation BattleStation { get; set; }
-        public StationModuleModule Module { get; set; }
         public int OwnerId { get; set; }
 
-        public override short AssetTypeId => AssetTypeModule.SATELLITE;
         public bool Installed = false;
+        public int InstallationSecondsLeft = 0;
 
-        public Satellite(BattleStation battleStation, StationModuleModule module, int ownerId, string name, int designId, Position position) : base(battleStation.Spacemap, battleStation.FactionId, position, battleStation.Clan)
+        public int ItemId { get; set; }
+        public int SlotId { get; set; }
+        public short Type { get; set; }
+
+        public Satellite(BattleStation battleStation, int ownerId, string name, int designId, int itemId, int slotId, short type, Position position) : base(battleStation.Spacemap, battleStation.FactionId, position, battleStation.Clan, AssetTypeModule.SATELLITE)
         {
             ShieldAbsorption = 0.8;
             BattleStation = battleStation;
-            Module = module;
             OwnerId = ownerId;
             Name = name;
             DesignId = designId;
+            ItemId = itemId;
+            SlotId = slotId;
+            Type = type;
 
-            SetStatus(DesignId);
+
+
+            MaxHitPoints = 1560000;
+            CurrentHitPoints = MaxHitPoints;
+            //CurrentShieldPoints = 250000;
+            //MaxShieldPoints = 500000;
+
+
+
+
+
+
 
             Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
-        }
-
-        public void SetStatus(int designId)
-        {
-            //check all modules and set different hp and shields whatever
-            CurrentHitPoints = 250000;
-            MaxHitPoints = 500000;
-            CurrentShieldPoints = 250000;
-            MaxShieldPoints = 500000;
         }
 
         public DateTime installationTime = new DateTime();
@@ -50,38 +89,216 @@ namespace Ow.Game.Objects.Stations
         {
             if (!Installed)
             {
-                if (Module.installationSecondsLeft > 0)
-                {
-                    var player = GameManager.GetPlayerById(OwnerId);
+                var player = GameManager.GetPlayerById(OwnerId);
 
-                    if (player != null && BattleStation != null && player.Position.DistanceTo(BattleStation.Position) < 700)
+                if (InstallationSecondsLeft > 0)
+                {
+                    if (BattleStation.AssetTypeId == AssetTypeModule.ASTEROID)
                     {
-                        if (installationTime.AddSeconds(1) < DateTime.Now)
-                        {
-                            Module.installationSecondsLeft--;
-                            installationTime = DateTime.Now;
-                        }
+                        if (player == null || player.Position.DistanceTo(BattleStation.Position) > 700)
+                            Remove(true);
                     }
-                    else Remove(true);
+
+                    if (installationTime.AddSeconds(1) < DateTime.Now)
+                    {
+                        InstallationSecondsLeft--;
+                        installationTime = DateTime.Now;
+                    }
                 }
-                else if (Module.installationSecondsLeft <= 0)
+                else if (InstallationSecondsLeft <= 0)
                 {
                     Installed = true;
 
                     if (BattleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
                         RemoveVisualModifier(VisualModifierCommand.BATTLESTATION_INSTALLING);
 
-                    var player = GameManager.GetPlayerById(OwnerId);
-
-                    if (player != null && BattleStation != null)
+                    if (player != null)
                         BattleStation.Click(player.GameSession);
+
+                    QueryManager.BattleStations.Modules(BattleStation);
                 }
             }
             else
             {
-                //attack enemies
+                if (BattleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
+                {
+                    if (Type != StationModuleModule.DEFLECTOR && Type != StationModuleModule.HULL && Type != StationModuleModule.NONE
+                        && Type != StationModuleModule.DAMAGE_BOOSTER && Type != StationModuleModule.EXPERIENCE_BOOSTER 
+                        && Type != StationModuleModule.HONOR_BOOSTER && Type != StationModuleModule.REPAIR)
+                    {
+                        foreach (var character in Spacemap.Characters.Values)
+                        {
+                            if (character is Player || character is Pet)
+                                Attack(character);
+                        }
+                    }
+                    else if (Type == StationModuleModule.REPAIR)
+                    {
+                        //repair modules
+                    }
+                }
             }
         }
+
+        public int RandomizeDamage(int baseDmg, double missProbability = 1.00) //TODO
+        {
+            var random = new Random();
+
+            var randNums = random.Next(0, 6);
+
+            if (missProbability == 0)
+                randNums = random.Next(0, 3) | random.Next(4, 7);
+            if (missProbability < 1.00 && missProbability != 0)
+                randNums = random.Next(0, 7);
+            if (missProbability > 1.00 && missProbability < 2.00)
+                randNums = random.Next(0, 4);
+            if (missProbability >= 2.00)
+                randNums = random.Next(2, 4);
+
+            switch (randNums)
+            {
+                case 0:
+                    return (int)(baseDmg * 1.10);
+                case 1:
+                    return (int)(baseDmg * 0.98);
+                case 2:
+                    return (int)(baseDmg * 1.02);
+                case 3:
+                    return 0;
+                case 4:
+                    return (int)(baseDmg * 0.92);
+                case 5:
+                    return (int)(baseDmg * 0.99);
+                default:
+                    return baseDmg;
+            }
+        }
+
+        public DateTime lastAttackTime = new DateTime();
+        public void Attack(Attackable target, double shieldPenetration = 0)
+        {
+            //targetdefination
+
+            var damage = RandomizeDamage((Type == StationModuleModule.LASER_LOW_RANGE ? 59850 : Type == StationModuleModule.LASER_MID_RANGE ? 48450 : Type == StationModuleModule.LASER_HIGH_RANGE ? 28500 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 85500 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 71250 : 0), 2); //TODO
+            damage = 1000; //for test
+
+            var damageType = (Type == StationModuleModule.LASER_LOW_RANGE || Type == StationModuleModule.LASER_MID_RANGE || Type == StationModuleModule.LASER_HIGH_RANGE) ? DamageType.LASER : (Type == StationModuleModule.ROCKET_LOW_ACCURACY || Type == StationModuleModule.ROCKET_MID_ACCURACY) ? DamageType.ROCKET : DamageType.LASER;
+            var range = Type == StationModuleModule.LASER_LOW_RANGE ? 590 : Type == StationModuleModule.LASER_MID_RANGE ? 650 : Type == StationModuleModule.LASER_HIGH_RANGE ? 720 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 900 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 780 : 0;
+            var cooldown = 1;
+
+            if (target.Position.DistanceTo(Position) < range) //set range*** for all different modules
+            {
+                if (lastAttackTime.AddSeconds(cooldown) < DateTime.Now)
+                {
+                    int damageShd = 0, damageHp = 0;
+
+                    double shieldAbsorb = System.Math.Abs(target.ShieldAbsorption - shieldPenetration);
+
+                    if (shieldAbsorb > 1)
+                        shieldAbsorb = 1;
+
+                    if ((target.CurrentShieldPoints - damage) >= 0)
+                    {
+                        damageShd = (int)(damage * shieldAbsorb);
+                        damageHp = damage - damageShd;
+                    }
+                    else
+                    {
+                        int newDamage = damage - target.CurrentShieldPoints;
+                        damageShd = target.CurrentShieldPoints;
+                        damageHp = (int)(newDamage + (damageShd * shieldAbsorb));
+                    }
+
+                    if ((target.CurrentHitPoints - damageHp) < 0)
+                    {
+                        damageHp = target.CurrentHitPoints;
+                    }
+
+                    if (target is Player && !(target as Player).Attackable())
+                    {
+                        damage = 0;
+                        damageShd = 0;
+                        damageHp = 0;
+                    }
+
+                    if (damageType == DamageType.LASER)
+                    {
+                        if (target is Player && (target as Player).Storage.Sentinel)
+                            damageShd -= Maths.GetPercentage(damageShd, 30);
+
+                        /*TODO
+                        if (target is Player && (target as Player).Storage.Diminisher)
+                            if ((target as Player).Storage.UnderDiminisherPlayer == Player)
+                                damageShd += Maths.GetPercentage(damage, 30);
+                        */
+
+                        var laserRunCommand = AttackLaserRunCommand.write(Id, target.Id, 0, false, false);
+                        SendCommandToInRangeCharacters(laserRunCommand);
+                    }
+                    else if (damageType == DamageType.ROCKET)
+                    {
+                        var rocketRunPacket = "0|v|" + Id + "|" + target.Id + "|H|" + 1 + "|1|1";
+                        SendPacketToInRangeCharacters(rocketRunPacket);
+                    }
+
+                    if (damage == 0)
+                    {
+                        SendCommandToInRangeCharacters(AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 1), target);
+
+                        //check
+                        if (target is Player)
+                            (target as Player).SendCommand(AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 0));
+                    }
+                    else
+                    {
+                        var attackHitCommand =
+                                AttackHitCommand.write(new AttackTypeModule((short)damageType), Id,
+                                                     target.Id, target.CurrentHitPoints,
+                                                     target.CurrentShieldPoints, target.CurrentNanoHull,
+                                                     damage > damageShd ? damage : damageShd, false);
+
+                        SendCommandToInRangeCharacters(attackHitCommand);
+                    }
+
+                    if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints == 0)
+                        target.Destroy(this, DestructionType.MISC);
+                    else
+                        target.CurrentHitPoints -= damageHp;
+
+                    target.CurrentShieldPoints -= damageShd;
+                    target.LastCombatTime = DateTime.Now;
+
+                    target.UpdateStatus();
+
+                    lastAttackTime = DateTime.Now;
+                }
+            }
+        }
+
+        public void SendPacketToInRangeCharacters(string packet)
+        {
+            foreach (var character in Spacemap.Characters.Values)
+                if (character is Player player && character.Position.DistanceTo(Position) < 2000)
+                    player.SendPacket(packet);
+        }
+
+        public void SendCommandToInRangeCharacters(byte[] command, Attackable expectPlayer = null)
+        {
+            foreach (var character in Spacemap.Characters.Values)
+                if (character is Player player && player != expectPlayer && character.Position.DistanceTo(Position) < 2000)
+                    player.SendCommand(command);
+        }
+
+
+
+
+
+
+
+
+
+
+
 
         public override void Click(GameSession gameSession) { }
 
@@ -98,20 +315,32 @@ namespace Ow.Game.Objects.Stations
         {
             var player = GameManager.GetPlayerById(OwnerId);
 
-            if (player != null && BattleStation != null)
+            if (player != null)
             {
                 BattleStation.EquippedStationModule[player.Clan.Id].Remove(this);
 
                 if (BattleStation.EquippedStationModule[player.Clan.Id].Count == 0)
                     BattleStation.EquippedStationModule.Remove(player.Clan.Id);
 
-                player.Storage.BattleStationModules.Add(Module);
+                player.Storage.BattleStationModules.Add(new StationModuleModule(BattleStation.Id, ItemId, SlotId, Type, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
 
                 if (closeUI)
                     player.SendCommand(OutOfBattleStationRangeCommand.write(BattleStation.Id));
+
+                QueryManager.BattleStations.Modules(BattleStation);
             }
 
             Program.TickManager.RemoveTick(this);
+        }
+
+        public static string GetName(short type)
+        {
+            return type == StationModuleModule.REPAIR ? "REPM-1" : type == StationModuleModule.LASER_HIGH_RANGE ? "LTM-HR" : type == StationModuleModule.LASER_MID_RANGE ? "LTM-MR" : type == StationModuleModule.LASER_LOW_RANGE ? "LTM-LR" : type == StationModuleModule.ROCKET_LOW_ACCURACY ? "RAM-LA" : type == StationModuleModule.ROCKET_MID_ACCURACY ? "RAM-MA" : type == StationModuleModule.HONOR_BOOSTER ? "HONM-1" : type == StationModuleModule.DAMAGE_BOOSTER ? "DMGM-1" : type == StationModuleModule.EXPERIENCE_BOOSTER ? "XPM-1" : "";
+        }
+
+        public static Position GetPosition(Position center, int slotId)
+        {
+            return slotId == 9 ? new Position(center.X - 171, center.Y - 236) : slotId == 2 ? new Position(center.X + 170, center.Y - 235) : slotId == 3 ? new Position(center.X + 412, center.Y - 98) : slotId == 4 ? new Position(center.X + 412, center.Y + 97) : slotId == 5 ? new Position(center.X + 170, center.Y + 236) : slotId == 6 ? new Position(center.X - 171, center.Y + 235) : slotId == 7 ? new Position(center.X - 413, center.Y + 97) : slotId == 8 ? new Position(center.X - 413, center.Y - 98) : null;
         }
     }
 }

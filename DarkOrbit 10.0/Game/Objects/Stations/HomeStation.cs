@@ -21,14 +21,12 @@ namespace Ow.Game.Objects.Stations
     {
         public static int SECURE_ZONE_RANGE = 1500;
 
-        public override short AssetTypeId => AssetTypeModule.BASE_COMPANY;
-
         public RepairStation RepairStation { get; set; }
         public HangarStation HangarStation { get; set; }
         public QuestGiverStation QuestGiverStation { get; set; }
         public OreTradeStation OreTradeStation { get; set; }
 
-        public HomeStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan)
+        public HomeStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan, AssetTypeModule.BASE_COMPANY)
         {
             PrepareStations();
         }

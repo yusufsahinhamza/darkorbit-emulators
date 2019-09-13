@@ -104,11 +104,12 @@ namespace Ow.Game
             if (StationBase != null && StationBase.Count >= 1) {
                 foreach (var station in StationBase)
                 {
+                    var position = new Position(station.Position[0], station.Position[1]);
+
                     switch (station.TypeId)
                     {
                         case AssetTypeModule.BASE_COMPANY:
-                            var stationPosition = new Position(station.Position[0], station.Position[1]);
-                            new HomeStation(this, station.FactionId, stationPosition, GameManager.GetClan(0));
+                            new HomeStation(this, station.FactionId, position, GameManager.GetClan(0));
                             break;
                     }
                 }
@@ -124,12 +125,7 @@ namespace Ow.Game
                 }
             }
             
-
-            if (Id == 1)
-            {
-                new BattleStation(this, 0, new Position(1600, 1600), GameManager.GetClan(0));
-            }
-
+            
             if (new int[] {13,14,15}.Contains(Id))
             {
                 for (int i = 0; i <= 85; i++)
@@ -335,10 +331,10 @@ namespace Ow.Game
 
         public void SendObjects(Player player)
         {
-            foreach (var activatableStationary in Activatables.Values)
+            foreach (var activatable in Activatables.Values)
             {
-                short relationType = player.Clan.Id != 0 && activatableStationary.Clan.Id != 0 ? activatableStationary.Clan.GetRelation(player.Clan) : (short)0;
-                player.SendCommand(activatableStationary.GetAssetCreateCommand(relationType));
+                short relationType = player.Clan.Id != 0 && activatable.Clan.Id != 0 ? activatable.Clan.GetRelation(player.Clan) : (short)0;
+                player.SendCommand(activatable.GetAssetCreateCommand(relationType));
             }
             foreach (var poi in POIs.Values)
                 player.SendCommand(poi.GetPOICreateCommand());

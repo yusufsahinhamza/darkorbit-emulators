@@ -28,7 +28,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
 
-                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.Module.itemId == read.itemId).FirstOrDefault();
+                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.ItemId == read.itemId).FirstOrDefault();
 
                 if (module != null)
                 {

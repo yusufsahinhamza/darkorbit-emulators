@@ -17,6 +17,7 @@ using Ow.Managers.MySQLManager;
 using Ow.Game.Movements;
 using Newtonsoft.Json.Linq;
 using Ow.Net;
+using Ow.Net.netty.commands;
 
 namespace Ow.Managers
 {
@@ -57,6 +58,15 @@ namespace Ow.Managers
             }
         }
 
+        public static string GetUserShipName(int userId)
+        {
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                var result = mySqlClient.ExecuteQueryRow($"SELECT shipName FROM player_accounts WHERE userID = {userId}");
+                return result["shipName"].ToString();
+            }
+        }
+
         public static bool CheckSessionId(int userId, string sessionId)
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
@@ -81,7 +91,7 @@ namespace Ow.Managers
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userID = {Player.Id} ");
+                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userID = {Player.Id}");
                     foreach (DataRow row in data.Rows)
                     {
                         Player.Level = Convert.ToInt32(row["level"]);
@@ -163,6 +173,73 @@ namespace Ow.Managers
                     var options = JsonConvert.DeserializeObject<OptionsBase>(row["options"].ToString());
                     var spacemap = new Spacemap(mapId, name, factionId, portals, stations, options);
                     GameManager.Spacemaps.TryAdd(spacemap.Id, spacemap);
+                }
+            }
+
+            LoadBattleStations();
+        }
+
+
+        public class BattleStations
+        {
+            public static void BattleStation(BattleStation battleStation)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    var visualModifiers = new List<int>();
+
+                    foreach (var modifier in battleStation.VisualModifiers.Keys)
+                        visualModifiers.Add(modifier);
+
+                    mySqlClient.ExecuteNonQuery($"UPDATE server_battlestations SET clanId = {battleStation.Clan.Id}, factionId = {battleStation.FactionId}" +
+                    $", inBuildingState = {battleStation.InBuildingState}, buildTimeInMinutes = {battleStation.BuildTimeInMinutes}, buildTime = '{battleStation.buildTime.ToString("yyyy-MM-dd HH:mm:ss")}'" +
+                    $", visualModifiers = '{JsonConvert.SerializeObject(visualModifiers)}' WHERE name = '{battleStation.AsteroidName}'");
+                }
+            }
+
+            public static void Modules(BattleStation battleStation)
+            {
+                var modules = new List<EquippedModuleBase>();
+
+                foreach (var equipped in battleStation.EquippedStationModule)
+                {
+                    var module = new List<SatelliteBase>();
+
+                    foreach (var equippedModule in battleStation.EquippedStationModule[equipped.Key])
+                    {
+                        module.Add(new SatelliteBase(equippedModule.OwnerId, equippedModule.ItemId, equippedModule.SlotId, equippedModule.DesignId, equippedModule.Type, equippedModule.CurrentHitPoints,
+                            equippedModule.MaxHitPoints, equippedModule.CurrentShieldPoints, equippedModule.MaxShieldPoints, equippedModule.InstallationSecondsLeft, equippedModule.Installed));
+                    }
+
+                    modules.Add(new EquippedModuleBase(equipped.Key, module));
+                }
+
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                    mySqlClient.ExecuteNonQuery($"UPDATE server_battlestations SET modules = '{JsonConvert.SerializeObject(modules)}' WHERE name = '{battleStation.AsteroidName}'");
+            }
+        }
+
+        public static void LoadBattleStations()
+        {
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_battlestations");
+                foreach (DataRow row in data.Rows)
+                {
+                    string name = Convert.ToString(row["name"]);
+                    int mapId = Convert.ToInt32(row["mapId"]);
+                    int clanId = Convert.ToInt32(row["clanId"]);
+                    int factionId = Convert.ToInt32(row["factionId"]);
+                    int positionX = Convert.ToInt32(row["positionX"]);
+                    int positionY = Convert.ToInt32(row["positionY"]);
+                    var modules = JsonConvert.DeserializeObject<List<EquippedModuleBase>>(row["modules"].ToString());
+                    var inBuildingState = Convert.ToBoolean(Convert.ToInt32(row["inBuildingState"]));
+                    var buildTimeInMinutes = Convert.ToInt32(row["buildTimeInMinutes"]);
+                    var buildTime = DateTime.Parse(row["buildTime"].ToString());
+                    var visualModifiers = JsonConvert.DeserializeObject<List<int>>(row["visualModifiers"].ToString());
+
+                    var battleStation = new BattleStation(name, factionId, GameManager.GetSpacemap(mapId), new Position(positionX, positionY), GameManager.GetClan(clanId), modules, inBuildingState, buildTimeInMinutes, buildTime, visualModifiers);
+                    GameManager.BattleStations.TryAdd(battleStation.Name, battleStation);
                 }
             }
         }

@@ -19,7 +19,7 @@ namespace Ow.Game.Objects.Stations
 
         public abstract void Click(GameSession gameSession);
 
-        public abstract short AssetTypeId { get; }
+        public short AssetTypeId { get; set; }
 
         public override string Name { get; set; }
         public override Clan Clan { get; set; }
@@ -35,8 +35,9 @@ namespace Ow.Game.Objects.Stations
         public override double ShieldAbsorption { get; set; }
         public override double ShieldPenetration { get; set; }
 
-        public Activatable(Spacemap spacemap, int factionId, Position position, Clan clan) : base(Randoms.CreateRandomID())
+        public Activatable(Spacemap spacemap, int factionId, Position position, Clan clan, short assetTypeId = 0) : base(Randoms.CreateRandomID())
         {
+            AssetTypeId = assetTypeId;
             Spacemap = spacemap;
             FactionId = factionId;
             Position = position;

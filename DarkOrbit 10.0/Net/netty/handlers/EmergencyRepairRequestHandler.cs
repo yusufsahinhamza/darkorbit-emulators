@@ -26,14 +26,14 @@ namespace Ow.Net.netty.handlers
 
             if (battleStation != null)
             {
-                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.Module.slotId == read.slotId).FirstOrDefault();
+                var module = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.SlotId == read.slotId).FirstOrDefault();
 
                 if (module != null)
                 {
                     module.Destroyed = false;
-                    module.Module.currentHitpoints = module.Module.maxHitpoints;
-                    module.Module.currentShield = module.Module.maxShield;
-                    module.DesignId = module.Module.type == StationModuleModule.REPAIR ? 3 : module.Module.type == StationModuleModule.LASER_HIGH_RANGE ? 4 : module.Module.type == StationModuleModule.LASER_MID_RANGE ? 5 : module.Module.type == StationModuleModule.LASER_LOW_RANGE ? 6 : module.Module.type == StationModuleModule.ROCKET_LOW_ACCURACY ? 7 : module.Module.type == StationModuleModule.ROCKET_MID_ACCURACY ? 8 : module.Module.type == StationModuleModule.HONOR_BOOSTER ? 9 : module.Module.type == StationModuleModule.DAMAGE_BOOSTER ? 10 : module.Module.type == StationModuleModule.EXPERIENCE_BOOSTER ? 11 : 0;
+                    module.CurrentHitPoints = module.MaxHitPoints;
+                    module.CurrentShieldPoints = module.MaxShieldPoints;
+                    module.DesignId = module.Type == StationModuleModule.REPAIR ? 3 : module.Type == StationModuleModule.LASER_HIGH_RANGE ? 4 : module.Type == StationModuleModule.LASER_MID_RANGE ? 5 : module.Type == StationModuleModule.LASER_LOW_RANGE ? 6 : module.Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 7 : module.Type == StationModuleModule.ROCKET_MID_ACCURACY ? 8 : module.Type == StationModuleModule.HONOR_BOOSTER ? 9 : module.Type == StationModuleModule.DAMAGE_BOOSTER ? 10 : module.Type == StationModuleModule.EXPERIENCE_BOOSTER ? 11 : 0;
 
                     foreach (var character in module.Spacemap.Characters.Values)
                     {

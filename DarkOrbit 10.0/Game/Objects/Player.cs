@@ -777,7 +777,7 @@ namespace Ow.Game.Objects
             }
         }
 
-        public void KillScreen(Character killerPlayer, DestructionType destructionType, bool killedLogin = false)
+        public void KillScreen(Attackable killerEntity, DestructionType destructionType, bool killedLogin = false)
         {
             var killScreenOptionModules = new List<KillScreenOptionModule>();
             var basicRepair =
@@ -826,7 +826,7 @@ namespace Ow.Game.Objects
             }
 
             var killScreenPostCommand =
-                    KillScreenPostCommand.write(killerPlayer != null ? killerPlayer.Name : "", "http://localhost/indexInternal.es?action=internalDock",
+                    KillScreenPostCommand.write(killerEntity != null ? killerEntity.Name : "", "http://localhost/indexInternal.es?action=internalDock",
                                               "MISC", new DestructionTypeModule((short)destructionType),
                                               killScreenOptionModules);
 

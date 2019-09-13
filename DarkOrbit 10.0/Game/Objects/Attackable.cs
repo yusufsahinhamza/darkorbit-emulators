@@ -129,21 +129,6 @@ namespace Ow.Game.Objects
                 owner.SendCommand(PetHitpointsUpdateCommand.write(pet.CurrentHitPoints, pet.MaxHitPoints, false));
                 owner.SendCommand(PetShieldUpdateCommand.write(pet.CurrentShieldPoints, pet.MaxShieldPoints));
             }
-            else if (this is BattleStation battleStation)
-            {
-                var module = battleStation.EquippedStationModule[battleStation.Clan.Id].Where(x => x.Module.type == StationModuleModule.HULL).FirstOrDefault();
-                module.Module.maxHitpoints = MaxHitPoints;
-                module.Module.currentHitpoints = CurrentHitPoints;
-                module.Module.maxShield = MaxShieldPoints;
-                module.Module.currentShield = CurrentShieldPoints;
-            }
-            else if (this is Satellite satellite)
-            {
-                satellite.Module.maxHitpoints = MaxHitPoints;
-                satellite.Module.currentHitpoints = CurrentHitPoints;
-                satellite.Module.maxShield = MaxShieldPoints;
-                satellite.Module.currentShield = CurrentShieldPoints;
-            }
 
             foreach (var otherCharacter in Spacemap.Characters.Values)
             {
@@ -183,7 +168,7 @@ namespace Ow.Game.Objects
                     player.SendCommand(command);
         }
 
-        public void Destroy(Character destroyer, DestructionType destructionType)
+        public void Destroy(Attackable destroyer, DestructionType destructionType)
         {
             if (this is Spaceball || Destroyed) return;
 
@@ -218,8 +203,7 @@ namespace Ow.Game.Objects
                 thisPlayer.Storage.InRangeAssets.Clear();
                 thisPlayer.KillScreen(destroyer, destructionType);
             }
-
-            if (this is BattleStation battleStation)
+            else if (this is BattleStation battleStation)
             {
                 foreach (var module in battleStation.EquippedStationModule[battleStation.Clan.Id])
                 {
@@ -248,17 +232,17 @@ namespace Ow.Game.Objects
                     }
                 }
             }
-
-            if (this is Satellite satellite)
+            else if (this is Satellite satellite)
             {
                 if (!satellite.BattleStation.Destroyed)
                 {
-                    satellite.Module.type = StationModuleModule.NONE;
-                    satellite.Module.currentHitpoints = 0;
-                    satellite.Module.currentShield = 0;
+                    satellite.Type = StationModuleModule.NONE;
+                    satellite.CurrentHitPoints = 0;
+                    satellite.CurrentShieldPoints = 0;
                     satellite.DesignId = 0;
 
                     GameManager.SendCommandToMap(Spacemap.Id, satellite.GetAssetCreateCommand(0));
+                    QueryManager.BattleStations.Modules(satellite.BattleStation);
                 }
             }
 

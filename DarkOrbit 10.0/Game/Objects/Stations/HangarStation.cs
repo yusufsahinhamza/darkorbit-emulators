@@ -12,9 +12,7 @@ namespace Ow.Game.Objects.Stations
 {
     class HangarStation : Activatable
     {
-        public override short AssetTypeId => AssetTypeModule.HANGAR_HOME;
-
-        public HangarStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan) { }
+        public HangarStation(Spacemap spacemap, int factionId, Position position, Clan clan) : base(spacemap, factionId, position, clan, AssetTypeModule.HANGAR_HOME) { }
 
         public override void Click(GameSession gameSession) { }
 

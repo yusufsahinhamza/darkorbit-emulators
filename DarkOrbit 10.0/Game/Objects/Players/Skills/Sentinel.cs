@@ -21,13 +21,13 @@ namespace Ow.Game.Objects.Players.Skills
         public override void Tick()
         {
             if (Active)
-                if (cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION) < DateTime.Now)
+                if (cooldown.AddMilliseconds(Duration) < DateTime.Now)
                     Disable();
         }
 
         public override void Send()
         {
-            if (Player.Ship.Id == 66 && cooldown.AddMilliseconds(TimeManager.SENTINEL_DURATION + TimeManager.SENTINEL_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == 66 && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SkillManager.DisableAllSkills();
 
@@ -35,7 +35,7 @@ namespace Ow.Game.Objects.Players.Skills
 
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.FORTRESS, 0, "", 0, true));
 
-                Player.SendCooldown(SkillManager.SENTINEL, TimeManager.SENTINEL_DURATION, true);
+                Player.SendCooldown(LootId, Duration, true);
                 Active = true;
                 cooldown = DateTime.Now;
             }
@@ -47,7 +47,7 @@ namespace Ow.Game.Objects.Players.Skills
 
             Player.RemoveVisualModifier(VisualModifierCommand.FORTRESS);
 
-            Player.SendCooldown(SkillManager.SENTINEL, TimeManager.SENTINEL_COOLDOWN);
+            Player.SendCooldown(LootId, Cooldown);
             Active = false;
         }
     }

@@ -36,6 +36,12 @@ namespace Ow.Managers
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                     mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}', level = {player.Level} WHERE userID = {player.Id}");
             }
+
+            public static void Boosters(Player player)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_equipment SET boosters = '{JsonConvert.SerializeObject(player.BoosterManager.Boosters)}' WHERE userId = {player.Id}");
+            }
         }
 
         public class ChatFunctions
@@ -121,7 +127,9 @@ namespace Ow.Managers
                     string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
                     var querySet = mySqlClient.ExecuteQueryRow(sql);
 
-                    Player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase() { Config1Hitpoints = Player.Ship.BaseHitpoints, Config2Hitpoints = Player.Ship.BaseHitpoints, Config1Speed = 300, Config2Speed = 300 }; //TODO: GGA (i dont remember what i said )
+                    Player.BoosterManager.Boosters = JsonConvert.DeserializeObject<Dictionary<short, List<BoosterBase>>>(querySet["boosters"].ToString());
+
+                    Player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase(Player.Ship.BaseHitpoints, 0, 0, 300, Player.Ship.BaseHitpoints, 0, 0, 300); //TODO: GGA (i dont remember what i said )
                 }
             }
             catch (Exception e)
@@ -191,9 +199,11 @@ namespace Ow.Managers
                     foreach (var modifier in battleStation.VisualModifiers.Keys)
                         visualModifiers.Add(modifier);
 
+                    var buildTime = battleStation.AssetTypeId != AssetTypeModule.BATTLESTATION && battleStation.InBuildingState ? $"buildTime = '{battleStation.buildTime.ToString("yyyy-MM-dd HH:mm:ss")}'," : "";
+
                     mySqlClient.ExecuteNonQuery($"UPDATE server_battlestations SET clanId = {battleStation.Clan.Id}, factionId = {battleStation.FactionId}" +
-                    $", inBuildingState = {battleStation.InBuildingState}, buildTimeInMinutes = {battleStation.BuildTimeInMinutes}, buildTime = '{battleStation.buildTime.ToString("yyyy-MM-dd HH:mm:ss")}'" +
-                    $", visualModifiers = '{JsonConvert.SerializeObject(visualModifiers)}' WHERE name = '{battleStation.AsteroidName}'");
+                    $", inBuildingState = {battleStation.InBuildingState}, buildTimeInMinutes = {battleStation.BuildTimeInMinutes}, {buildTime}" +
+                    $"visualModifiers = '{JsonConvert.SerializeObject(visualModifiers)}' WHERE name = '{battleStation.AsteroidName}'");
                 }
             }
 

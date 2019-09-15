@@ -22,7 +22,7 @@ namespace Ow.Game.Objects.Players.Skills
         {
             if (Active)
             {
-                if (cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION) < DateTime.Now)
+                if (cooldown.AddMilliseconds(Duration) < DateTime.Now)
                     Disable();
                 if (Player.Selected == null || Player.Selected != Player.Storage.UnderDiminisherPlayer)
                     Disable();
@@ -31,7 +31,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public override void Send()
         {
-            if (Player.Ship.Id == 64 && cooldown.AddMilliseconds(TimeManager.DIMINISHER_DURATION + TimeManager.DIMINISHER_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == 64 && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
                 var enemy = Player.Selected;
                 if (enemy == null || !(enemy is Player)) return;
@@ -45,7 +45,7 @@ namespace Ow.Game.Objects.Players.Skills
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
                 (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
 
-                Player.SendCooldown(SkillManager.DIMINISHER, TimeManager.DIMINISHER_DURATION, true);
+                Player.SendCooldown(LootId, Duration, true);
                 Active = true;
                 cooldown = DateTime.Now;
             }
@@ -62,7 +62,7 @@ namespace Ow.Game.Objects.Players.Skills
             Player.RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
             (enemy as Player).RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
 
-            Player.SendCooldown(SkillManager.DIMINISHER, TimeManager.DIMINISHER_COOLDOWN);
+            Player.SendCooldown(LootId, Cooldown);
             Active = false;
         }
     }

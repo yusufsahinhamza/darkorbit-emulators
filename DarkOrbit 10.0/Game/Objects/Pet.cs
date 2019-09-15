@@ -48,9 +48,15 @@ namespace Ow.Game.Objects
             {
                 CheckShieldPointsRepair();
                 CheckGuardMode();
+                CheckAutoLoot();
                 Follow(Owner);
                 Movement.ActualPosition(this);
             }
+        }
+
+        public void CheckAutoLoot()
+        {
+            //TODO
         }
 
         public DateTime lastShieldRepairTime = new DateTime();
@@ -223,6 +229,7 @@ namespace Ow.Game.Objects
             Owner.SendCommand(PetStatusCommand.write(Id, 15, 27000000, 27000000, CurrentHitPoints, MaxHitPoints, CurrentShieldPoints, MaxShieldPoints, 50000, 50000, Speed, Name));
             Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.PASSIVE), 0, 0, true));
             Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.GUARD), 0, 0, true));
+            Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.AUTO_LOOT), 0, 0, true));
             SwitchGear(PetGearTypeModule.PASSIVE);
         }
 

@@ -8,6 +8,7 @@ using Ow.Game.Ticks;
 using Ow.Managers;
 using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
+using Ow.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -266,7 +267,11 @@ namespace Ow.Game.Objects
                         if (count < 13)
                         {
                             int experience = destroyerPlayer.Ship.GetExperienceBoost((this as Character).Ship.Rewards.Experience);
+                            experience += Maths.GetPercentage(experience, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.EP));
+
                             int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost((this as Character).Ship.Rewards.Honor));
+                            honor += Maths.GetPercentage(honor, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.HONOUR));
+
                             int uridium = (this as Character).Ship.Rewards.Uridium;
                             var changeType = ChangeType.INCREASE;
 
@@ -280,7 +285,7 @@ namespace Ow.Game.Objects
                         }
                     }
 
-                    new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position, Spacemap, false, false, destroyerPlayer);
+                    new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
                 }
             }
 

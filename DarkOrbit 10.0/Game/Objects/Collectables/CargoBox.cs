@@ -13,7 +13,7 @@ namespace Ow.Game.Objects.Collectables
 {
     class CargoBox : Collectable
     {
-        public CargoBox(int collectableId, Position position, Spacemap spacemap, bool respawnable, bool spaceball, Player toPlayer = null) : base(collectableId, position, spacemap, respawnable, toPlayer) { Spaceball = spaceball; }
+        public CargoBox(Position position, Spacemap spacemap, bool respawnable, bool spaceball, Player toPlayer = null) : base(AssetTypeModule.BOXTYPE_FROM_SHIP, position, spacemap, respawnable, toPlayer) { Spaceball = spaceball; }
 
         private bool Spaceball { get; set; }
 

@@ -143,7 +143,7 @@ namespace Ow.Game.Objects
             GameManager.SendPacketToAll($"0|n|ssi|{Mmo}|{Eic}|{Vru}");
 
             for (int i = 0; i <= 20; i++)
-                new CargoBox(AssetTypeModule.BOXTYPE_FROM_SHIP, Position.Random(Spacemap, Position.X - 1000, Position.X + 500, Position.Y - 1000, Position.Y + 500), Spacemap, false, true);
+                new CargoBox(Position.Random(Spacemap, Position.X - 1000, Position.X + 500, Position.Y - 1000, Position.Y + 500), Spacemap, false, true);
 
             Respawn();
 

@@ -13,7 +13,7 @@ namespace Ow.Game.Objects.Collectables
 {
     class BonusBox : Collectable
     {
-        public BonusBox(int collectableId, Position position, Spacemap spacemap, bool respawnable, Player toPlayer = null) : base(collectableId, position, spacemap, respawnable, toPlayer) { }
+        public BonusBox(Position position, Spacemap spacemap, bool respawnable, Player toPlayer = null) : base(AssetTypeModule.BOXTYPE_BONUS_BOX, position, spacemap, respawnable, toPlayer) { }
 
         public override void Reward(Player player)
         {

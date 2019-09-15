@@ -19,14 +19,11 @@ namespace Ow.Game.Objects.Players.Skills
 
         public Solace(Player player) : base(player) { }
 
-        public override void Tick()
-        {
-
-        }
+        public override void Tick() { }
 
         public override void Send()
         {
-            if (Player.Ship.Id == 63 && cooldown.AddMilliseconds(TimeManager.SOLACE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == 63 && cooldown.AddMilliseconds(Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SkillManager.DisableAllSkills();
 
@@ -36,15 +33,12 @@ namespace Ow.Game.Objects.Players.Skills
                 Player.SendPacket(packet);
                 Player.SendPacketToInRangePlayers(packet);
 
-                Player.SendCooldown(SkillManager.SOLACE, TimeManager.SOLACE_COOLDOWN);
+                Player.SendCooldown(LootId, Cooldown);
                 cooldown = DateTime.Now;
             }
         }
 
-        public override void Disable()
-        {
-
-        }
+        public override void Disable() { }
 
         public void ExecuteHeal()
         {

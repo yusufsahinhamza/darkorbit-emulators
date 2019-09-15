@@ -56,6 +56,7 @@ namespace Ow.Game
             try
             {
                 QueryManager.SavePlayer.Information(Player);
+                QueryManager.SavePlayer.Boosters(Player);
                 Player.SaveSettings();
                 Player.Group?.UpdateTarget(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
                 Player.Pet.Deactivate();

@@ -12,25 +12,52 @@ namespace Ow.Game.Objects.Collectables
 {
     class GreenBooty : Collectable
     {
-        public GreenBooty(int collectableId, Position position, Spacemap spacemap, bool respawnable, Player toPlayer = null) : base(collectableId, position, spacemap, respawnable, toPlayer) { }
+        public GreenBooty(Position position, Spacemap spacemap, bool respawnable, Player toPlayer = null) : base(AssetTypeModule.BOXTYPE_PIRATE_BOOTY, position, spacemap, respawnable, toPlayer) { }
 
         public override void Reward(Player player)
         {
-            var luck = Randoms.random.Next(0, 3);
+            double rand = Randoms.random.NextDouble();
+            
+            if (rand <= 0.001)
+            {
+                //lf4
+            }
+            else if (rand <= 0.001)
+            {
 
-            if (luck == 1)
-            {
-                player.BoosterManager.Add(BoosterType.HP_B01, 1);
             }
-            else if (luck == 2)
+            else if (rand <= 0.001)
             {
-                player.BoosterManager.Add(BoosterType.DMG_B01, 1);
+
             }
-            else
-            {
-                player.BoosterManager.Add(BoosterType.SHD_B01, 10);
-            }
-            QueryManager.SavePlayer.Information(player);
+
+
+
+
+
+            /*
+             * 
+             * 
+             * 
+             * [18:16, 15.09.2019] ERSİN: Yeşil kutudan random credi uri
+[18:16, 15.09.2019] ERSİN: Booster
+[18:16, 15.09.2019] ERSİN: Çok düşük olasılık apis parçası  zeus parçası lf4
+             * 
+             * 
+             * */
+
+
+
+
+
+
+
+
+
+
+
+
+            //QueryManager.SavePlayer.Information(player);
         }
 
         public override byte[] GetCollectableCreateCommand()

@@ -126,10 +126,12 @@ namespace Ow.Game
             }
             
             
-            if (new int[] {13,14,15}.Contains(Id))
+            if (new int[] { 1, 13, 14, 15 }.Contains(Id))
             {
                 for (int i = 0; i <= 85; i++)
-                    new BonusBox(AssetTypeModule.BOXTYPE_BONUS_BOX, Position.Random(this, 1000, 19800, 1000, 11800), this, true);
+                    new BonusBox(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
+                for (int i = 0; i <= 500; i++)
+                    new GreenBooty(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
             }
 
             if (Id == 101)

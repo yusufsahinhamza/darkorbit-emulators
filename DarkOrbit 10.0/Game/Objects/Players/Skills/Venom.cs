@@ -24,7 +24,7 @@ namespace Ow.Game.Objects.Players.Skills
         {
             if (Active)
             {
-                if (cooldown.AddMilliseconds(TimeManager.VENOM_DURATION) < DateTime.Now)
+                if (cooldown.AddMilliseconds(Duration) < DateTime.Now)
                     Disable();
                 else if (Player.Selected == null || Player.Selected != Player.Storage.UnderVenomPlayer)
                     Disable();
@@ -35,7 +35,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public override void Send()
         {
-            if (Player.Ship.Id == 67 && cooldown.AddMilliseconds(TimeManager.VENOM_DURATION + TimeManager.VENOM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == 67 && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
                 var enemy = Player.Selected;
                 if (enemy == null || !(enemy is Player)) return;
@@ -50,7 +50,7 @@ namespace Ow.Game.Objects.Players.Skills
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
                 (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
 
-                Player.SendCooldown(SkillManager.VENOM, TimeManager.VENOM_DURATION, true);
+                Player.SendCooldown(LootId, Duration, true);
                 Active = true;
                 cooldown = DateTime.Now;
             }
@@ -67,7 +67,7 @@ namespace Ow.Game.Objects.Players.Skills
             Player.RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
             (enemy as Player).RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
 
-            Player.SendCooldown(SkillManager.VENOM, TimeManager.VENOM_COOLDOWN);
+            Player.SendCooldown(LootId, Cooldown);
             Active = false;
         }
 

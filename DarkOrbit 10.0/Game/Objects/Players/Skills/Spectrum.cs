@@ -22,14 +22,14 @@ namespace Ow.Game.Objects.Players.Skills
         {
             if (Active)
             {
-                if (cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION) < DateTime.Now)
+                if (cooldown.AddMilliseconds(Duration) < DateTime.Now)
                     Disable();
             }
         }
 
         public override void Send()
         {
-            if (Player.Ship.Id == 65 && cooldown.AddMilliseconds(TimeManager.SPECTRUM_DURATION + TimeManager.SPECTRUM_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == 65 && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SkillManager.DisableAllSkills();
 
@@ -37,7 +37,7 @@ namespace Ow.Game.Objects.Players.Skills
 
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.PRISMATIC_SHIELD, 0, "", 0, true));
 
-                Player.SendCooldown(SkillManager.SPECTRUM, TimeManager.SPECTRUM_DURATION, true);
+                Player.SendCooldown(LootId, Duration, true);
                 Active = true;
                 cooldown = DateTime.Now;
             }
@@ -49,7 +49,7 @@ namespace Ow.Game.Objects.Players.Skills
 
             Player.RemoveVisualModifier(VisualModifierCommand.PRISMATIC_SHIELD);
 
-            Player.SendCooldown(SkillManager.SPECTRUM, TimeManager.SPECTRUM_COOLDOWN);
+            Player.SendCooldown(LootId, Cooldown);
             Active = false;
         }
     }

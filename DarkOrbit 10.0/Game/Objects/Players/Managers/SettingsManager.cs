@@ -192,6 +192,19 @@ namespace Ow.Game.Objects.Players.Managers
         public int Config2Damage = 0;
         public int Config2Shield = 0;
         public int Config2Speed = 0;
+
+        public EquipmentBase(int config1Hitpoints, int config1Damage, int config1Shield, int config1Speed,
+            int config2Hitpoints, int config2Damage, int config2Shield, int config2Speed)
+        {
+            Config1Hitpoints = config1Hitpoints;
+            Config1Damage = config1Damage;
+            Config1Shield = config1Shield;
+            Config1Speed = config1Speed;
+            Config2Hitpoints = config2Hitpoints;
+            Config2Damage = config2Damage;
+            Config2Shield = config2Shield;
+            Config2Speed = config2Speed;
+        }
     }
 
     class Settings

@@ -80,14 +80,7 @@ namespace Ow.Game.Objects
             DroneManager.Tick();
             TechManager.Tick();
             SkillManager.Tick();
-
-            /*
-            if (MoveManager.Moving && Collecting)
-            {
-                Collecting = false;
-                SendPacket("0|" + ServerCommands.SET_ATTRIBUTE + "|" + ServerCommands.ASSEMBLE_COLLECTION_BEAM_CANCELLED + "|0|" + ID + "|" + -1);
-            }
-            */
+            BoosterManager.Tick();
         }
 
         public DateTime lastHpRepairTime = new DateTime();
@@ -105,6 +98,8 @@ namespace Ow.Game.Objects
             RepairBot(true);
 
             int repairHitpoints = MaxHitPoints / 35;
+            repairHitpoints += Maths.GetPercentage(repairHitpoints, BoosterManager.GetPercentage(BoostedAttributeType.REPAIR));
+
             Heal(repairHitpoints);
 
             lastHpRepairTime = DateTime.Now;
@@ -217,8 +212,7 @@ namespace Ow.Game.Objects
             get
             {
                 var value = CurrentConfig == 1 ? Equipment.Config1Hitpoints : Equipment.Config2Hitpoints;
-                //value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.MAXHP));
-                //portaldan atlayınca can yükseliyor booster hatası
+                value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.MAXHP));
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
@@ -303,8 +297,7 @@ namespace Ow.Game.Objects
             {
                 var value = CurrentConfig == 1 ? Equipment.Config1Shield : Equipment.Config2Shield;
                 value += Maths.GetPercentage(value, 40);
-                //value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.SHIELD));
-                //portaldan atlayınca can yükseliyor booster hatası
+                value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.SHIELD));
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
@@ -371,9 +364,8 @@ namespace Ow.Game.Objects
             get
             {
                 var value = CurrentConfig == 1 ? Equipment.Config1Damage : Equipment.Config2Damage;
-                value += Maths.GetPercentage(value, 60);
-                //value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.DAMAGE));
-                //portaldan atlayınca can yükseliyor booster hatası
+                value += Maths.GetPercentage(value, 60); //seprom
+                value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.DAMAGE));
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
@@ -402,7 +394,7 @@ namespace Ow.Game.Objects
                         value -= Maths.GetPercentage(value, 20);
                         break;
                 }
-                //value = Ship.GetLaserDamageBoost(value, FactionId, SelectedCharacter.FactionId);
+                value = Ship.GetLaserDamageBoost(value, FactionId, (Selected != null ? Selected.FactionId : 0));
                 return value;
             }
         }

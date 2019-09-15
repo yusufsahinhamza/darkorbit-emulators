@@ -12,7 +12,7 @@ namespace Ow.Game.Objects.Collectables
 {
     class GoldBooty : Collectable
     {
-        public GoldBooty(int collectableId, Position position, Spacemap spacemap, bool respawnable, Player toPlayer = null) : base(collectableId, position, spacemap, respawnable, toPlayer) { }
+        public GoldBooty(Position position, Spacemap spacemap, bool respawnable, Player toPlayer = null) : base(AssetTypeModule.BOXTYPE_PIRATE_BOOTY, position, spacemap, respawnable, toPlayer) { }
 
         public override void Reward(Player player)
         {

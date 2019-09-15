@@ -19,11 +19,9 @@ namespace Ow.Net.netty.handlers
 
             var player = gameSession.Player;
 
-            foreach(var collectable in player.Spacemap.Collectables.Values)
-            {
-                if (collectable.Hash == read.hash)
-                    collectable.Collect(player);
-            }
+            var collectable = player.Spacemap.Collectables.Values.Where(x => x.Hash == read.hash).FirstOrDefault();
+            if (collectable != null)
+                collectable.Collect(player);
         }
     }
 }

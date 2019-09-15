@@ -20,9 +20,12 @@ namespace Ow.Game.Objects.Collectables
         public Position Position { get; set; }
         public Spacemap Spacemap { get; set; }
         public bool Respawnable { get; set; }
+        public Character Character { get; set; }
         public Player ToPlayer { get; set; }
         public bool Disposed = false;
-        public DateTime addedTime = new DateTime();
+        public DateTime disposeTime = new DateTime();
+
+        public int Seconds => CollectableId == AssetTypeModule.BOXTYPE_PIRATE_BOOTY ? 5 : -1;
 
         public Collectable(int collectableId, Position position, Spacemap spacemap, bool respawnable, Player toPlayer)
         {
@@ -33,19 +36,43 @@ namespace Ow.Game.Objects.Collectables
             Respawnable = respawnable;
             ToPlayer = toPlayer;
             Spacemap.Collectables.TryAdd(Hash, this);
-            addedTime = DateTime.Now;
+            disposeTime = DateTime.Now;
 
             if (this is CargoBox)
-            {
                 Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
-            }
         }
 
+        public DateTime collectTime = new DateTime();
         public void Tick()
         {
-            if (this is CargoBox && addedTime.AddMinutes(2) < DateTime.Now)
+            if (this is CargoBox && disposeTime.AddMinutes(2) < DateTime.Now)
                 Dispose();
+
+            if (Character != null && Character.Collecting)
+            {
+                if (!Character.Moving)
+                {
+                    if (collectTime.AddSeconds(Seconds) < DateTime.Now)
+                    {
+                        Reward(Character is Pet pet ? pet.Owner : Character as Player);
+                        Dispose();
+                    }
+                }
+                else
+                {
+                    Character.Collecting = false;
+
+                    var packet = $"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_CANCELLED}|0|{Character.Id}|-1";
+
+                    if (Character is Player player)
+                        player.SendPacket(packet);
+                    else if (Character is Pet pet)
+                        pet.SendPacketToInRangePlayers(packet);
+
+                    Character = null;
+                }
+            }
+
             /*
             if (!Disposed)
                 foreach (var character in Spacemap.Characters.Values)
@@ -56,28 +83,29 @@ namespace Ow.Game.Objects.Collectables
                 */
         }
 
-        public async void Collect(Character character)
+        public void Collect(Character character)
         {
             if (Disposed) return;
-            int second = CollectableId == 20 ? 5 : -1;
 
-            character.Collecting = true;
+            Character = character;
+            Character.Collecting = true;
+            Character.Moving = false;
+            collectTime = DateTime.Now;
 
-            if (character is Player)
-                (character as Player).SendPacket($"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_ACTIVE}|0|{character.Id}|{second}");
-            else if (character is Pet)
-                (character as Pet).SendPacketToInRangePlayers($"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_ACTIVE}|0|{character.Id}|{second}");
+            var packet = $"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_ACTIVE}|0|{Character.Id}|{Seconds}";
 
-            await Task.Delay(CollectableId == 20 ? 5000 : 1);
-            Dispose();
-            Reward(character is Pet ? (character as Pet).Owner : character as Player);
+            if (Character is Player player)
+                player.SendPacket(packet);
+            else if (Character is Pet pet)
+                pet.SendPacketToInRangePlayers(packet);
+
+            Program.TickManager.AddTick(this, out var tickId);
         }
 
         public void Dispose()
         {
             Disposed = true;
-            var collectable = this;
-            Spacemap.Collectables.TryRemove(Hash, out collectable);
+            Spacemap.Collectables.TryRemove(Hash, out var collectable);
             Program.TickManager.RemoveTick(this);
             GameManager.SendCommandToMap(Spacemap.Id, DisposeBoxCommand.write(Hash, true));
 
@@ -87,11 +115,12 @@ namespace Ow.Game.Objects.Collectables
 
         public void Respawn()
         {
-            var newPos = Position.Random(Spacemap, 1000, 19800, 1000, 11800);
-            Position = newPos;
-            Disposed = false;
+            Position = Position.Random(Spacemap, 1000, 19800, 1000, 11800);
             Spacemap.Collectables.TryAdd(Hash, this);
             Program.TickManager.AddTick(this, out var tickId);
+
+            Character = null;
+            Disposed = false;
         }
 
         public abstract void Reward(Player player);

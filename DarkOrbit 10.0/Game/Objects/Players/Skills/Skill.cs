@@ -11,7 +11,6 @@ namespace Ow.Game.Objects.Players.Skills
     {
         public int TickId { get; set; }
         public abstract string LootId { get; }
-        public abstract int Id { get; }
 
         public abstract int Duration { get; }
         public abstract int Cooldown { get; }

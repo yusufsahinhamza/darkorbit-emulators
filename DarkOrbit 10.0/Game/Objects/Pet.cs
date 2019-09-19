@@ -95,7 +95,7 @@ namespace Ow.Game.Objects
 
         private void Attack(Character target)
         {
-            if (!Owner.AttackManager.TargetDefinition(target, false)) return;
+            if (!Owner.TargetDefinition(target, false)) return;
             if ((Owner.Settings.InGameSettings.selectedLaser == AmmunitionManager.RSB_75 ? lastRSBAttackTime : lastAttackTime).AddSeconds(Owner.Settings.InGameSettings.selectedLaser == AmmunitionManager.RSB_75 ? 3 : 1) < DateTime.Now)
             {
                 int damageShd = 0, damageHp = 0;

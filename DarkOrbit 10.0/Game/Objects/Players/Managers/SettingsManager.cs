@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Ow.Game.Events;
 using Ow.Game.Movements;
 using Ow.Game.Objects.Mines;
 using Ow.Managers;
@@ -1844,7 +1845,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendMine(string mineLootId)
         {
-            if (Player.Storage.IsInDemilitarizedZone || Player.Storage.OnBlockedMinePosition || Player.CurrentInRangePortalId != -1 || (Player.Storage.Duel != null && Player.Storage.Duel.PeaceArea)) return;
+            if (Player.Storage.IsInDemilitarizedZone || Player.Storage.OnBlockedMinePosition || Player.CurrentInRangePortalId != -1 || (Duel.InDuel(Player) && Player.Storage.Duel.PeaceArea)) return;
 
             if (Player.AttackManager.mineCooldown.AddMilliseconds(TimeManager.MINE_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {

@@ -4,6 +4,7 @@ using Ow.Game.Objects.Mines;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Game.Objects.Players.Skills;
 using Ow.Game.Objects.Stations;
+using Ow.Managers;
 using Ow.Net.netty.commands;
 using System;
 using System.Collections.Concurrent;
@@ -14,6 +15,20 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects.Players
 {
+    public class ModuleBase
+    {
+        public int Id { get; set; }
+        public short Type { get; set; }
+        public bool InUse { get; set; }
+
+        public ModuleBase(int id, short type, bool inUse)
+        {
+            Id = id;
+            Type = type;
+            InUse = inUse;
+        }
+    }
+
     class Storage
     {
         public Player Player { get; set; }
@@ -25,7 +40,7 @@ namespace Ow.Game.Objects.Players
         public ConcurrentDictionary<int, Player> DuelInvites = new ConcurrentDictionary<int, Player>();
         public List<int> KilledPlayerIds = new List<int>();
         public Dictionary<string, Skill> Skills = new Dictionary<string, Skill>();
-        public List<StationModuleModule> BattleStationModules = new List<StationModuleModule>();
+        public List<ModuleBase> BattleStationModules = new List<ModuleBase>();
 
         public bool UbaMatchmakingAccepted = false;
         public Duel Duel { get; set; }
@@ -55,12 +70,12 @@ namespace Ow.Game.Objects.Players
         public bool Lightning = false;
         public bool Sentinel = false;
         public bool Spectrum = false;
-        public bool Diminisher = false;
 
-        public Player UnderDiminisherPlayer { get; set; }
+        public bool Diminisher = false;
+        public Attackable UnderDiminisherEntity { get; set; }
 
         public bool Venom = false;
-        public Player UnderVenomPlayer { get; set; }
+        public Attackable UnderVenomEntity { get; set; }
 
         public bool underR_IC3 = false;
         public DateTime underR_IC3Time = new DateTime();
@@ -71,7 +86,6 @@ namespace Ow.Game.Objects.Players
         public bool underSLM_01 = false;
         public DateTime underSLM_01Time = new DateTime();
 
-        public bool invincibilityEffect = false;
         public DateTime invincibilityEffectTime = new DateTime();
 
         public bool mirroredControlEffect = false;
@@ -95,7 +109,7 @@ namespace Ow.Game.Objects.Players
                 DeactivePLD8();
             if (underSLM_01 && underSLM_01Time.AddMilliseconds(TimeManager.SLM_01_DURATION) < DateTime.Now)
                 DeactiveSLM_01();
-            if (invincibilityEffect && invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
+            if (Player.Invincible && invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
                 DeactiveInvincibilityEffect();
             if (mirroredControlEffect && mirroredControlEffectTime.AddMilliseconds(TimeManager.MIRRORED_CONTROL_DURATION) < DateTime.Now)
                 DeactiveMirroredControlEffect();
@@ -157,9 +171,9 @@ namespace Ow.Game.Objects.Players
 
         public void DeactiveInvincibilityEffect()
         {
-            if (invincibilityEffect)
+            if (Player.Invincible)
             {
-                invincibilityEffect = false;
+                Player.Invincible = false;
                 Player.RemoveVisualModifier(VisualModifierCommand.INVINCIBILITY);
             }
         }

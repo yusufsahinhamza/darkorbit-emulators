@@ -12,7 +12,7 @@ namespace Ow.Game.Objects.Players.Techs
     class BattleRepairBot
     {
         public Player Player { get; set; }
-        private static int HEALT = 10000;
+        private static int HEALTH = 10000;
         public bool Active = false;
 
         public BattleRepairBot(Player player) { Player = player; }
@@ -31,8 +31,7 @@ namespace Ow.Game.Objects.Players.Techs
         {
             if (lastRepairTime.AddSeconds(1) < DateTime.Now)
             {
-                int heal = HEALT;
-                Player.Heal(heal);
+                Player.Heal(HEALTH);
                 lastRepairTime = DateTime.Now;
             }
         }

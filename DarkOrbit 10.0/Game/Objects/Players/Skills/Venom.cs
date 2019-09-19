@@ -11,7 +11,6 @@ namespace Ow.Game.Objects.Players.Skills
     class Venom : Skill
     {
         public override string LootId { get => SkillManager.VENOM; }
-        public override int Id { get => 5; }
 
         public override int Duration { get => TimeManager.VENOM_DURATION; }
         public override int Cooldown { get => TimeManager.VENOM_COOLDOWN; }
@@ -26,7 +25,7 @@ namespace Ow.Game.Objects.Players.Skills
             {
                 if (cooldown.AddMilliseconds(Duration) < DateTime.Now)
                     Disable();
-                else if (Player.Selected == null || Player.Selected != Player.Storage.UnderVenomPlayer)
+                else if (Player.Storage.UnderVenomEntity == null || Player.Selected != Player.Storage.UnderVenomEntity || Player.Spacemap.Id != Player.Storage.UnderVenomEntity.Spacemap.Id)
                     Disable();
                 else
                     ExecuteDamage();
@@ -37,18 +36,18 @@ namespace Ow.Game.Objects.Players.Skills
         {
             if (Player.Ship.Id == 67 && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
-                var enemy = Player.Selected;
-                if (enemy == null || !(enemy is Player)) return;
-                if (!Player.AttackManager.TargetDefinition(enemy as Player, false)) return;
+                var target = Player.Selected;
+                if (target == null) return;
+                if (!Player.TargetDefinition(target, false)) return;
 
                 Player.SkillManager.DisableAllSkills();
 
                 Damage = 1500;
                 Player.Storage.Venom = true;
-                Player.Storage.UnderVenomPlayer = enemy as Player;
+                Player.Storage.UnderVenomEntity = target;
 
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
-                (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
+                target.AddVisualModifier(new VisualModifierCommand(target.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;
@@ -58,14 +57,15 @@ namespace Ow.Game.Objects.Players.Skills
 
         public override void Disable()
         {
-            var enemy = Player.Storage.UnderVenomPlayer;
-            if (enemy == null) return;
+            var target = Player.Storage.UnderVenomEntity;
 
             Player.Storage.Venom = false;
-            Player.Storage.UnderVenomPlayer = null;
+            Player.Storage.UnderVenomEntity = null;
 
             Player.RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
-            (enemy as Player).RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
+
+            if (target != null)
+                target.RemoveVisualModifier(VisualModifierCommand.SINGULARITY);
 
             Player.SendCooldown(LootId, Cooldown);
             Active = false;
@@ -74,13 +74,12 @@ namespace Ow.Game.Objects.Players.Skills
         public DateTime lastDamageTime = new DateTime();
         public void ExecuteDamage()
         {
-            var enemy = Player.Storage.UnderVenomPlayer;
-            if (enemy == null) return;
-            if (!Player.AttackManager.TargetDefinition(enemy)) return;
+            var target = Player.Storage.UnderVenomEntity;
+            if (target == null) return;           
 
             if (lastDamageTime.AddSeconds(1) < DateTime.Now)
             {
-                AttackManager.Damage(Player, enemy, DamageType.SL, Damage, true, true, false, false);
+                AttackManager.Damage(Player, target, DamageType.SL, Damage, true, true, false, false);
                 Damage += 200;
 
                 lastDamageTime = DateTime.Now;

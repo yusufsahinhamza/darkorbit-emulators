@@ -21,6 +21,7 @@ using Ow.Game.Objects.Collectables;
 using Ow.Game.Objects.Mines;
 using System.Collections.Concurrent;
 using Ow.Game.Ticks;
+using Ow.Game.Events;
 
 namespace Ow.Game
 {
@@ -126,12 +127,12 @@ namespace Ow.Game
             }
             
             
-            if (new int[] { 1, 13, 14, 15 }.Contains(Id))
+            if (new int[] { 13, 14, 15 }.Contains(Id))
             {
                 for (int i = 0; i <= 85; i++)
                     new BonusBox(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
-                for (int i = 0; i <= 500; i++)
-                    new GreenBooty(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
+                //for (int i = 0; i <= 500; i++)
+                    //new GreenBooty(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
             }
 
             if (Id == 101)
@@ -183,7 +184,7 @@ namespace Ow.Game
         {
             foreach (var mine in Mines.Values)
             {
-                if (mine.Player == player || player.Storage.Duel == null || (player.Storage.Duel != null && mine.Player == player.Storage.Duel?.GetOpponent(player)))
+                if (player == mine.Player || !Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == mine.Player))
                 {
                     if (player.Position.DistanceTo(mine.Position) <= 1250)
                     {
@@ -229,7 +230,8 @@ namespace Ow.Game
 
                 if (inRange)
                 {
-                    onBlockedMinePosition = true;
+                    if (!(entity is BattleStation) && !(entity is Satellite))
+                        onBlockedMinePosition = true;
 
                     if (entity is HomeStation homeStation)
                     {
@@ -256,7 +258,9 @@ namespace Ow.Game
                     if (entity is Portal portal && !portal.Working)
                         status = MapAssetActionAvailableCommand.OFF;
 
-                    if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && !battleStation.InBuildingState && battleStation.Clan.Id != Player.Clan.Id)
+                    //check old = if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && !battleStation.InBuildingState && battleStation.Clan.Id != Player.Clan.Id)
+
+                    if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && battleStation.Clan.Id != Player.Clan.Id)
                         status = MapAssetActionAvailableCommand.OFF;
 
                     if (entity is BattleStation && status == MapAssetActionAvailableCommand.OFF)

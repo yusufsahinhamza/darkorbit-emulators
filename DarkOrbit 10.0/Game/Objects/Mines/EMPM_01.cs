@@ -1,4 +1,5 @@
-﻿using Ow.Game.Movements;
+﻿using Ow.Game.Events;
+using Ow.Game.Movements;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
@@ -14,19 +15,10 @@ namespace Ow.Game.Objects.Mines
     {
         public EMPM_01(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(player, spacemap, position, mineTypeId) { }
 
-        public override void Explode()
+        public override void Action(Player player)
         {
-            foreach (var character in Spacemap.Characters.Values)
-            {
-                if (character is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
-                {
-                    if (Player == player || player.Storage.Duel == null || (player.Storage.Duel != null && Player == player.Storage.Duel?.GetOpponent(player)))
-                    {
-                        if (player.Attackable())
-                            player.CpuManager.DisableCloak();
-                    }
-                }
-            }
+            if (player.Attackable())
+                player.CpuManager.DisableCloak();
         }
     }
 }

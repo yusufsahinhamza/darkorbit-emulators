@@ -503,27 +503,27 @@ namespace Ow.Game.Objects
                          "equipment_extra_repbot_rep-4", Storage.IsInRadiationZone);
         }
 
-        public byte[] GetShipCreateCommand(bool fromAdmin, short relationType, bool sameClan, bool jackpotBattle = false)
+        public byte[] GetShipCreateCommand(Player otherPlayer, short relationType)
         {
             return ShipCreateCommand.write(
                 Id,
                 Ship.LootId,
                 3,
-                jackpotBattle ? "" : Clan.Tag,
-                jackpotBattle ? EventManager.JackpotBattle.Name : (Name + (fromAdmin ? " (" + Id + ")" : "")),
+                !EventManager.JackpotBattle.InEvent(this) ? Clan.Tag : "",
+                !EventManager.JackpotBattle.InEvent(this) ? (otherPlayer.RankId == 21 ? $"{Name} - {Id}" : Name) : EventManager.JackpotBattle.Name,
                 Position.X,
                 Position.Y,
                 FactionId,
-                Clan.Id,
+                !EventManager.JackpotBattle.InEvent(this) ? Clan.Id : 0,
                 RankId,
-                false,//RankId == 21 ? true : false,
-                new ClanRelationModule((EventManager.JackpotBattle.InActiveEvent(this) || Storage.Duel != null || Storage.Uba != null) ? ClanRelationModule.AT_WAR : relationType),
+                false,
+                new ClanRelationModule(!EventManager.JackpotBattle.InEvent(this) ? relationType : ClanRelationModule.NONE),
                 100,
                 false,
                 false,
                 Invisible,
-                ((EventManager.JackpotBattle.InActiveEvent(this) || Storage.Duel != null || Storage.Uba != null) && sameClan) ? ClanRelationModule.NON_AGGRESSION_PACT : ClanRelationModule.NON_AGGRESSION_PACT,
-                (EventManager.JackpotBattle.InActiveEvent(this) || Storage.Duel != null || Storage.Uba != null) ? ClanRelationModule.AT_WAR : relationType,
+                !EventManager.JackpotBattle.InEvent(this) ? relationType : ClanRelationModule.NONE,
+                !EventManager.JackpotBattle.InEvent(this) ? relationType : ClanRelationModule.NONE,
                 VisualModifiers.Values.ToList(),
                 new class_11d(class_11d.DEFAULT));
         }
@@ -567,7 +567,7 @@ namespace Ow.Game.Objects
 
         public bool Attackable()
         {
-            return (AttackManager.IshCooldown.AddMilliseconds(TimeManager.ISH_DURATION) > DateTime.Now || Storage.invincibilityEffect || Storage.GodMode) ? false : true;
+            return (AttackManager.IshCooldown.AddMilliseconds(TimeManager.ISH_DURATION) > DateTime.Now || Invincible || Storage.GodMode) ? false : true;
         }
 
         public void SendCooldown(string itemId, int time, bool countdown = false)
@@ -860,8 +860,7 @@ namespace Ow.Game.Objects
 
         public int GetBaseMapId()
         {
-            return 1;
-            //return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
+            return FactionId == 1 ? 13 : FactionId == 2 ? 14 : 15;
         }
 
         public Position GetBasePosition()

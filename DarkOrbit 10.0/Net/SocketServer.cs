@@ -195,6 +195,12 @@ namespace Ow.Net
 
             if (player.Clan.Id != 0)
             {
+                foreach (var battleStation in GameManager.BattleStations.Values)
+                {
+                    if (battleStation.EquippedStationModule.ContainsKey(player.Clan.Id))
+                        battleStation.EquippedStationModule[player.Clan.Id].ForEach(x => { if (x.OwnerId == player.Id) { x.Destroy(null, DestructionType.MISC); } });
+                }
+
                 player.Clan = GameManager.GetClan(0);
                 GameManager.SendCommandToMap(player.Spacemap.Id, ClanChangedCommand.write(player.Clan.Tag, player.Clan.Id, player.Id));
             }
@@ -204,13 +210,16 @@ namespace Ow.Net
         {
             if (deletedClan.Id != 0)
             {
+                foreach (var battleStation in GameManager.BattleStations.Values.Where(x => x.Clan.Id == deletedClan.Id))
+                    battleStation.Destroy(null, DestructionType.MISC);
+
                 GameManager.Clans.TryRemove(deletedClan.Id, out deletedClan);
 
                 foreach (var gameSession in GameManager.GameSessions.Values)
                 {
                     var member = gameSession.Player;
 
-                    if (member.Clan == deletedClan)
+                    if (member.Clan.Id == deletedClan.Id)
                     {
                         member.Clan = GameManager.GetClan(0);
                         GameManager.SendCommandToMap(member.Spacemap.Id, ClanChangedCommand.write(member.Clan.Tag, member.Clan.Id, member.Id));

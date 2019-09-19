@@ -11,7 +11,6 @@ namespace Ow.Game.Objects.Players.Skills
     class Sentinel : Skill
     {
         public override string LootId { get => SkillManager.SENTINEL; }
-        public override int Id { get => 4; }
 
         public override int Duration { get => TimeManager.SENTINEL_DURATION; }
         public override int Cooldown { get => TimeManager.SENTINEL_COOLDOWN; }

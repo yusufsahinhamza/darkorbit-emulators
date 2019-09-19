@@ -31,18 +31,19 @@ namespace Ow.Game.Events
 
             foreach (var player in Players.Values)
             {
-                if (player.GameSession == null) return;
-
-                player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.CAMERA, 0, "", 0, true));
-                player.Storage.Duel = this;
-                player.CpuManager.DisableCloak();
-
-                foreach (var player2 in Players.Values)
+                if (player.GameSession != null)
                 {
-                    if (!player.Equals(player2))
+                    player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.CAMERA, 0, "", 0, true));
+                    player.Storage.Duel = this;
+                    player.CpuManager.DisableCloak();
+
+                    foreach (var player2 in Players.Values)
                     {
-                        player.Jump(Spacemap.Id, Position1);
-                        player2.Jump(Spacemap.Id, Position2);
+                        if (!player.Equals(player2))
+                        {
+                            player.Jump(Spacemap.Id, Position1);
+                            player2.Jump(Spacemap.Id, Position2);
+                        }
                     }
                 }
             }
@@ -57,15 +58,13 @@ namespace Ow.Game.Events
                 var packet = $"0|A|STD|-={i}=-";
 
                 foreach (var player in Players.Values)
-                    if (player.GameSession != null)
-                        player.SendPacket(packet);
+                    player.SendPacket(packet);
 
                 await Task.Delay(1000);
 
                 if (i <= 1)
                 {
                     PeaceArea = false;
-
                     Program.TickManager.AddTick(this, out var tickId);
                     TickId = tickId;
                 }
@@ -75,23 +74,24 @@ namespace Ow.Game.Events
         public void Tick()
         {
             if (Players.Count == 1)
-            {
-                var lastPlayer = Players.FirstOrDefault().Value;
-                SendRewardAndStop(lastPlayer as Player);
-            }
+                SendRewardAndStop(Players.FirstOrDefault().Value);
         }
 
         public async void SendRewardAndStop(Player winnerPlayer)
         {
             Program.TickManager.RemoveTick(this);
 
-            winnerPlayer.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
-            await Task.Delay(5000);
+            if (winnerPlayer != null)
+            {
+                winnerPlayer.SendPacket("0|n|KSMSG|label_traininggrounds_results_victory");
+                await Task.Delay(2500);
 
-            winnerPlayer.SetPosition(winnerPlayer.GetBasePosition());
-            winnerPlayer.Jump(winnerPlayer.GetBaseMapId(), winnerPlayer.Position);
+                winnerPlayer.SetPosition(winnerPlayer.GetBasePosition());
+                winnerPlayer.Jump(winnerPlayer.GetBaseMapId(), winnerPlayer.Position);
+            }
 
             foreach (var player in Players.Values)
+            {
                 if (player.GameSession != null)
                 {
                     var mines = Spacemap.Mines.Where(x => x.Value.Player == player);
@@ -101,20 +101,28 @@ namespace Ow.Game.Events
                     player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
                     RemovePlayer(player);
                 }
+            }
         }
 
         public static void RemovePlayer(Player player)
         {
-            if (player.Storage.Duel != null)
+            player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
+
+            if (InDuel(player))
             {
                 player.Storage.Duel.Players.TryRemove(player.Id, out player);
                 player.Storage.Duel = null;
             }
         }
 
+        public static bool InDuel(Player player)
+        {
+            return player.Storage.Duel != null && player.Spacemap.Id == Spacemap.Id && Spacemap.Characters.ContainsKey(player.Id);
+        }
+
         public Player GetOpponent(Player player)
         {
-            return Players.Where(x => x.Value.Id != player.Id).FirstOrDefault().Value;
+            return Players?.Where(x => x.Value.Id != player.Id).FirstOrDefault().Value;
         }
     }
 }

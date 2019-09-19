@@ -95,7 +95,7 @@ namespace Ow.Net.netty.handlers
             try
             {
                 Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
-                if (firstLogin || EventManager.JackpotBattle.InActiveEvent(Player) || Player.Storage.Duel != null)
+                if (firstLogin || EventManager.JackpotBattle.InEvent(Player) || Duel.InDuel(Player))
                 {
                     Player.CurrentHitPoints = Player.MaxHitPoints;
                     Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;

@@ -12,7 +12,6 @@ namespace Ow.Game.Objects.Players.Skills
     class Solace : Skill
     {
         public override string LootId { get => SkillManager.SOLACE; }
-        public override int Id { get => 2; }
 
         public override int Duration { get => -1; }
         public override int Cooldown { get => TimeManager.SOLACE_COOLDOWN; }

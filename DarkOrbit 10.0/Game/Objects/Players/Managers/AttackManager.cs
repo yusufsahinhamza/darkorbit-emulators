@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Objects;
 using Ow.Game.Objects.Players.Techs;
+using Ow.Game.Objects.Stations;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
@@ -30,7 +31,7 @@ namespace Ow.Game.Objects.Players.Managers
                 var target = Player.Selected;
 
                 if (target == null) return;
-                if (!TargetDefinition(target)) return;
+                if (!Player.TargetDefinition(target)) return;
 
                 if (CheckLaserAttackTime())
                 {
@@ -84,7 +85,7 @@ namespace Ow.Game.Objects.Players.Managers
             if (enemy == null) return;
 
             if (Player.Settings.InGameSettings.selectedRocket != AmmunitionManager.WIZ_X)
-                if (!TargetDefinition(enemy, true, true)) return;
+                if (!Player.TargetDefinition(enemy, true, true)) return;
 
             switch (GetSelectedRocket())
             {
@@ -121,7 +122,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             var enemy = Player.Selected;
             if (enemy == null) return;
-            if (!TargetDefinition(enemy, false)) return;
+            if (!Player.TargetDefinition(enemy, false)) return;
 
             Player.SendPacket("0|RL|A|" + Player.Id + "|" + enemy.Id + "|" + RocketLauncher.CurrentLoad + "|" + GetSelectedLauncherId());
             Player.SendPacketToInRangePlayers("0|RL|A|" + Player.Id + "|" + enemy.Id + "|" + RocketLauncher.CurrentLoad + "|" + GetSelectedLauncherId());
@@ -182,46 +183,11 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
-        public DateTime EmpCooldown = new DateTime();
-        public void EMP()
-        {
-            if (EmpCooldown.AddMilliseconds(TimeManager.EMP_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
-            {
-                Player.SendCooldown(AmmunitionManager.EMP_01, TimeManager.EMP_COOLDOWN);
-                EmpCooldown = DateTime.Now;
-
-                Player.Storage.DeactiveR_RIC3();
-                Player.Storage.DeactiveDCR_250();
-                Player.Storage.DeactiveSLM_01();
-
-                string empPacket = "0|n|EMP|" + Player.Id;
-                Player.SendPacket(empPacket);
-                Player.SendPacketToInRangePlayers(empPacket);
-
-                foreach (var otherPlayers in Player.Spacemap.Characters.Values)
-                {
-                    if (otherPlayers is Player otherPlayer && otherPlayer.Selected == Player)
-                        otherPlayer.Deselection(true);
-                }
-
-                foreach (var otherPlayers in Player.InRangeCharacters.Values)
-                {
-                    if (otherPlayers is Player otherPlayer)
-                    {
-                        if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
-
-                        if (otherPlayer.FactionId != Player.FactionId)
-                            otherPlayer.CpuManager.DisableCloak();
-                    }
-                }
-            }
-        }
-
         public DateTime r_ic3Cooldown = new DateTime();
         public void R_IC3()
         {
             var enemy = Player.SelectedCharacter;
-            if (!TargetDefinition(enemy)) return;
+            if (!Player.TargetDefinition(enemy)) return;
 
             if (r_ic3Cooldown.AddMilliseconds(TimeManager.R_IC3_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -251,7 +217,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             var enemy = Player.SelectedCharacter;
             if (enemy == null) return;
-            if (!TargetDefinition(enemy)) return;
+            if (!Player.TargetDefinition(enemy)) return;
 
             if (pld8Cooldown.AddMilliseconds(TimeManager.PLD8_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -318,7 +284,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             var enemy = Player.SelectedCharacter;
             if (enemy == null) return;
-            if (!TargetDefinition(enemy)) return;
+            if (!Player.TargetDefinition(enemy)) return;
 
             if (dcr_250Cooldown.AddMilliseconds(TimeManager.DCR_250_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
@@ -345,6 +311,41 @@ namespace Ow.Game.Objects.Players.Managers
             }
         }
 
+        public DateTime EmpCooldown = new DateTime();
+        public void EMP()
+        {
+            if (EmpCooldown.AddMilliseconds(TimeManager.EMP_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+            {
+                Player.SendCooldown(AmmunitionManager.EMP_01, TimeManager.EMP_COOLDOWN);
+                EmpCooldown = DateTime.Now;
+
+                Player.Storage.DeactiveR_RIC3();
+                Player.Storage.DeactiveDCR_250();
+                Player.Storage.DeactiveSLM_01();
+
+                string empPacket = "0|n|EMP|" + Player.Id;
+                Player.SendPacket(empPacket);
+                Player.SendPacketToInRangePlayers(empPacket);
+
+                foreach (var otherPlayers in Player.Spacemap.Characters.Values)
+                {
+                    if (otherPlayers is Player otherPlayer && otherPlayer.Selected == Player)
+                        otherPlayer.Deselection(true);
+                }
+
+                foreach (var otherPlayers in Player.InRangeCharacters.Values)
+                {
+                    if (otherPlayers is Player otherPlayer)
+                    {
+                        if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
+
+                        if (otherPlayer.FactionId != Player.FactionId)
+                            otherPlayer.CpuManager.DisableCloak();
+                    }
+                }
+            }
+        }
+
         public DateTime SmbCooldown = new DateTime();
         public void SMB()
         {
@@ -363,7 +364,7 @@ namespace Ow.Game.Objects.Players.Managers
                 {
                     if (otherPlayer == null || !(otherPlayer is Player)) continue;
                     if (otherPlayer.Position.DistanceTo(Player.Position) > 700) continue;
-                    if (!TargetDefinition(otherPlayer, false)) continue;
+                    if (!Player.TargetDefinition(otherPlayer, false)) continue;
 
                     int damage = Maths.GetPercentage(otherPlayer.CurrentHitPoints, 20);
                     Damage(Player, otherPlayer as Player, DamageType.MINE, damage, false, true, false, false);
@@ -393,7 +394,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             foreach (var entry in Player.InRangeCharacters.Values)
             {
-                if (entry != null && entry is Player && TargetDefinition(entry, false) && entry.Position.DistanceTo(Player.Position) <= 1000)
+                if (entry != null && entry is Player && Player.TargetDefinition(entry, false) && entry.Position.DistanceTo(Player.Position) <= 1000)
                     if (targets.Count < 7)
                         targets.Add(entry.Id, entry);
             }
@@ -410,98 +411,6 @@ namespace Ow.Game.Objects.Players.Managers
 
                 Damage(Player, target, DamageType.ECI, damage, true, true, false);
             }
-        }
-
-        public DateTime outOfRangeCooldown = new DateTime();
-        public DateTime inAttackCooldown = new DateTime();
-        public DateTime peaceAreaCooldown = new DateTime();
-        public bool TargetDefinition(Attackable target, bool sendMessage = true, bool isRocketAttack = false)
-        {
-            if (target == null) return false;
-
-            short relationType = Player.Clan.Id != 0 && target.Clan.Id != 0 ? Player.Clan.GetRelation(target.Clan) : (short)0;
-            if (target.FactionId == Player.FactionId && relationType != ClanRelationModule.AT_WAR && !(target is Pet pet && pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.Duel == null)
-            {
-                Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                /*
-                if (sendMessage)
-                    Player.SendPacket("0|A|STD|You can't attack members of your own company!");
-                    */
-                return false;
-            }
-
-            if (target is Player)
-            {
-                var targetPlayer = target as Player;
-
-                if (relationType == ClanRelationModule.ALLIED && !(target is Pet && target as Pet == Player.Pet) && !(EventManager.JackpotBattle.InActiveEvent(Player)) && Player.Storage.Duel == null)
-                {
-                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                    /*
-                    if (sendMessage)
-                        Player.SendPacket("0|A|STD|You can't attack members of your own clan or alliance clan!");
-                        */
-                    return false;
-                }
-                
-                if (targetPlayer.Group != null)
-                {
-                    if (Player.Group != null && Player.Group.Members.ContainsKey(target.Id))
-                    {
-                        Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                        /*
-                        if (sendMessage)
-                            Player.SendPacket("0|A|STD|You can't attack members of your group!");
-                            */
-                        return false;
-                    }
-                }
-
-                if (targetPlayer.Storage.IsInDemilitarizedZone || (Player.Storage.Duel != null && Player.Storage.Duel.PeaceArea))
-                {
-                    Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
-                    if (peaceAreaCooldown.AddSeconds(10) < DateTime.Now)
-                    {
-                        if (sendMessage)
-                        {
-                            Player.SendPacket("0|A|STM|peacearea");
-                            targetPlayer.SendPacket("0|A|STM|peacearea");
-
-                            peaceAreaCooldown = DateTime.Now;
-                        }
-                    }
-                    return false;
-                }
-
-            }
-
-            if (Player.Position.DistanceTo(target.Position) > (isRocketAttack ? GetRocketRange() : Player.AttackRange))
-            {
-                if (outOfRangeCooldown.AddSeconds(5) < DateTime.Now)
-                {
-                    if (sendMessage)
-                    {
-                        if (!isRocketAttack) //not sure
-                            Player.SendPacket("0|A|STM|outofrange");
-
-                        if (target is Player)
-                            (target as Player).SendPacket("0|A|STM|attescape");
-
-                        outOfRangeCooldown = DateTime.Now;
-                    }
-                }
-                return false;
-            }
-
-            if (inAttackCooldown.AddSeconds(10) < DateTime.Now)
-            {
-                if (sendMessage)
-                {
-                    Player.SendPacket("0|A|STM|oppoatt|%!|" + (EventManager.JackpotBattle.InActiveEvent(Player) ? EventManager.JackpotBattle.Name : target.Name));
-                    inAttackCooldown = DateTime.Now;
-                }
-            }
-            return true;
         }
 
         public int RandomizeDamage(int baseDmg, double missProbability = 1.00)
@@ -540,7 +449,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void Absorbation(Player attacker, Attackable target, DamageType damageType, int damage)
         {
-            if (attacker.Storage.invincibilityEffect)
+            if (attacker.Invincible)
                 attacker.Storage.DeactiveInvincibilityEffect();
 
             Player.CpuManager.DisableCloak();
@@ -585,7 +494,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void Damage(Player attacker, Attackable target, DamageType damageType, int damage, double shieldPenetration, bool deactiveCloak = true)
         {
-            if (damageType == DamageType.MINE && target is Player && (target as Player).Storage.invincibilityEffect) return;
+            if (damageType == DamageType.MINE && target.Invincible) return;
 
             if (damageType == DamageType.LASER && Player.Settings.InGameSettings.selectedLaser == AmmunitionManager.SAB_50)
             {
@@ -595,7 +504,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             int damageShd = 0, damageHp = 0;
 
-            if (attacker.Storage.invincibilityEffect)
+            if (attacker.Invincible)
                 attacker.Storage.DeactiveInvincibilityEffect();
 
             if (target is Spaceball)
@@ -626,7 +535,7 @@ namespace Ow.Game.Objects.Players.Managers
                 damageHp = target.CurrentHitPoints;
             }
 
-            if (target is Player && !(target as Player).Attackable())
+            if (target.Invincible || (target is Satellite satellite && satellite.BattleStation.Invincible) || (target is Player && !(target as Player).Attackable()))
             {
                 damage = 0;
                 damageShd = 0;
@@ -642,11 +551,11 @@ namespace Ow.Game.Objects.Players.Managers
                     damageShd -= Maths.GetPercentage(damageShd, 30);
 
                 if (Player.Storage.Diminisher)
-                    if (target == Player.Storage.UnderDiminisherPlayer)
+                    if (target == Player.Storage.UnderDiminisherEntity)
                         damageShd += Maths.GetPercentage(damage, 50);
 
                 if (target is Player && (target as Player).Storage.Diminisher)
-                    if ((target as Player).Storage.UnderDiminisherPlayer == Player)
+                    if ((target as Player).Storage.UnderDiminisherEntity == Player)
                         damageShd += Maths.GetPercentage(damage, 30);
 
                 var laserRunCommand = AttackLaserRunCommand.write(Player.Id, target.Id, GetSelectedLaser(), false, true);
@@ -707,11 +616,11 @@ namespace Ow.Game.Objects.Players.Managers
             target.UpdateStatus();
         }
 
-        public static void Damage(Player attacker, Character target, DamageType damageType, int damage, bool toDestroy, bool toHp, bool toShd, bool missedEffect = true)
+        public static void Damage(Player attacker, Attackable target, DamageType damageType, int damage, bool toDestroy, bool toHp, bool toShd, bool missedEffect = true)
         {
-            if (damageType == DamageType.MINE && target is Player && (target as Player).Storage.invincibilityEffect) return;
+            if (damageType == DamageType.MINE && target.Invincible) return;
 
-            if (attacker.Storage.invincibilityEffect && damageType != DamageType.RADIATION)
+            if (attacker.Invincible && damageType != DamageType.RADIATION)
                 attacker.Storage.DeactiveInvincibilityEffect();
 
             if (target is Player && !(target as Player).Attackable())
@@ -772,7 +681,7 @@ namespace Ow.Game.Objects.Players.Managers
             return lastAttackTime.AddSeconds(1) < DateTime.Now;
         }
 
-        private int GetRocketRange()
+        public int GetRocketRange()
         {
             switch (Player.Settings.InGameSettings.selectedRocket)
             {

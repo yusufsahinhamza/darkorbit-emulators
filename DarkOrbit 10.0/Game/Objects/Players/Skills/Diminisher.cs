@@ -11,7 +11,6 @@ namespace Ow.Game.Objects.Players.Skills
     class Diminisher : Skill
     {
         public override string LootId { get => SkillManager.DIMINISHER; }
-        public override int Id { get => 2; }
 
         public override int Duration { get => TimeManager.DIMINISHER_DURATION; }
         public override int Cooldown { get => TimeManager.DIMINISHER_COOLDOWN; }
@@ -24,7 +23,7 @@ namespace Ow.Game.Objects.Players.Skills
             {
                 if (cooldown.AddMilliseconds(Duration) < DateTime.Now)
                     Disable();
-                if (Player.Selected == null || Player.Selected != Player.Storage.UnderDiminisherPlayer)
+                if (Player.Storage.UnderDiminisherEntity == null || Player.Selected != Player.Storage.UnderDiminisherEntity || Player.Spacemap.Id != Player.Storage.UnderDiminisherEntity.Spacemap.Id)
                     Disable();
             }
         }
@@ -33,17 +32,17 @@ namespace Ow.Game.Objects.Players.Skills
         {
             if (Player.Ship.Id == 64 && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
-                var enemy = Player.Selected;
-                if (enemy == null || !(enemy is Player)) return;
-                if (!Player.AttackManager.TargetDefinition(enemy as Player, false)) return;
+                var target = Player.Selected;
+                if (target == null) return;
+                if (!Player.TargetDefinition(target, false)) return;
 
                 Player.SkillManager.DisableAllSkills();
 
                 Player.Storage.Diminisher = true;
-                Player.Storage.UnderDiminisherPlayer = enemy as Player;
+                Player.Storage.UnderDiminisherEntity = target;
 
                 Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
-                (enemy as Player).AddVisualModifier(new VisualModifierCommand(enemy.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
+                target.AddVisualModifier(new VisualModifierCommand(target.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;
@@ -53,14 +52,15 @@ namespace Ow.Game.Objects.Players.Skills
 
         public override void Disable()
         {
-            var enemy = Player.Storage.UnderDiminisherPlayer;
-            if (enemy == null) return;
+            var target = Player.Storage.UnderDiminisherEntity;
 
             Player.Storage.Diminisher = false;
-            Player.Storage.UnderDiminisherPlayer = null;
+            Player.Storage.UnderDiminisherEntity = null;
 
             Player.RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
-            (enemy as Player).RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
+
+            if (target != null)
+                target.RemoveVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS);
 
             Player.SendCooldown(LootId, Cooldown);
             Active = false;

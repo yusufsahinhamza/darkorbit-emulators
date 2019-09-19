@@ -42,6 +42,12 @@ namespace Ow.Managers
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                     mySqlClient.ExecuteNonQuery($"UPDATE player_equipment SET boosters = '{JsonConvert.SerializeObject(player.BoosterManager.Boosters)}' WHERE userId = {player.Id}");
             }
+
+            public static void Modules(Player player)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_equipment SET modules = '{JsonConvert.SerializeObject(player.Storage.BattleStationModules)}' WHERE userId = {player.Id}");
+            }
         }
 
         public class ChatFunctions
@@ -128,6 +134,7 @@ namespace Ow.Managers
                     var querySet = mySqlClient.ExecuteQueryRow(sql);
 
                     Player.BoosterManager.Boosters = JsonConvert.DeserializeObject<Dictionary<short, List<BoosterBase>>>(querySet["boosters"].ToString());
+                    Player.Storage.BattleStationModules = JsonConvert.DeserializeObject<List<ModuleBase>>(querySet["modules"].ToString());
 
                     Player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase(Player.Ship.BaseHitpoints, 0, 0, 300, Player.Ship.BaseHitpoints, 0, 0, 300); //TODO: GGA (i dont remember what i said )
                 }
@@ -200,10 +207,11 @@ namespace Ow.Managers
                         visualModifiers.Add(modifier);
 
                     var buildTime = battleStation.AssetTypeId != AssetTypeModule.BATTLESTATION && battleStation.InBuildingState ? $"buildTime = '{battleStation.buildTime.ToString("yyyy-MM-dd HH:mm:ss")}'," : "";
+                    var deflectorTime = !battleStation.DeflectorActive ? $"deflectorTime = '{battleStation.deflectorTime.ToString("yyyy-MM-dd HH:mm:ss")}'," : "";
 
-                    mySqlClient.ExecuteNonQuery($"UPDATE server_battlestations SET clanId = {battleStation.Clan.Id}, factionId = {battleStation.FactionId}" +
-                    $", inBuildingState = {battleStation.InBuildingState}, buildTimeInMinutes = {battleStation.BuildTimeInMinutes}, {buildTime}" +
-                    $"visualModifiers = '{JsonConvert.SerializeObject(visualModifiers)}' WHERE name = '{battleStation.AsteroidName}'");
+                    mySqlClient.ExecuteNonQuery($"UPDATE server_battlestations SET clanId = {battleStation.Clan.Id}," +
+                    $"inBuildingState = {battleStation.InBuildingState}, buildTimeInMinutes = {battleStation.BuildTimeInMinutes}, {buildTime}" +
+                    $"deflectorActive = {battleStation.DeflectorActive}, deflectorSecondsLeft = {battleStation.DeflectorSecondsLeft}, {deflectorTime} visualModifiers = '{JsonConvert.SerializeObject(visualModifiers)}' WHERE name = '{battleStation.AsteroidName}'");
                 }
             }
 
@@ -239,16 +247,18 @@ namespace Ow.Managers
                     string name = Convert.ToString(row["name"]);
                     int mapId = Convert.ToInt32(row["mapId"]);
                     int clanId = Convert.ToInt32(row["clanId"]);
-                    int factionId = Convert.ToInt32(row["factionId"]);
                     int positionX = Convert.ToInt32(row["positionX"]);
                     int positionY = Convert.ToInt32(row["positionY"]);
                     var modules = JsonConvert.DeserializeObject<List<EquippedModuleBase>>(row["modules"].ToString());
                     var inBuildingState = Convert.ToBoolean(Convert.ToInt32(row["inBuildingState"]));
                     var buildTimeInMinutes = Convert.ToInt32(row["buildTimeInMinutes"]);
                     var buildTime = DateTime.Parse(row["buildTime"].ToString());
+                    var deflectorActive = Convert.ToBoolean(Convert.ToInt32(row["deflectorActive"]));
+                    var deflectorSecondsLeft = Convert.ToInt32(row["deflectorSecondsLeft"]);
+                    var deflectorTime = DateTime.Parse(row["deflectorTime"].ToString());
                     var visualModifiers = JsonConvert.DeserializeObject<List<int>>(row["visualModifiers"].ToString());
 
-                    var battleStation = new BattleStation(name, factionId, GameManager.GetSpacemap(mapId), new Position(positionX, positionY), GameManager.GetClan(clanId), modules, inBuildingState, buildTimeInMinutes, buildTime, visualModifiers);
+                    var battleStation = new BattleStation(name, GameManager.GetSpacemap(mapId), new Position(positionX, positionY), GameManager.GetClan(clanId), modules, inBuildingState, buildTimeInMinutes, buildTime, deflectorActive, deflectorSecondsLeft, deflectorTime, visualModifiers);
                     GameManager.BattleStations.TryAdd(battleStation.Name, battleStation);
                 }
             }
@@ -320,10 +330,10 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM chat_permissions WHERE UserId = {userId}");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM chat_permissions WHERE userId = {userId}");
                 foreach (DataRow row in data.Rows)
                 {
-                    return Convert.ToInt32(row["Type"]);
+                    return Convert.ToInt32(row["type"]);
                 }
                 return 0;
             }

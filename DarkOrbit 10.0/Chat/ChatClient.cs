@@ -170,13 +170,13 @@ namespace Ow.Chat
                 return;
             }
 
-            if (gameSession.Player.Storage.Duel != null)
+            if (Duel.InDuel(gameSession.Player))
             {
-                Send($"dq%You cant accept duels while your duel continuenigenbeninn.#");
+                Send($"dq%You can't accept duels while you're in a duel.#");
                 return;
             }
 
-            if (inviterPlayer.Storage.Duel != null)
+            if (Duel.InDuel(inviterPlayer))
             {
                 Send($"dq%Your opponent is already fighting on duel with another player.#");
                 return;

@@ -40,11 +40,12 @@ namespace Ow.Game.Events
 
                     if (i <= 1)
                     {
-                        foreach (var gameSession in GameManager.GameSessions.Values)
+                        foreach (var gameSession in GameManager.GameSessions?.Values)
                         {
-                            if (gameSession != null && gameSession.Player.Storage.Duel == null && gameSession.Player.Storage.Uba == null && gameSession.Player.RankId != 21)
+                            var player = gameSession.Player;
+
+                            if (!Duel.InDuel(player) && player.RankId != 21)
                             {
-                                var player = gameSession.Player;
                                 Players.TryAdd(player.Id, player);
 
                                 player.CurrentHitPoints = player.MaxHitPoints;
@@ -77,9 +78,6 @@ namespace Ow.Game.Events
             {
                 CheckRadiation();
 
-                /*
-                 * YENİDEN YAZ
-                */
                 if (Spacemap.Characters.Count == 2 && Finalists.Count < 2)
                 {
                     foreach (var player in Spacemap.Characters.Values)
@@ -87,10 +85,7 @@ namespace Ow.Game.Events
                 }
 
                 if (Spacemap.Characters.Count == 1)
-                {
-                    var lastPlayer = Spacemap.Characters.FirstOrDefault().Value;
-                    SendRewardAndStop(lastPlayer as Player);
-                }
+                    SendRewardAndStop(Spacemap.Characters.FirstOrDefault().Value as Player);
             }
         }
 
@@ -168,7 +163,7 @@ namespace Ow.Game.Events
             Spacemap.POIs.Clear();
         }
 
-        public bool InActiveEvent(Player player)
+        public bool InEvent(Player player)
         {
             return Active && player.Spacemap.Id == Spacemap.Id && Spacemap.Characters.ContainsKey(player.Id);
         }

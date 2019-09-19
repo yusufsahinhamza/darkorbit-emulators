@@ -15,7 +15,7 @@ namespace Ow.Net.netty.handlers.UbaRequestHandlers
         public void execute(GameSession gameSession, byte[] bytes)
         {
             var player = gameSession.Player;
-            if (player.Spacemap.Id == EventManager.JackpotBattle.Spacemap.Id || player.Storage.Duel != null) return;
+            if (EventManager.JackpotBattle.InEvent(player) || Duel.InDuel(player)) return;
             EventManager.UltimateBattleArena.AddWaitingPlayer(player);
         }
     }

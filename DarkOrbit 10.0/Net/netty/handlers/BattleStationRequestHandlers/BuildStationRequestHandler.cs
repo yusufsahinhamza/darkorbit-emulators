@@ -45,6 +45,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                 battleStation.buildTime = DateTime.Now;
 
                 Program.TickManager.AddTick(battleStation, out var tickId);
+                battleStation.TickId = tickId;
 
                 battleStation.AddVisualModifier(new VisualModifierCommand(battleStation.Id, VisualModifierCommand.BATTLESTATION_CONSTRUCTING, 0, "", 0, true));
 

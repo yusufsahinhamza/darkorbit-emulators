@@ -102,14 +102,13 @@ namespace Ow.Game.Objects
                     if (this is Player player)
                     {
                         short relationType = character.Clan.Id != 0 && Clan.Id != 0 ? Clan.GetRelation(character.Clan) : (short)0;
-                        bool sameClan = Clan.Id != 0 && character.Clan.Id != 0 && Clan == character.Clan;
 
                         if (character is Player)
                         {
                             var otherPlayer = character as Player;
-                            player.SendCommand(otherPlayer.GetShipCreateCommand(player.RankId == 21 ? true : false, relationType, sameClan, (EventManager.JackpotBattle.InActiveEvent(player) && EventManager.JackpotBattle.InActiveEvent(otherPlayer))));
+                            player.SendCommand(otherPlayer.GetShipCreateCommand(player, relationType));
 
-                            if (otherPlayer.Title != "" && (!EventManager.JackpotBattle.InActiveEvent(player) && !EventManager.JackpotBattle.InActiveEvent(otherPlayer)))
+                            if (otherPlayer.Title != "" && !EventManager.JackpotBattle.InEvent(otherPlayer))
                                 player.SendPacket($"0|n|t|{otherPlayer.Id}|1|{otherPlayer.Title}");
 
                             player.SendPacket(otherPlayer.DroneManager.GetDronesPacket());
@@ -123,7 +122,6 @@ namespace Ow.Game.Objects
                         }
                         else player.SendCommand(character.GetShipCreateCommand());
 
-                        //player.SendPacket($"0|n|INV|{character.Id}|{Convert.ToInt32(character.Invisible)}");
                         var timeElapsed = (DateTime.Now - character.MovementStartTime).TotalMilliseconds;
                         player.SendCommand(MoveCommand.write(character.Id, character.Destination.X, character.Destination.Y, (int)(character.MovementTime - timeElapsed)));
                     }
@@ -164,43 +162,6 @@ namespace Ow.Game.Objects
                 Out.WriteLine("RemoveInRangeCharacter void exception " + e, "Character.cs");
                 return false;
             }
-        }
-
-        public void Heal(int amount, int healerId = 0, HealType healType = HealType.HEALTH)
-        {
-            if (amount < 0)
-                return;
-
-            switch (healType)
-            {
-                case HealType.HEALTH:
-                    if (CurrentHitPoints + amount > MaxHitPoints)
-                        amount = MaxHitPoints - CurrentHitPoints;
-                    CurrentHitPoints += amount;
-                    break;
-                case HealType.SHIELD:
-                    if (CurrentShieldPoints + amount > MaxShieldPoints)
-                        amount = MaxShieldPoints - CurrentShieldPoints;
-                    CurrentShieldPoints += amount;
-                    break;
-            }
-
-            if (this is Player player)
-            {
-                var healPacket = "0|A|HL|" + healerId + "|" + Id + "|" + (healType == HealType.HEALTH ? "HPT" : "SHD") + "|" + CurrentHitPoints + "|" + amount;
-
-                if (!Invisible)
-                {
-                    foreach (var otherPlayers in InRangeCharacters.Values)
-                        if (otherPlayers.Selected == this)
-                            if (otherPlayers is Player)
-                                (otherPlayers as Player).SendPacket(healPacket);
-                }
-
-                player.SendPacket(healPacket);
-            }
-
-            UpdateStatus();
         }
 
         public abstract byte[] GetShipCreateCommand();

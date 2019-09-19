@@ -1,4 +1,5 @@
-﻿using Ow.Game.Movements;
+﻿using Ow.Game.Events;
+using Ow.Game.Movements;
 using Ow.Game.Ticks;
 using Ow.Managers;
 using Ow.Net.netty.commands;
@@ -44,7 +45,19 @@ namespace Ow.Game.Objects.Mines
             TickId = tickId;
         }
 
-        public abstract void Explode();
+        public abstract void Action(Player player);
+
+        public void Explode()
+        {
+            foreach (var character in Spacemap.Characters.Values)
+            {
+                if (character is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
+                {
+                    if (!Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == Player))
+                        Action(player);
+                }
+            }
+        }
 
         public void Tick()
         {
@@ -57,7 +70,7 @@ namespace Ow.Game.Objects.Mines
             Active = false;
             var mine = this;
 
-            foreach (var gameSession in GameManager.GameSessions.Values)
+            foreach (var gameSession in GameManager.GameSessions?.Values)
             {
                 var player = gameSession.Player;
 

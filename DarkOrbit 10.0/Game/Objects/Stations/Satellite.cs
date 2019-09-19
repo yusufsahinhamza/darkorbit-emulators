@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Ow.Game;
 using Ow.Game.Movements;
+using Ow.Game.Objects.Players;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
@@ -49,6 +51,7 @@ namespace Ow.Game.Objects.Stations
         public BattleStation BattleStation { get; set; }
         public int OwnerId { get; set; }
 
+        public bool EmergencyRepairActive = false;
         public bool Installed = false;
         public int InstallationSecondsLeft = 0;
 
@@ -67,18 +70,10 @@ namespace Ow.Game.Objects.Stations
             SlotId = slotId;
             Type = type;
 
-
-
             MaxHitPoints = 1560000;
             CurrentHitPoints = MaxHitPoints;
             //CurrentShieldPoints = 250000;
             //MaxShieldPoints = 500000;
-
-
-
-
-
-
 
             Program.TickManager.AddTick(this, out var tickId);
             TickId = tickId;
@@ -96,7 +91,7 @@ namespace Ow.Game.Objects.Stations
                     if (BattleStation.AssetTypeId == AssetTypeModule.ASTEROID)
                     {
                         if (player == null || player.Position.DistanceTo(BattleStation.Position) > 700)
-                            Remove(true);
+                            Remove(false, true, true);
                     }
 
                     if (installationTime.AddSeconds(1) < DateTime.Now)
@@ -118,7 +113,7 @@ namespace Ow.Game.Objects.Stations
                     QueryManager.BattleStations.Modules(BattleStation);
                 }
             }
-            else
+            else if (Installed)
             {
                 if (BattleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
                 {
@@ -133,10 +128,23 @@ namespace Ow.Game.Objects.Stations
                         }
                     }
                     else if (Type == StationModuleModule.REPAIR)
-                    {
-                        //repair modules
-                    }
+                        RepairModules();
                 }
+            }
+        }
+
+        public DateTime repairTime = new DateTime();
+        public void RepairModules()
+        {
+            if (repairTime.AddSeconds(1) < DateTime.Now)
+            {
+                foreach (var module in BattleStation.EquippedStationModule[Clan.Id])
+                {
+                    //kontroller
+                    module.Heal(7500);
+                }
+
+                repairTime = DateTime.Now;
             }
         }
 
@@ -177,8 +185,6 @@ namespace Ow.Game.Objects.Stations
         public DateTime lastAttackTime = new DateTime();
         public void Attack(Attackable target, double shieldPenetration = 0)
         {
-            //targetdefination
-
             var damage = RandomizeDamage((Type == StationModuleModule.LASER_LOW_RANGE ? 59850 : Type == StationModuleModule.LASER_MID_RANGE ? 48450 : Type == StationModuleModule.LASER_HIGH_RANGE ? 28500 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 85500 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 71250 : 0), 2); //TODO
             damage = 1000; //for test
 
@@ -186,8 +192,10 @@ namespace Ow.Game.Objects.Stations
             var range = Type == StationModuleModule.LASER_LOW_RANGE ? 590 : Type == StationModuleModule.LASER_MID_RANGE ? 650 : Type == StationModuleModule.LASER_HIGH_RANGE ? 720 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 900 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 780 : 0;
             var cooldown = 1;
 
-            if (target.Position.DistanceTo(Position) < range) //set range*** for all different modules
+            if (target.Position.DistanceTo(Position) < range)
             {
+                if (!TargetDefinition(target)) return;
+
                 if (lastAttackTime.AddSeconds(cooldown) < DateTime.Now)
                 {
                     int damageShd = 0, damageHp = 0;
@@ -275,31 +283,6 @@ namespace Ow.Game.Objects.Stations
             }
         }
 
-        public void SendPacketToInRangeCharacters(string packet)
-        {
-            foreach (var character in Spacemap.Characters.Values)
-                if (character is Player player && character.Position.DistanceTo(Position) < 2000)
-                    player.SendPacket(packet);
-        }
-
-        public void SendCommandToInRangeCharacters(byte[] command, Attackable expectPlayer = null)
-        {
-            foreach (var character in Spacemap.Characters.Values)
-                if (character is Player player && player != expectPlayer && character.Position.DistanceTo(Position) < 2000)
-                    player.SendCommand(command);
-        }
-
-
-
-
-
-
-
-
-
-
-
-
         public override void Click(GameSession gameSession) { }
 
         public override byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE)
@@ -311,26 +294,68 @@ namespace Ow.Game.Objects.Stations
                                           VisualModifiers.Values.ToList());
         }
 
-        public void Remove(bool closeUI = false)
+        public void Remove(bool deleteModule = false, bool removeList = true, bool closeUI = false)
         {
             var player = GameManager.GetPlayerById(OwnerId);
 
             if (player != null)
             {
-                BattleStation.EquippedStationModule[player.Clan.Id].Remove(this);
+                var module = player.Storage.BattleStationModules.Where(x => x.Id == ItemId).FirstOrDefault();
 
-                if (BattleStation.EquippedStationModule[player.Clan.Id].Count == 0)
-                    BattleStation.EquippedStationModule.Remove(player.Clan.Id);
+                if (module != null)
+                {
+                    if (deleteModule)
+                        player.Storage.BattleStationModules.Remove(module);
+                    else
+                    {
+                        BattleStation.EquippedStationModule[player.Clan.Id].Remove(this);
 
-                player.Storage.BattleStationModules.Add(new StationModuleModule(BattleStation.Id, ItemId, SlotId, Type, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
+                        if (removeList)
+                        {
+                            if (BattleStation.EquippedStationModule[player.Clan.Id].Count == 0)
+                                BattleStation.EquippedStationModule.Remove(player.Clan.Id);
+                        }
 
-                if (closeUI)
-                    player.SendCommand(OutOfBattleStationRangeCommand.write(BattleStation.Id));
+                        module.InUse = false;
+                    }
 
-                QueryManager.BattleStations.Modules(BattleStation);
+                    if (closeUI)
+                        player.SendCommand(OutOfBattleStationRangeCommand.write(BattleStation.Id));
+
+                    QueryManager.SavePlayer.Modules(player);
+                    QueryManager.BattleStations.Modules(BattleStation);
+                }
             }
 
             Program.TickManager.RemoveTick(this);
+        }
+
+        public void Delete()
+        {
+           
+
+      
+            /*
+            else
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    Console.WriteLine("xxx");
+                    string sql = $"SELECT * FROM player_equipment WHERE userId = {OwnerId} ";
+                    var querySet = mySqlClient.ExecuteQueryRow(sql);
+
+                    var modules = JsonConvert.DeserializeObject<List<ModuleBase>>(querySet["modules"].ToString());
+                    modules.RemoveAt(ItemId);
+
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_equipment SET modules = '{JsonConvert.SerializeObject(modules)}' WHERE userId = {OwnerId}");
+                }
+            }
+            */
+        }
+
+        public int GetRange()
+        {
+            return Type == StationModuleModule.LASER_LOW_RANGE ? 590 : Type == StationModuleModule.LASER_MID_RANGE ? 650 : Type == StationModuleModule.LASER_HIGH_RANGE ? 720 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 900 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 780 : 0;
         }
 
         public static string GetName(short type)
@@ -340,7 +365,7 @@ namespace Ow.Game.Objects.Stations
 
         public static Position GetPosition(Position center, int slotId)
         {
-            return slotId == 9 ? new Position(center.X - 171, center.Y - 236) : slotId == 2 ? new Position(center.X + 170, center.Y - 235) : slotId == 3 ? new Position(center.X + 412, center.Y - 98) : slotId == 4 ? new Position(center.X + 412, center.Y + 97) : slotId == 5 ? new Position(center.X + 170, center.Y + 236) : slotId == 6 ? new Position(center.X - 171, center.Y + 235) : slotId == 7 ? new Position(center.X - 413, center.Y + 97) : slotId == 8 ? new Position(center.X - 413, center.Y - 98) : null;
+            return slotId == 9 ? new Position(center.X - 171, center.Y - 236) : slotId == 2 ? new Position(center.X + 170, center.Y - 235) : slotId == 3 ? new Position(center.X + 412, center.Y - 98) : slotId == 4 ? new Position(center.X + 412, center.Y + 97) : slotId == 5 ? new Position(center.X + 170, center.Y + 236) : slotId == 6 ? new Position(center.X - 171, center.Y + 235) : slotId == 7 ? new Position(center.X - 413, center.Y + 97) : slotId == 8 ? new Position(center.X - 413, center.Y - 98) : center;
         }
     }
 }

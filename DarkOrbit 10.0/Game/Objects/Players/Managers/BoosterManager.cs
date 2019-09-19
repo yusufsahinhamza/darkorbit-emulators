@@ -32,7 +32,7 @@ namespace Ow.Game.Objects.Players.Managers
         public DateTime boosterTime = new DateTime();
         public void Tick()
         {
-            if (boosterTime.AddSeconds(1) < DateTime.Now)
+            if (boosterTime.AddSeconds(5) < DateTime.Now)
             {
                 for (short i = 0; i < Boosters.ToList().Count; i++)
                 {
@@ -40,7 +40,7 @@ namespace Ow.Game.Objects.Players.Managers
 
                     for (short k = 0; k < boosters.Count; k++)
                     {
-                        boosters[k].Seconds -= 1;
+                        boosters[k].Seconds -= 5;
 
                         if (boosters[k].Seconds <= 0)
                             Remove((BoosterType)boosters[k].Type);

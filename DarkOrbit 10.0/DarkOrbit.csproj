@@ -160,6 +160,8 @@
     <Compile Include="Net\mysql\TransactionException.cs" />
     <Compile Include="Net\mysql\TransactionQueryReactor.cs" />
     <Compile Include="Net\netty\commands\AssetRemoveCommand.cs" />
+    <Compile Include="Net\netty\commands\BattleStationManagementUiInitializationCommand.cs" />
+    <Compile Include="Net\netty\commands\BattleStationNoClanUiInitializationCommand.cs" />
     <Compile Include="Net\netty\commands\OutOfBattleStationRangeCommand.cs" />
     <Compile Include="Net\netty\commands\RemovePortalCommand.cs" />
     <Compile Include="Net\netty\commands\AssetInfoCommand.cs" />
@@ -323,7 +325,7 @@
     <Compile Include="Net\netty\commands\WindowSettingsModule.cs" />
     <Compile Include="Net\netty\commands\ClientUIMenuBarModule.cs" />
     <Compile Include="Net\netty\Handler.cs" />
-    <Compile Include="Net\netty\handlers\EmergencyRepairRequestHandler.cs" />
+    <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\EmergencyRepairRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\BuildStationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\UnEquipModuleRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\BattleStationRequestHandlers\EquipModuleRequestHandler.cs" />

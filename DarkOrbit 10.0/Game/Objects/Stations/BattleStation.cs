@@ -31,10 +31,17 @@ namespace Ow.Game.Objects.Stations
 
         public bool InBuildingState = false;
         public int BuildTimeInMinutes = 0;
+
+        public bool DeflectorActive = false;
+        public int DeflectorSecondsLeft = 0;
+        public int DeflectorSecondsMax = 0;
+
         public string AsteroidName { get; set; }
 
-        public BattleStation(string name, int factionId, Spacemap spacemap, Position position, Clan clan, 
-            List<EquippedModuleBase> modules, bool inBuildingState, int buildTimeInMinutes, DateTime buildTime, List<int> visualModifiers) : base(spacemap, factionId, position, clan, (clan.Id == 0 || inBuildingState ? AssetTypeModule.ASTEROID : AssetTypeModule.BATTLESTATION))
+        public BattleStation(string name, Spacemap spacemap, Position position, Clan clan, 
+            List<EquippedModuleBase> modules, bool inBuildingState, int buildTimeInMinutes, DateTime buildTime,
+            bool deflectorActive, int deflectorSecondsLeft, DateTime deflectorTime,
+            List<int> visualModifiers) : base(spacemap, (clan.Id != 0 ? clan.FactionId : 0), position, clan, (clan.Id == 0 || inBuildingState ? AssetTypeModule.ASTEROID : AssetTypeModule.BATTLESTATION))
         {
             ShieldAbsorption = 0.8;
 
@@ -46,9 +53,23 @@ namespace Ow.Game.Objects.Stations
             InBuildingState = inBuildingState;
             BuildTimeInMinutes = buildTimeInMinutes;
 
+            DeflectorActive = deflectorActive;
+            DeflectorSecondsLeft = deflectorSecondsLeft;
+            DeflectorSecondsMax = deflectorSecondsLeft;
+
             AsteroidName = name;
 
             Name = Clan.Id != 0 ? Clan.Name : name;
+
+            if (DeflectorActive)
+            {
+                DeflectorSecondsLeft = DeflectorSecondsLeft - (int)DateTime.Now.Subtract(deflectorTime).TotalMinutes;
+                this.deflectorTime = DateTime.Now;
+                Invincible = true;
+                AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.BATTLESTATION_DEFLECTOR, DeflectorSecondsLeft, "", 0, true));
+                Program.TickManager.AddTick(this, out var tickId);
+                TickId = tickId;
+            }
 
             foreach (var modifier in visualModifiers)
                 AddVisualModifier(new VisualModifierCommand(Id, (short)modifier, 0, "", 0, true));
@@ -58,7 +79,19 @@ namespace Ow.Game.Objects.Stations
                 var satellite = new List<Satellite>();
 
                 foreach (var m in module.Modules)
-                    satellite.Add(new Satellite(this, m.OwnerId, Satellite.GetName(m.Type), m.DesignId, m.ItemId, m.SlotId, m.Type, Satellite.GetPosition(Position, m.SlotId)));
+                {
+                    var s = new Satellite(this, m.OwnerId, Satellite.GetName(m.Type), m.DesignId, m.ItemId, m.SlotId, m.Type, Satellite.GetPosition(Position, m.SlotId));
+                    s.InstallationSecondsLeft = m.InstallationSecondsLeft;
+                    s.Installed = m.Installed;
+                    s.CurrentHitPoints = m.CurrentHitPoints;
+                    s.MaxHitPoints = m.MaxHitPoints;
+                    s.CurrentShieldPoints = m.CurrentShieldPoints;
+                    s.MaxShieldPoints = m.MaxShieldPoints;
+
+                    if (DeflectorActive)
+                        s.AddVisualModifier(new VisualModifierCommand(s.Id, VisualModifierCommand.BATTLESTATION_DEFLECTOR, 0, "", 0, true));
+                    satellite.Add(s);
+                }
 
                 EquippedStationModule.Add(module.ClanId, satellite);
             }
@@ -67,13 +100,15 @@ namespace Ow.Game.Objects.Stations
             {
                 BuildTimeInMinutes = BuildTimeInMinutes - (int)DateTime.Now.Subtract(buildTime).TotalMinutes;
                 this.buildTime = DateTime.Now;
-                Program.TickManager.AddTick(this, out var TickId);
+                Program.TickManager.AddTick(this, out var tickId);
+                TickId = tickId;
             }
             else if (Clan.Id != 0 && !InBuildingState)
                 Build();
         }
 
         public DateTime buildTime = new DateTime();
+        public DateTime deflectorTime = new DateTime();
         public new void Tick()
         {
             if (InBuildingState && buildTime.AddMinutes(BuildTimeInMinutes) < DateTime.Now)
@@ -81,6 +116,23 @@ namespace Ow.Game.Objects.Stations
                 Build();
                 QueryManager.BattleStations.BattleStation(this);
             }
+
+            if (DeflectorActive && deflectorTime.AddSeconds(DeflectorSecondsLeft) < DateTime.Now)
+                DeactiveDeflector();
+        }
+
+        public void DeactiveDeflector()
+        {
+            RemoveVisualModifier(VisualModifierCommand.BATTLESTATION_DEFLECTOR);
+
+            foreach (var modules in EquippedStationModule.Values)
+                foreach (var satellite in modules)
+                    satellite.RemoveVisualModifier(VisualModifierCommand.BATTLESTATION_DEFLECTOR);
+
+            Invincible = false;
+            DeflectorActive = false;
+            DeflectorSecondsLeft = 0;
+            QueryManager.BattleStations.BattleStation(this);
         }
 
         public void Build()
@@ -106,44 +158,6 @@ namespace Ow.Game.Objects.Stations
             InBuildingState = false;
         }
 
-        public void UpdatePlayerModuleInventory(Player player)
-        {
-            player.Storage.BattleStationModules.Clear();
-            
-            for (var i = 1; i <= 8; i++)
-                player.Storage.BattleStationModules.Add(new StationModuleModule(Id, i, i, StationModuleModule.LASER_LOW_RANGE, 1, 1, 1, 1, 16, player.Name, 0, 0 , 0, 0, 500));
-            for (var i = 9; i <= 16; i++)
-                player.Storage.BattleStationModules.Add(new StationModuleModule(Id, i, i, StationModuleModule.LASER_MID_RANGE, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            for (var i = 15; i <= 22; i++)
-                player.Storage.BattleStationModules.Add(new StationModuleModule(Id, i, i, StationModuleModule.LASER_HIGH_RANGE, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            for (var i = 23; i <= 30; i++)
-                player.Storage.BattleStationModules.Add(new StationModuleModule(Id, i, i, StationModuleModule.ROCKET_LOW_ACCURACY, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            for (var i = 31; i <= 38; i++)
-                player.Storage.BattleStationModules.Add(new StationModuleModule(Id, i, i, StationModuleModule.ROCKET_MID_ACCURACY, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-
-            player.Storage.BattleStationModules.Add(new StationModuleModule(Id, 39, 39, StationModuleModule.DAMAGE_BOOSTER, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            player.Storage.BattleStationModules.Add(new StationModuleModule(Id, 40, 40, StationModuleModule.EXPERIENCE_BOOSTER, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            player.Storage.BattleStationModules.Add(new StationModuleModule(Id, 41, 41, StationModuleModule.HONOR_BOOSTER, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            player.Storage.BattleStationModules.Add(new StationModuleModule(Id, 42, 42, StationModuleModule.REPAIR, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            player.Storage.BattleStationModules.Add(new StationModuleModule(Id, 43, 43, StationModuleModule.DEFLECTOR, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-            player.Storage.BattleStationModules.Add(new StationModuleModule(Id, 44, 44, StationModuleModule.HULL, 1, 1, 1, 1, 16, player.Name, 0, 0, 0, 0, 500));
-
-            foreach (var battleStation in GameManager.BattleStations.Values)
-            {
-                if (battleStation.EquippedStationModule.ContainsKey(player.Clan.Id))
-                {
-                    foreach (var module in battleStation.EquippedStationModule[player.Clan.Id])
-                    {
-                        if (module.OwnerId == player.Id)
-                        {
-                            var playerModule = player.Storage.BattleStationModules.Where(x => x.itemId == module.ItemId).FirstOrDefault();
-                            player.Storage.BattleStationModules.Remove(playerModule);
-                        }
-                    }
-                }
-            }         
-        }
-
         public void PrepareSatellites()
         {
             foreach (var satellite in EquippedStationModule[Clan.Id])
@@ -167,7 +181,6 @@ namespace Ow.Game.Objects.Stations
         public override void Click(GameSession gameSession)
         {
             var player = gameSession.Player;
-            UpdatePlayerModuleInventory(player);
 
             int secondsLeft = (int)(TimeSpan.FromMinutes(BuildTimeInMinutes).TotalSeconds - (DateTime.Now - buildTime).TotalSeconds);
 
@@ -175,7 +188,9 @@ namespace Ow.Game.Objects.Stations
                 player.SendCommand(BattleStationBuildingStateCommand.write(Id, Id, Name, secondsLeft, 0, Clan.Name, new FactionModule((short)FactionId)));
             else
             {
-                if (Clan.Id == 0 || buildTime.AddMinutes(BuildTimeInMinutes) > DateTime.Now)
+                if (player.Clan.Id == 0)
+                    player.SendCommand(BattleStationNoClanUiInitializationCommand.write(Id));
+                else
                 {
                     var stationModuleModule = new List<StationModuleModule>();
 
@@ -183,50 +198,58 @@ namespace Ow.Game.Objects.Stations
                     {
                         foreach (var mm in EquippedStationModule[player.Clan.Id])
                         {
+                            if (mm.Type == StationModuleModule.HULL || mm.Type == StationModuleModule.DEFLECTOR)
+                            {
+                                mm.CurrentHitPoints = CurrentHitPoints;
+                                mm.MaxHitPoints = MaxHitPoints;
+                                mm.CurrentShieldPoints = CurrentShieldPoints;
+                                mm.MaxShieldPoints = MaxShieldPoints;
+                            }
+
                             stationModuleModule.Add(new StationModuleModule(Id, mm.ItemId, mm.SlotId, mm.Type, mm.CurrentHitPoints,
-                                mm.MaxHitPoints, mm.CurrentShieldPoints, mm.MaxShieldPoints, 16, QueryManager.GetUserShipName(mm.OwnerId), 0, mm.InstallationSecondsLeft, 0, 0, 500));
+                                    mm.MaxHitPoints, mm.CurrentShieldPoints, mm.MaxShieldPoints, 16, QueryManager.GetUserShipName(mm.OwnerId), 0, mm.InstallationSecondsLeft, 0, 0, 500));
                         }
                     }
 
-                    var bestClan = EquippedStationModule.Values.Where(x => x.Where(y => y.Installed).ToList().Count() > 0).ToList().Count > 0 ? EquippedStationModule.OrderByDescending(x => x.Value.Count) : null;
-                    player.SendCommand(BattleStationBuildingUiInitializationCommand.write(Id, Id, Name,
-                                      new AsteroidProgressCommand(
-                                              Id,
-                                              (float)(EquippedStationModule.ContainsKey(player.Clan.Id) ? EquippedStationModule[player.Clan.Id].Where(x => x.Installed).ToList().Count : 0) / 10,
-                                              (float)(bestClan != null ? bestClan.FirstOrDefault().Value.Where(x => x.Installed).ToList().Count : 0) / 10,
-                                              player.Clan.Name,
-                                              bestClan != null ? GameManager.GetClan(bestClan.FirstOrDefault().Key).Name :  "Leading clan's progress",                                             
-                                              new EquippedModulesModule(EquippedStationModule.ContainsKey(player.Clan.Id) ? stationModuleModule : new List<StationModuleModule>()),
-                                              (EquippedStationModule.ContainsKey(player.Clan.Id) ? EquippedStationModule[player.Clan.Id].Where(x => x.Installed).ToList().Count : 0) == 10),
-                                      new AvailableModulesCommand(player.Storage.BattleStationModules),
-                                      1,
-                                      60,
-                                      0));
-                }
-                else
-                {
-                    if (player.Clan.Id == Clan.Id)
+                    var playerModules = new List<StationModuleModule>();
+
+                    for (var i = 0; i < player.Storage.BattleStationModules.Count; i++)
                     {
-                        var stationModuleModule = new List<StationModuleModule>();
+                        if (!player.Storage.BattleStationModules[i].InUse)
+                            playerModules.Add(new StationModuleModule(Id, player.Storage.BattleStationModules[i].Id, i, player.Storage.BattleStationModules[i].Type, 1, 1, 1, 1, 16, QueryManager.GetUserShipName(player.Id), 0, 0, 0, 0, 500));
+                    }
 
-                        if (EquippedStationModule.ContainsKey(player.Clan.Id))
-                        {
-                            foreach (var mm in EquippedStationModule[player.Clan.Id])
-                            {
-                                if (mm.Type == StationModuleModule.HULL)
-                                {
-                                    mm.CurrentHitPoints = CurrentHitPoints;
-                                    mm.MaxHitPoints = MaxHitPoints;
-                                    mm.CurrentShieldPoints = CurrentShieldPoints;
-                                    mm.MaxShieldPoints = MaxShieldPoints;
-                                }
-
-                                stationModuleModule.Add(new StationModuleModule(Id, mm.ItemId, mm.SlotId, mm.Type, mm.CurrentHitPoints,
-                                    mm.MaxHitPoints, mm.CurrentShieldPoints, mm.MaxShieldPoints, 16, "", 0, mm.InstallationSecondsLeft, 0, 0, 500));
-                            }
-                        }
-
-                        player.SendCommand(BattleStationStatusCommand.write(Id, Id, Name, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, new EquippedModulesModule(stationModuleModule), false));
+                    if (Clan.Id != 0 && player.Clan.Id == Clan.Id)
+                    {
+                        player.SendCommand(BattleStationManagementUiInitializationCommand.write(
+                            Id, 
+                            Id, 
+                            Name, 
+                            Clan.Name, 
+                            new FactionModule((short)FactionId), 
+                            new BattleStationStatusCommand(Id, Id, Name, DeflectorActive, 0, DeflectorSecondsMax, 0, 0, 0, 0, 0, 0, 0, 0, new EquippedModulesModule(stationModuleModule)),
+                            new AvailableModulesCommand(playerModules),
+                            0,
+                            0,
+                            0,
+                            false));
+                    }
+                    else
+                    {
+                        var bestClan = EquippedStationModule.Values.Where(x => x.Where(y => y.Installed).ToList().Count() > 0).ToList().Count > 0 ? EquippedStationModule.OrderByDescending(x => x.Value.Count) : null;
+                        player.SendCommand(BattleStationBuildingUiInitializationCommand.write(Id, Id, Name,
+                                          new AsteroidProgressCommand(
+                                                  Id,
+                                                  (float)(EquippedStationModule.ContainsKey(player.Clan.Id) ? EquippedStationModule[player.Clan.Id].Where(x => x.Installed).ToList().Count : 0) / 10,
+                                                  (float)(bestClan != null ? bestClan.FirstOrDefault().Value.Where(x => x.Installed).ToList().Count : 0) / 10,
+                                                  player.Clan.Name,
+                                                  bestClan != null ? GameManager.GetClan(bestClan.FirstOrDefault().Key)?.Name : "Leading clan's progress",
+                                                  new EquippedModulesModule(EquippedStationModule.ContainsKey(player.Clan.Id) ? stationModuleModule : new List<StationModuleModule>()),
+                                                  (EquippedStationModule.ContainsKey(player.Clan.Id) ? EquippedStationModule[player.Clan.Id].Where(x => x.Installed).ToList().Count : 0) == 10),
+                                          new AvailableModulesCommand(playerModules),
+                                          1,
+                                          60,
+                                          0));
                     }
                 }
             }

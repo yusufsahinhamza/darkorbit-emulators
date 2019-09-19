@@ -14,9 +14,6 @@ namespace Ow.Game.Objects.Mines
     {
         public IM_01(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(player, spacemap, position, mineTypeId) { }
 
-        public override void Explode()
-        {
-            ///hastalık
-        }
+        public override void Action(Player player) { }
     }
 }

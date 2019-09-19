@@ -11,7 +11,6 @@ namespace Ow.Game.Objects.Players.Skills
     class Spectrum : Skill
     {
         public override string LootId { get => SkillManager.SPECTRUM; }
-        public override int Id { get => 3; }
 
         public override int Duration { get => TimeManager.SPECTRUM_DURATION; }
         public override int Cooldown { get => TimeManager.SPECTRUM_COOLDOWN; }

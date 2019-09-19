@@ -12,7 +12,6 @@ namespace Ow.Game.Objects.Players.Skills
     class Afterburner : Skill
     {
         public override string LootId { get => SkillManager.LIGHTNING; }
-        public override int Id { get => 0; } //find it
 
         public override int Duration { get => TimeManager.LIGHTNING_DURATION; }
         public override int Cooldown { get => TimeManager.LIGHTNING_COOLDOWN; }

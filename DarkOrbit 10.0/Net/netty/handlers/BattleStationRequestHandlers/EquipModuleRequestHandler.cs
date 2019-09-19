@@ -40,63 +40,61 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     return;
                 }
 
-                var equippedModule = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.SlotId == read.slotId).FirstOrDefault();
-
-                if (read.replace || equippedModule != null)
-                {
-                    if (equippedModule.OwnerId != player.Id && read.replace)
-                    {
-                        player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
-                        return;
-                    }
-
-                    battleStation.EquippedStationModule[player.Clan.Id].Remove(equippedModule);
-
-                    if (!read.replace)
-                    {
-                        Activatable activatable;
-                        equippedModule.Spacemap.Activatables.TryRemove(equippedModule.Id, out activatable);
-                        GameManager.SendCommandToMap(equippedModule.Spacemap.Id, AssetRemoveCommand.write(equippedModule.GetAssetType(), equippedModule.Id));
-                    }
-                }
-
-                var module = player.Storage.BattleStationModules.Where(x => x.itemId == read.itemId).FirstOrDefault();
+                var module = player.Storage.BattleStationModules.Where(x => x.Id == read.itemId).FirstOrDefault();
 
                 if (module != null)
                 {
-                    if (module.type == StationModuleModule.DEFLECTOR && read.slotId != 1 || module.type != StationModuleModule.DEFLECTOR && read.slotId == 1) return;
-                    if (module.type == StationModuleModule.HULL && read.slotId != 0 || module.type != StationModuleModule.HULL && read.slotId == 0) return;
-                    if ((module.type == StationModuleModule.DEFLECTOR || module.type == StationModuleModule.HULL || module.type == StationModuleModule.REPAIR || module.type == StationModuleModule.DAMAGE_BOOSTER || module.type == StationModuleModule.EXPERIENCE_BOOSTER || module.type == StationModuleModule.HONOR_BOOSTER) && battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.Type == module.type).Count() >= 1) return;
+                    if (module.Type == StationModuleModule.DEFLECTOR && read.slotId != 1 || module.Type != StationModuleModule.DEFLECTOR && read.slotId == 1) return;
+                    if (module.Type == StationModuleModule.HULL && read.slotId != 0 || module.Type != StationModuleModule.HULL && read.slotId == 0) return;
+                    if ((module.Type == StationModuleModule.DEFLECTOR || module.Type == StationModuleModule.HULL || module.Type == StationModuleModule.REPAIR || module.Type == StationModuleModule.DAMAGE_BOOSTER || module.Type == StationModuleModule.EXPERIENCE_BOOSTER || module.Type == StationModuleModule.HONOR_BOOSTER) && battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.Type == module.Type).Count() >= 1) return;
 
-                    module.slotId = read.slotId;
+                    var equippedModule = battleStation.EquippedStationModule[player.Clan.Id].Where(x => x.SlotId == read.slotId).FirstOrDefault();
 
-                    var center = battleStation.Position;
-                    int designId = module.type == StationModuleModule.REPAIR ? 3 : module.type == StationModuleModule.LASER_HIGH_RANGE ? 4 : module.type == StationModuleModule.LASER_MID_RANGE ? 5 : module.type == StationModuleModule.LASER_LOW_RANGE ? 6 : module.type == StationModuleModule.ROCKET_LOW_ACCURACY ? 7 : module.type == StationModuleModule.ROCKET_MID_ACCURACY ? 8 : module.type == StationModuleModule.HONOR_BOOSTER ? 9 : module.type == StationModuleModule.DAMAGE_BOOSTER ? 10 : module.type == StationModuleModule.EXPERIENCE_BOOSTER ? 11 : 0;
-                    string name = module.type == StationModuleModule.REPAIR ? "REPM-1" : module.type == StationModuleModule.LASER_HIGH_RANGE ? "LTM-HR" : module.type == StationModuleModule.LASER_MID_RANGE ? "LTM-MR" : module.type == StationModuleModule.LASER_LOW_RANGE ? "LTM-LR" : module.type == StationModuleModule.ROCKET_LOW_ACCURACY ? "RAM-LA" : module.type == StationModuleModule.ROCKET_MID_ACCURACY ? "RAM-MA" : module.type == StationModuleModule.HONOR_BOOSTER ? "HONM-1" : module.type == StationModuleModule.DAMAGE_BOOSTER ? "DMGM-1" : module.type == StationModuleModule.EXPERIENCE_BOOSTER ? "XPM-1" : "";
-                    var position = module.slotId == 9 ? new Position(center.X - 171, center.Y - 236) : module.slotId == 2 ? new Position(center.X + 170, center.Y - 235) : module.slotId == 3 ? new Position(center.X + 412, center.Y - 98) : module.slotId == 4 ? new Position(center.X + 412, center.Y + 97) : module.slotId == 5 ? new Position(center.X + 170, center.Y + 236) : module.slotId == 6 ? new Position(center.X - 171, center.Y + 235) : module.slotId == 7 ? new Position(center.X - 413, center.Y + 97) : module.slotId == 8 ? new Position(center.X - 413, center.Y - 98) : null;
+                    if (read.replace || equippedModule != null)
+                    {
+                        if (equippedModule.OwnerId != player.Id && read.replace)
+                        {
+                            player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
+                            return;
+                        }
 
-                    var satellite = new Satellite(battleStation, player.Id, name, designId, module.itemId, module.slotId, module.type, position);
-                    satellite.InstallationSecondsLeft = battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION ? 5 : 1;
+                        equippedModule.Remove(false, false);
+
+                        if (battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
+                        {
+                            var activatable = equippedModule as Activatable;
+                            equippedModule.Spacemap.Activatables.TryRemove(equippedModule.Id, out activatable);
+                            GameManager.SendCommandToMap(equippedModule.Spacemap.Id, AssetRemoveCommand.write(equippedModule.GetAssetType(), equippedModule.Id));
+                        }
+                    }
+
+                    int designId = module.Type == StationModuleModule.REPAIR ? 3 : module.Type == StationModuleModule.LASER_HIGH_RANGE ? 4 : module.Type == StationModuleModule.LASER_MID_RANGE ? 5 : module.Type == StationModuleModule.LASER_LOW_RANGE ? 6 : module.Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 8 : module.Type == StationModuleModule.ROCKET_MID_ACCURACY ? 7 : module.Type == StationModuleModule.HONOR_BOOSTER ? 9 : module.Type == StationModuleModule.DAMAGE_BOOSTER ? 10 : module.Type == StationModuleModule.EXPERIENCE_BOOSTER ? 11 : 0;
+
+                    var satellite = new Satellite(battleStation, player.Id, Satellite.GetName(module.Type), designId, module.Id, read.slotId, module.Type, Satellite.GetPosition(battleStation.Position, read.slotId));
+                    satellite.InstallationSecondsLeft = battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION ? 240 : 60;
+
+                    module.InUse = true;
+
+                    battleStation.EquippedStationModule[player.Clan.Id].Add(satellite);
 
                     if (battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
                     {
                         satellite.AddVisualModifier(new VisualModifierCommand(satellite.Id, VisualModifierCommand.BATTLESTATION_INSTALLING, 0, "", 0, true));
+                        satellite.Spacemap.Activatables.TryAdd(satellite.Id, satellite);
 
                         foreach (var character in satellite.Spacemap.Characters.Values)
                         {
                             if (character is Player)
                             {
-                                satellite.Spacemap.Activatables.TryAdd(satellite.Id, satellite);
-
                                 short relationType = character.Clan.Id != 0 && satellite.Clan.Id != 0 ? satellite.Clan.GetRelation(character.Clan) : (short)0;
                                 (character as Player).SendCommand(satellite.GetAssetCreateCommand(relationType));
                             }
                         }
                     }
 
-                    battleStation.EquippedStationModule[player.Clan.Id].Add(satellite);
                     battleStation.Click(gameSession);
 
+                    QueryManager.SavePlayer.Modules(player);
                     QueryManager.BattleStations.Modules(battleStation);
 
                     //send command to other players

@@ -287,6 +287,8 @@ namespace Ow.Game.Objects
 
                         int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost((this as Character).Ship.Rewards.Honor));
                         honor += Maths.GetPercentage(honor, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.HONOUR));
+                        honor += Maths.GetPercentage(honor, SettingsManager.GetSkillPercentage("Cruelty 1", destroyerPlayer.SkillTree.Cruelty1));
+                        honor += Maths.GetPercentage(honor, SettingsManager.GetSkillPercentage("Cruelty 2", destroyerPlayer.SkillTree.Cruelty2));
 
                         int uridium = (this as Character).Ship.Rewards.Uridium;
                         var changeType = ChangeType.INCREASE;
@@ -332,7 +334,7 @@ namespace Ow.Game.Objects
                 if (relationType != ClanRelationModule.AT_WAR)
                 {
                     if ((target is Player || target is Pet) &&
-                        !(target is Pet pet && pet == player.Pet) &&
+                        !(target is Pet && target as Pet == player.Pet) &&
                         (target.FactionId == FactionId || target.Clan.Id == Clan.Id) &&
                         (!EventManager.JackpotBattle.InEvent(player) &&
                         !Duel.InDuel(player)))
@@ -344,7 +346,7 @@ namespace Ow.Game.Objects
 
                         return false;
                     }
-                    else if (target.FactionId == FactionId || target.Clan.Id == Clan.Id || relationType == ClanRelationModule.ALLIED || relationType == ClanRelationModule.NON_AGGRESSION_PACT)
+                    else if (!(target is Pet && target as Pet == player.Pet) && (target.FactionId == FactionId || target.Clan.Id == Clan.Id || relationType == ClanRelationModule.ALLIED || relationType == ClanRelationModule.NON_AGGRESSION_PACT))
                         return false;
                 }
 

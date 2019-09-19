@@ -136,6 +136,7 @@ namespace Ow.Game.Objects.Stations
         public DateTime repairTime = new DateTime();
         public void RepairModules()
         {
+            //TODO
             if (repairTime.AddSeconds(1) < DateTime.Now)
             {
                 foreach (var module in BattleStation.EquippedStationModule[Clan.Id])

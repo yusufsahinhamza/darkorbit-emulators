@@ -183,6 +183,17 @@ namespace Ow.Game.Objects.Players.Managers
         public int jackpot = 0;
     }
 
+    public class SkillTreeBase
+    {
+        public int Engineering = 0;
+        public int Detonation1 = 0;
+        public int Detonation2 = 0;
+        public int HeatseekingMissiles = 0;
+        public int RocketFusion = 0;
+        public int Cruelty1 = 0;
+        public int Cruelty2 = 0;
+    }
+
     public class EquipmentBase
     {
         public int Config1Hitpoints = 0;
@@ -331,8 +342,8 @@ namespace Ow.Game.Objects.Players.Managers
         public static string[] RocketsCategory =
         {
                 "ammunition_rocket_r-310", "ammunition_rocket_plt-2026", "ammunition_rocket_plt-2021",
-                "ammunition_rocket_plt-3030", "ammunition_specialammo_dcr-250", "ammunition_specialammo_r-ic3", "ammunition_specialammo_wiz-x"
-            //"ammunition_specialammo_pld-8"
+                "ammunition_rocket_plt-3030", "ammunition_specialammo_dcr-250", "ammunition_specialammo_r-ic3", "ammunition_specialammo_wiz-x",
+                "ammunition_specialammo_pld-8"
                // , "ammunition_rocket_bdr-1211"
         };
 
@@ -1974,6 +1985,42 @@ namespace Ow.Game.Objects.Players.Managers
                                                                count, false, true,
                                                                slotBarStatusTooltip, buyEnable ? true : false, RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) : false,
                                                                5).writeCommand();
+        }
+
+        public static int GetSkillPercentage(string skillName, int points)
+        {
+            int value = 0;
+
+            if (skillName == "Engineering")
+            {
+                value = points == 1 ? 5 : points == 2 ? 10 : points == 3 ? 15 : points == 4 ? 20 : points == 5 ? 30 : 0;
+            } 
+            else if (skillName == "Detonation 1")
+            {
+                value = points == 1 ? 7 : points == 2 ? 14 : 0;
+            }
+            else if (skillName == "Detonation 2")
+            {
+                value = points == 1 ? 21 : points == 2 ? 28 : points == 3 ? 50 : 0;
+            }
+            else if (skillName == "Heat-seeking Missiles")
+            {
+                value = points == 1 ? 1 : points == 2 ? 2 : points == 3 ? 4 : points == 4 ? 6 : points == 5 ? 10 : 0;
+            }
+            else if (skillName == "Rocket Fusion")
+            {
+                value = points == 1 ? 2 : points == 2 ? 4 : points == 3 ? 6 : points == 4 ? 8 : points == 5 ? 15 : 0;
+            }
+            else if (skillName == "Cruelty 1")
+            {
+                value = points == 1 ? 4 : points == 2 ? 8 : 0;
+            }
+            else if (skillName == "Cruelty 2")
+            {
+                value = points == 1 ? 12 : points == 2 ? 18 : points == 3 ? 25 : 0;
+            }
+
+            return value;
         }
     }
 }

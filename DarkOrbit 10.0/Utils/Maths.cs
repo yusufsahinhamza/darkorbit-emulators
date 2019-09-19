@@ -13,6 +13,11 @@ namespace Ow.Utils
             return a * b / 100;
         }
 
+        public static double GetDoublePercentage(double a, double b)
+        {
+            return a * b / 100;
+        }
+
         public static double Sqr(double pValue)
         {
             return Math.Pow(pValue, 2);

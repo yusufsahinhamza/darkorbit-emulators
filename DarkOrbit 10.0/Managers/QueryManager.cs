@@ -114,6 +114,19 @@ namespace Ow.Managers
                         Player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
                     }
 
+                    var skill = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_skilltree WHERE userID = {Player.Id}");
+                    foreach (DataRow row in skill.Rows)
+                    {
+                        //TODO
+                        Player.SkillTree.Engineering = Convert.ToInt32(row["skill_13"]);
+                        Player.SkillTree.Detonation1 = Convert.ToInt32(row["skill_5a"]);
+                        Player.SkillTree.Detonation2 = Convert.ToInt32(row["skill_5b"]);
+                        Player.SkillTree.HeatseekingMissiles = Convert.ToInt32(row["skill_20"]);
+                        Player.SkillTree.RocketFusion = Convert.ToInt32(row["skill_6"]);
+                        Player.SkillTree.Cruelty1 = Convert.ToInt32(row["skill_21a"]);
+                        Player.SkillTree.Cruelty2 = Convert.ToInt32(row["skill_21b"]);
+                    }
+
                     string settingsSql = $"SELECT * FROM player_settings WHERE userId = {Player.Id} ";
                     var settingsResult = mySqlClient.ExecuteQueryRow(settingsSql);
 

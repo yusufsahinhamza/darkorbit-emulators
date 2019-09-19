@@ -19,6 +19,9 @@ namespace Ow.Game.Objects.Mines
         public override void Action(Player player)
         {
             var damage = Maths.GetPercentage(player.CurrentShieldPoints, 50);
+            damage += Maths.GetPercentage(damage, SettingsManager.GetSkillPercentage("Detonation 1", Player.SkillTree.Detonation1));
+            damage += Maths.GetPercentage(damage, SettingsManager.GetSkillPercentage("Detonation 2", Player.SkillTree.Detonation2));
+
             AttackManager.Damage(Player, player as Player, DamageType.MINE, damage, false, false, true, false);
         }
     }

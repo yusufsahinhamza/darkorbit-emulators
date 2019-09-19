@@ -32,6 +32,7 @@ namespace Ow.Game.Objects
         public Settings Settings = new Settings();
         public EquipmentBase Equipment { get; set; }
         public DataBase Data { get; set; }
+        public SkillTreeBase SkillTree = new SkillTreeBase();
         public Group Group { get; set; }
         public Pet Pet { get; set; }
         public Storage Storage { get; set; }
@@ -97,8 +98,9 @@ namespace Ow.Game.Objects
 
             RepairBot(true);
 
-            int repairHitpoints = MaxHitPoints / 35;
+            int repairHitpoints = MaxHitPoints / 40;
             repairHitpoints += Maths.GetPercentage(repairHitpoints, BoosterManager.GetPercentage(BoostedAttributeType.REPAIR));
+            repairHitpoints += Maths.GetPercentage(repairHitpoints, SettingsManager.GetSkillPercentage("Engineering", SkillTree.Engineering));
 
             Heal(repairHitpoints);
 
@@ -415,6 +417,8 @@ namespace Ow.Game.Objects
             get
             {
                 var value = AttackManager.GetRocketDamage();
+                value += Maths.GetPercentage(value, SettingsManager.GetSkillPercentage("Rocket Fusion", SkillTree.RocketFusion));
+
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
                     case DroneManager.TURTLE_FORMATION:
@@ -433,6 +437,20 @@ namespace Ow.Game.Objects
                         value += Maths.GetPercentage(value, 65);
                         break;
                 }
+                return value;
+            }
+        }
+
+        public double RocketMissProbability
+        {
+            get
+            {
+                var value = 0.1;
+                value -= Maths.GetDoublePercentage(value, SettingsManager.GetSkillPercentage("Heat-seeking Missiles", SkillTree.HeatseekingMissiles));
+
+                if (Storage.PrecisionTargeter)
+                    value = 0;
+
                 return value;
             }
         }
@@ -499,7 +517,7 @@ namespace Ow.Game.Objects
 
         public byte[] GetBeaconCommand()
         {
-            return BeaconCommand.write(1, 1, 1, 1, Storage.IsInDemilitarizedZone, Storage.RepairBotActivated, false,
+            return BeaconCommand.write(1, 1, 1, 1, Storage.IsInDemilitarizedZone, Storage.RepairBotActivated, (SkillTree.Engineering == 5),
                          "equipment_extra_repbot_rep-4", Storage.IsInRadiationZone);
         }
 

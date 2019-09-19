@@ -1,5 +1,6 @@
 ﻿using Ow.Game.Events;
 using Ow.Game.Movements;
+using Ow.Game.Objects.Players.Managers;
 using Ow.Game.Ticks;
 using Ow.Managers;
 using Ow.Net.netty.commands;
@@ -14,9 +15,8 @@ namespace Ow.Game.Objects.Mines
 {
     abstract class Mine : Tick
     {
-        public const int RANGE = 200; //15.04.2019 => 250
-        public const int EXPLODE_RANGE = 275; //11.04.2019 => 375
-        public const int ACTIVATION_TIME = 1750; //11.04.2019 => 1500
+        public const int RANGE = 200;
+        public const int ACTIVATION_TIME = 1750;
 
         public int TickId { get; set; }
         public int MineTypeId { get; set; }
@@ -27,16 +27,20 @@ namespace Ow.Game.Objects.Mines
         public DateTime activationTime = new DateTime();
         public bool Lance { get; set; }
         public bool Pulse { get; set; }
+        public bool Detonation { get; set; }
         public bool Active = true;
+        public int ExplodeRange = 275;
 
-        public Mine(Player player, Spacemap spacemap, Position position, int mineTypeId, bool lance = false, bool pulse = false)
+        public Mine(Player player, Spacemap spacemap, Position position, int mineTypeId)
         {
             Player = player;
             Spacemap = spacemap;
             Position = position;
             MineTypeId = mineTypeId;
-            Lance = lance;
-            Pulse = pulse;
+            Lance = Player.Settings.InGameSettings.selectedFormation == DroneManager.LANCE_FORMATION;
+            Pulse = false;
+            //ExplodeRange += Maths.GetPercentage(ExplodeRange, SettingsManager.GetSkillPercentage("Detonation 2", Player.SkillTree.Detonation2));
+            Detonation = (Player.SkillTree.Detonation1 + Player.SkillTree.Detonation2 == 5);
             Hash = Randoms.GenerateHash(16);
             Spacemap.Mines.TryAdd(Hash, this);
             activationTime = DateTime.Now;
@@ -51,7 +55,7 @@ namespace Ow.Game.Objects.Mines
         {
             foreach (var character in Spacemap.Characters.Values)
             {
-                if (character is Player player && player.Position.DistanceTo(Position) < EXPLODE_RANGE)
+                if (character is Player player && player.Position.DistanceTo(Position) < ExplodeRange)
                 {
                     if (!Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == Player))
                         Action(player);
@@ -85,7 +89,7 @@ namespace Ow.Game.Objects.Mines
 
         public byte[] GetMineCreateCommand()
         {
-            return MineCreateCommand.write(Hash, Pulse, false, MineTypeId, Position.Y, Position.X);
+            return MineCreateCommand.write(Hash, Pulse, Detonation, MineTypeId, Position.Y, Position.X);
         }
     }
 }

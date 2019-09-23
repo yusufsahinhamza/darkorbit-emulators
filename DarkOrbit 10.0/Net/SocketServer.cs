@@ -117,9 +117,32 @@ namespace Ow.Net
                     case "EndDiplomacy":
                         EndDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])));
                         break;
+                    case "SkillTree":
+                        UpgradeSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["SkillName"]));
+                        break;
                 }
             }
             catch (Exception) { }
+        }
+
+        public static void UpgradeSkillTree(Player player, string skillName)
+        {
+            if (skillName == "skill_13")
+                player.SkillTree.Engineering++;
+            else if (skillName == "skill_5a")
+                player.SkillTree.Detonation1++;
+            else if (skillName == "skill_5b")
+                player.SkillTree.Detonation2++;
+            else if (skillName == "skill_20")
+                player.SkillTree.HeatseekingMissiles++;
+            else if (skillName == "skill_6")
+                player.SkillTree.RocketFusion++;
+            else if (skillName == "skill_21a")
+                player.SkillTree.Cruelty1++;
+            else if (skillName == "skill_21b")
+                player.SkillTree.Cruelty2++;
+            else if (skillName == "skill_1")
+                player.SkillTree.Explosives++;
         }
 
         public static void BanUser(Player player)

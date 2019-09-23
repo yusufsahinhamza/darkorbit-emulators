@@ -19,8 +19,7 @@ namespace Ow.Game.Objects.Mines
         public override void Action(Player player)
         {
             var damage = Maths.GetPercentage(player.MaxHitPoints, 20);
-            damage += Maths.GetPercentage(damage, SettingsManager.GetSkillPercentage("Detonation 1", Player.SkillTree.Detonation1));
-            damage += Maths.GetPercentage(damage, SettingsManager.GetSkillPercentage("Detonation 2", Player.SkillTree.Detonation2));
+            damage += Maths.GetPercentage(damage, player.GetSkillPercentage("Detonation"));
 
             if (Lance)
                 damage += Maths.GetPercentage(damage, 50);

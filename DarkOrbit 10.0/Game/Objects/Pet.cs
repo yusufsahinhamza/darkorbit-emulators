@@ -21,9 +21,7 @@ namespace Ow.Game.Objects
         {
             get
             {
-                if (Owner != null)
-                    return (int)(Owner.Speed * 1.25);
-                return 300;
+                return (int)(Owner.Speed * 1.25);
             }
         }
 
@@ -34,12 +32,13 @@ namespace Ow.Game.Objects
         public Pet(Player player) : base(Randoms.CreateRandomID(), "P.E.T 15", player.FactionId, GameManager.GetShip(22), player.Position, player.Spacemap, player.Clan)
         {
             Owner = player;
-            MaxHitPoints = Ship.BaseHitpoints;
-            MaxShieldPoints = 50000;
-            CurrentHitPoints = 50000;
-            CurrentShieldPoints = 50000;
+
             ShieldAbsorption = 0.8;
             Damage = 5000;
+            MaxHitPoints = Ship.BaseHitpoints;
+            CurrentHitPoints = 1000;
+            MaxShieldPoints = 50000;
+            CurrentShieldPoints = MaxShieldPoints;
         }
 
         public override void Tick()

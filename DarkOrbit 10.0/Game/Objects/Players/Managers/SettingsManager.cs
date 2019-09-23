@@ -10,6 +10,52 @@ using System.Linq;
 
 namespace Ow.Game.Objects.Players.Managers
 {
+    public class DataBase
+    {
+        public int uridium = 0;
+        public int credits = 0;
+        public int honor = 0;
+        public int experience = 0;
+        public int jackpot = 0;
+    }
+
+    public class SkillTreeBase
+    {
+        public int Engineering = 0;
+        public int Detonation1 = 0;
+        public int Detonation2 = 0;
+        public int HeatseekingMissiles = 0;
+        public int RocketFusion = 0;
+        public int Cruelty1 = 0;
+        public int Cruelty2 = 0;
+        public int Explosives = 0;
+    }
+
+    public class EquipmentBase
+    {
+        public int Config1Hitpoints = 0;
+        public int Config1Damage = 0;
+        public int Config1Shield = 0;
+        public int Config1Speed = 0;
+        public int Config2Hitpoints = 0;
+        public int Config2Damage = 0;
+        public int Config2Shield = 0;
+        public int Config2Speed = 0;
+
+        public EquipmentBase(int config1Hitpoints, int config1Damage, int config1Shield, int config1Speed,
+            int config2Hitpoints, int config2Damage, int config2Shield, int config2Speed)
+        {
+            Config1Hitpoints = config1Hitpoints;
+            Config1Damage = config1Damage;
+            Config1Shield = config1Shield;
+            Config1Speed = config1Speed;
+            Config2Hitpoints = config2Hitpoints;
+            Config2Damage = config2Damage;
+            Config2Shield = config2Shield;
+            Config2Speed = config2Speed;
+        }
+    }
+
     public class AudioBase
     {
         public bool notSet = false;
@@ -172,51 +218,6 @@ namespace Ow.Game.Objects.Players.Managers
         public string selectedFormation = DroneManager.DEFAULT_FORMATION;
         public int currentConfig = 1;
         public List<string> selectedCpus = new List<string> { CpuManager.AUTO_ROCKET_CPU, CpuManager.AUTO_HELLSTROM_CPU };
-    }
-
-    public class DataBase
-    {
-        public int uridium = 0;
-        public int credits = 0;
-        public int honor = 0;
-        public int experience = 0;
-        public int jackpot = 0;
-    }
-
-    public class SkillTreeBase
-    {
-        public int Engineering = 0;
-        public int Detonation1 = 0;
-        public int Detonation2 = 0;
-        public int HeatseekingMissiles = 0;
-        public int RocketFusion = 0;
-        public int Cruelty1 = 0;
-        public int Cruelty2 = 0;
-    }
-
-    public class EquipmentBase
-    {
-        public int Config1Hitpoints = 0;
-        public int Config1Damage = 0;
-        public int Config1Shield = 0;
-        public int Config1Speed = 0;
-        public int Config2Hitpoints = 0;
-        public int Config2Damage = 0;
-        public int Config2Shield = 0;
-        public int Config2Speed = 0;
-
-        public EquipmentBase(int config1Hitpoints, int config1Damage, int config1Shield, int config1Speed,
-            int config2Hitpoints, int config2Damage, int config2Shield, int config2Speed)
-        {
-            Config1Hitpoints = config1Hitpoints;
-            Config1Damage = config1Damage;
-            Config1Shield = config1Shield;
-            Config1Speed = config1Speed;
-            Config2Hitpoints = config2Hitpoints;
-            Config2Damage = config2Damage;
-            Config2Shield = config2Shield;
-            Config2Speed = config2Speed;
-        }
     }
 
     class Settings
@@ -404,10 +405,9 @@ namespace Ow.Game.Objects.Players.Managers
         public static string[] AbilitiesCategory =
         {
             SkillManager.SPECTRUM, SkillManager.VENOM, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.DIMINISHER,
-            SkillManager.LIGHTNING
+            SkillManager.LIGHTNING, SkillManager.AEGIS_HP_REPAIR, SkillManager.AEGIS_SHIELD_REPAIR
             /*
-                SkillManager.AEGIS_HP_REPAIR,
-                SkillManager.AEGIS_REPAIR_POD, SkillManager.AEGIS_SHIELD_REPAIR, SkillManager.CITADEL_DRAW_FIRE,
+                SkillManager.AEGIS_REPAIR_POD, SkillManager.CITADEL_DRAW_FIRE,
                 SkillManager.CITADEL_FORTIFY, SkillManager.CITADEL_PROTECTION, SkillManager.CITADEL_TRAVEL, SkillManager.DIMINISHER,
                 SkillManager.LIGHTNING, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.SPEARHEAD_DOUBLE_MINIMAP,
                 SkillManager.SPEARHEAD_JAM_X, SkillManager.SPEARHEAD_TARGET_MARKER, SkillManager.SPEARHEAD_ULTIMATE_CLOAK,
@@ -1140,6 +1140,10 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_1736);
                 case SkillManager.LIGHTNING:
                     return new CooldownTypeModule(CooldownTypeModule.SPEED_BUFF);
+                case SkillManager.AEGIS_HP_REPAIR:
+                    return new CooldownTypeModule(CooldownTypeModule.short_2204);
+                case SkillManager.AEGIS_SHIELD_REPAIR:
+                    return new CooldownTypeModule(CooldownTypeModule.short_2342);
 
                 case AmmunitionManager.R_IC3:
                     return new CooldownTypeModule(CooldownTypeModule.short_1789);
@@ -1266,6 +1270,8 @@ namespace Ow.Game.Objects.Players.Managers
                 case SkillManager.SOLACE:
                 case SkillManager.DIMINISHER:
                 case SkillManager.LIGHTNING:
+                case SkillManager.AEGIS_HP_REPAIR:
+                case SkillManager.AEGIS_SHIELD_REPAIR:
                     if (Player.Storage.Skills.ContainsKey(pItemId))
                     {
                         var cooldown = (DateTime.Now - Player.Storage.Skills[pItemId].cooldown).TotalMilliseconds;
@@ -1985,42 +1991,6 @@ namespace Ow.Game.Objects.Players.Managers
                                                                count, false, true,
                                                                slotBarStatusTooltip, buyEnable ? true : false, RocketLauncherCategory.Contains(pItemId) ? Player.Settings.InGameSettings.selectedRocketLauncher.Equals(pItemId) : false,
                                                                5).writeCommand();
-        }
-
-        public static int GetSkillPercentage(string skillName, int points)
-        {
-            int value = 0;
-
-            if (skillName == "Engineering")
-            {
-                value = points == 1 ? 5 : points == 2 ? 10 : points == 3 ? 15 : points == 4 ? 20 : points == 5 ? 30 : 0;
-            } 
-            else if (skillName == "Detonation 1")
-            {
-                value = points == 1 ? 7 : points == 2 ? 14 : 0;
-            }
-            else if (skillName == "Detonation 2")
-            {
-                value = points == 1 ? 21 : points == 2 ? 28 : points == 3 ? 50 : 0;
-            }
-            else if (skillName == "Heat-seeking Missiles")
-            {
-                value = points == 1 ? 1 : points == 2 ? 2 : points == 3 ? 4 : points == 4 ? 6 : points == 5 ? 10 : 0;
-            }
-            else if (skillName == "Rocket Fusion")
-            {
-                value = points == 1 ? 2 : points == 2 ? 4 : points == 3 ? 6 : points == 4 ? 8 : points == 5 ? 15 : 0;
-            }
-            else if (skillName == "Cruelty 1")
-            {
-                value = points == 1 ? 4 : points == 2 ? 8 : 0;
-            }
-            else if (skillName == "Cruelty 2")
-            {
-                value = points == 1 ? 12 : points == 2 ? 18 : points == 3 ? 25 : 0;
-            }
-
-            return value;
         }
     }
 }

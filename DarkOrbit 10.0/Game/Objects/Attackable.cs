@@ -176,20 +176,6 @@ namespace Ow.Game.Objects
                     player.SendCommand(command);
         }
 
-        public void SendPacketToInRangeCharacters(string packet)
-        {
-            foreach (var character in Spacemap.Characters.Values)
-                if (character is Player player && character.Position.DistanceTo(Position) < RenderRange)
-                    player.SendPacket(packet);
-        }
-
-        public void SendCommandToInRangeCharacters(byte[] command, Attackable expectPlayer = null)
-        {
-            foreach (var character in Spacemap.Characters.Values)
-                if (character is Player player && player != expectPlayer && character.Position.DistanceTo(Position) < RenderRange)
-                    player.SendCommand(command);
-        }
-
         public void Destroy(Attackable destroyer, DestructionType destructionType)
         {
             if (this is Spaceball || Destroyed) return;
@@ -287,13 +273,12 @@ namespace Ow.Game.Objects
 
                         int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost((this as Character).Ship.Rewards.Honor));
                         honor += Maths.GetPercentage(honor, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.HONOUR));
-                        honor += Maths.GetPercentage(honor, SettingsManager.GetSkillPercentage("Cruelty 1", destroyerPlayer.SkillTree.Cruelty1));
-                        honor += Maths.GetPercentage(honor, SettingsManager.GetSkillPercentage("Cruelty 2", destroyerPlayer.SkillTree.Cruelty2));
+                        honor += Maths.GetPercentage(honor, destroyerPlayer.GetSkillPercentage("Cruelty"));
 
                         int uridium = (this as Character).Ship.Rewards.Uridium;
                         var changeType = ChangeType.INCREASE;
 
-                        if (destroyerPlayer.TargetDefinition(this))
+                        if (!destroyerPlayer.TargetDefinition(this))
                             changeType = ChangeType.DECREASE;
 
                         destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);

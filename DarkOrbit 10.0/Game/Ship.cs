@@ -51,6 +51,8 @@ namespace Ow.Game
         public const int VENGEANCE_ADEPT = 16;
         public const int VENGEANCE_LIGHTNING = 18;
 
+        public const int AEGIS = 49;
+
         public string Name { get; set; }
         public int Id { get; set; }
         public int BaseHitpoints { get; set; }

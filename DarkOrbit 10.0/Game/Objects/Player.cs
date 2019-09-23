@@ -52,6 +52,10 @@ namespace Ow.Game.Objects
             FactionId = factionId;
             RankId = rankId;
             InitiateManagers();
+
+            //TODO
+            //MaxNanoHull = 500000;
+            //CurrentNanoHull = MaxNanoHull;
         }
 
         public void InitiateManagers()
@@ -100,7 +104,7 @@ namespace Ow.Game.Objects
 
             int repairHitpoints = MaxHitPoints / 40;
             repairHitpoints += Maths.GetPercentage(repairHitpoints, BoosterManager.GetPercentage(BoostedAttributeType.REPAIR));
-            repairHitpoints += Maths.GetPercentage(repairHitpoints, SettingsManager.GetSkillPercentage("Engineering", SkillTree.Engineering));
+            repairHitpoints += Maths.GetPercentage(repairHitpoints, GetSkillPercentage("Engineering"));
 
             Heal(repairHitpoints);
 
@@ -417,7 +421,7 @@ namespace Ow.Game.Objects
             get
             {
                 var value = AttackManager.GetRocketDamage();
-                value += Maths.GetPercentage(value, SettingsManager.GetSkillPercentage("Rocket Fusion", SkillTree.RocketFusion));
+                value += Maths.GetPercentage(value, GetSkillPercentage("Rocket Fusion"));
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
@@ -446,7 +450,7 @@ namespace Ow.Game.Objects
             get
             {
                 var value = 0.1;
-                value -= Maths.GetDoublePercentage(value, SettingsManager.GetSkillPercentage("Heat-seeking Missiles", SkillTree.HeatseekingMissiles));
+                value -= Maths.GetDoublePercentage(value, GetSkillPercentage("Heat-seeking Missiles"));
 
                 if (Storage.PrecisionTargeter)
                     value = 0;
@@ -559,8 +563,8 @@ namespace Ow.Game.Objects
                 MaxHitPoints,
                 0,
                 0,
-                0,
-                0,
+                CurrentNanoHull,
+                MaxNanoHull,
                 Position.X,
                 Position.Y,
                 Spacemap.Id,
@@ -657,7 +661,7 @@ namespace Ow.Game.Objects
 
             foreach (var skill in Storage.Skills.Values)
             {
-                if (Settings.Cooldowns[skill.LootId] > 0) skill.cooldown = DateTime.Now.AddMilliseconds(-(skill.Cooldown - Settings.Cooldowns[skill.LootId]));
+                if (Settings.Cooldowns.ContainsKey(skill.LootId) && Settings.Cooldowns[skill.LootId] > 0) skill.cooldown = DateTime.Now.AddMilliseconds(-(skill.Cooldown - Settings.Cooldowns[skill.LootId]));
             }
         }
 
@@ -684,8 +688,8 @@ namespace Ow.Game.Objects
                             character.MaxShieldPoints,
                             character.CurrentHitPoints,
                             character.MaxHitPoints,
-                            0,
-                            0,
+                            character.CurrentNanoHull,
+                            character.MaxNanoHull,
                             character is Player ? true : false));
                     }
                 }
@@ -1061,6 +1065,49 @@ namespace Ow.Game.Objects
         {
             LoggingOut = false;
             SendPacket("0|t");
+        }
+
+        public int GetSkillPercentage(string skillName)
+        {
+            int value = 0;
+
+            var detonation1 = SkillTree.Detonation1;
+            var detonation2 = SkillTree.Detonation2;
+            var engineering = SkillTree.Engineering;
+            var heatseekingMissiles = SkillTree.HeatseekingMissiles;
+            var rocketFusion = SkillTree.RocketFusion;
+            var cruelty1 = SkillTree.Cruelty1;
+            var cruelty2 = SkillTree.Cruelty2;
+            var explosives = SkillTree.Explosives;
+
+            if (skillName == "Engineering")
+            {
+                value += engineering == 1 ? 5 : engineering == 2 ? 10 : engineering == 3 ? 15 : engineering == 4 ? 20 : engineering == 5 ? 30 : 0;
+            }
+            else if (skillName == "Detonation")
+            {
+                value += detonation1 == 1 ? 7 : detonation1 == 2 ? 14 : 0;
+                value += detonation2 == 1 ? 21 : detonation2 == 2 ? 28 : detonation2 == 3 ? 50 : 0;
+            }
+            else if (skillName == "Heat-seeking Missiles")
+            {
+                value += heatseekingMissiles == 1 ? 1 : heatseekingMissiles == 2 ? 2 : heatseekingMissiles == 3 ? 4 : heatseekingMissiles == 4 ? 6 : heatseekingMissiles == 5 ? 10 : 0;
+            }
+            else if (skillName == "Rocket Fusion")
+            {
+                value += rocketFusion == 1 ? 2 : rocketFusion == 2 ? 4 : rocketFusion == 3 ? 6 : rocketFusion == 4 ? 8 : rocketFusion == 5 ? 15 : 0;
+            }
+            else if (skillName == "Cruelty")
+            {
+                value += cruelty1 == 1 ? 4 : cruelty1 == 2 ? 8 : 0;
+                value += cruelty2 == 1 ? 12 : cruelty2 == 2 ? 18 : cruelty2 == 3 ? 25 : 0;
+            }
+            else if (skillName == "Explosives")
+            {
+                value += explosives == 1 ? 4 : explosives == 2 ? 8 : explosives == 3 ? 12 : explosives == 4 ? 18 : explosives == 5 ? 25 : 0;
+            }
+
+            return value;
         }
 
         public GameSession GameSession

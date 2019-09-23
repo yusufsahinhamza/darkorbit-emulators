@@ -97,6 +97,7 @@ namespace Ow.Net.netty.handlers
                 Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
                 if (firstLogin || EventManager.JackpotBattle.InEvent(Player) || Duel.InDuel(Player))
                 {
+                    Player.InRangeCharacters.Clear(); //TODO check
                     Player.CurrentHitPoints = Player.MaxHitPoints;
                     Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;
                     Player.CurrentShieldConfig2 = Player.Equipment.Config2Shield;
@@ -212,8 +213,6 @@ namespace Ow.Net.netty.handlers
                     player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(55, 60, 5, 333443), new Uba64iModule("Yaz Sezonu", 1, ht), new UbahsModule(l4b)), 0));
                 }
                 */
-
-
 
                 QueryManager.SavePlayer.Information(player);
             }

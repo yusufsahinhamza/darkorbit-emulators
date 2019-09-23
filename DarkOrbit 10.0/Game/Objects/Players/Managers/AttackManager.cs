@@ -628,10 +628,16 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.CurrentShieldPoints += sabDamage;
             }
 
-            if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints == 0)
+            if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints <= 0)
                 target.Destroy(Player, DestructionType.PLAYER);
             else
-                target.CurrentHitPoints -= damageHp;
+            {
+                //TODO properly
+                if (target.CurrentNanoHull > 0)
+                    target.CurrentNanoHull -= damageHp;
+                else
+                    target.CurrentHitPoints -= damageHp;
+            }
 
             target.CurrentShieldPoints -= damageShd;
             target.LastCombatTime = DateTime.Now;

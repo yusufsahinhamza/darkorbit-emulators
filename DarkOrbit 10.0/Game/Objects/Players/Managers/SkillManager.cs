@@ -53,6 +53,10 @@ namespace Ow.Game.Objects.Players.Managers
                 case Ship.VENGEANCE_LIGHTNING:
                     Player.Storage.Skills.Add(SkillManager.LIGHTNING, new Afterburner(Player));
                     break;
+                case Ship.AEGIS:
+                    Player.Storage.Skills.Add(SkillManager.AEGIS_HP_REPAIR, new AegisHpRepair(Player));
+                    Player.Storage.Skills.Add(SkillManager.AEGIS_SHIELD_REPAIR, new AegisShieldRepair(Player));
+                    break;
             }
         }
 

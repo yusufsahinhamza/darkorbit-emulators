@@ -62,5 +62,19 @@ namespace Ow.Game.Objects.Stations
                     satellite.Tick();
             }
         }
+
+        public void SendPacketToInRangeCharacters(string packet)
+        {
+            foreach (var character in Spacemap.Characters.Values)
+                if (character is Player player && character.Position.DistanceTo(Position) < RenderRange)
+                    player.SendPacket(packet);
+        }
+
+        public void SendCommandToInRangeCharacters(byte[] command, Attackable expectPlayer = null)
+        {
+            foreach (var character in Spacemap.Characters.Values)
+                if (character is Player player && player != expectPlayer && character.Position.DistanceTo(Position) < RenderRange)
+                    player.SendCommand(command);
+        }
     }
 }

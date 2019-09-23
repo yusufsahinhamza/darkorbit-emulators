@@ -37,11 +37,13 @@ namespace Ow.Game.Objects.Mines
             Spacemap = spacemap;
             Position = position;
             MineTypeId = mineTypeId;
-            Lance = Player.Settings.InGameSettings.selectedFormation == DroneManager.LANCE_FORMATION;
-            Pulse = false;
-            //ExplodeRange += Maths.GetPercentage(ExplodeRange, SettingsManager.GetSkillPercentage("Detonation 2", Player.SkillTree.Detonation2));
-            Detonation = (Player.SkillTree.Detonation1 + Player.SkillTree.Detonation2 == 5);
             Hash = Randoms.GenerateHash(16);
+
+            Lance = Player.Settings.InGameSettings.selectedFormation == DroneManager.LANCE_FORMATION;
+            Detonation = (Player.SkillTree.Detonation1 + Player.SkillTree.Detonation2 == 5);
+            Pulse = Player.SkillTree.Explosives == 5;
+            ExplodeRange += Maths.GetPercentage(ExplodeRange, Player.GetSkillPercentage("Explosives"));
+
             Spacemap.Mines.TryAdd(Hash, this);
             activationTime = DateTime.Now;
 

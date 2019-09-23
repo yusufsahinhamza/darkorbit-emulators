@@ -97,64 +97,65 @@ namespace Ow.Managers
             }
         }
 
-        public static void LoadUser(Player Player)
+        public static void LoadUser(Player player)
         {
             try
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userID = {Player.Id}");
+                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userID = {player.Id}");
                     foreach (DataRow row in data.Rows)
                     {
-                        Player.Level = Convert.ToInt32(row["level"]);
-                        Player.Premium = Convert.ToBoolean(row["premium"]);
-                        Player.Title = Convert.ToString(row["title"]);
-                        Player.Clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
-                        Player.Ship = GameManager.GetShip(Convert.ToInt32(row["shipID"]));
-                        Player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
+                        player.Level = Convert.ToInt32(row["level"]);
+                        player.Premium = Convert.ToBoolean(row["premium"]);
+                        player.Title = Convert.ToString(row["title"]);
+                        player.Clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
+                        player.Ship = GameManager.GetShip(Convert.ToInt32(row["shipID"]));
+                        player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
                     }
 
-                    var skill = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_skilltree WHERE userID = {Player.Id}");
+                    var skill = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_skilltree WHERE userID = {player.Id}");
                     foreach (DataRow row in skill.Rows)
                     {
                         //TODO
-                        Player.SkillTree.Engineering = Convert.ToInt32(row["skill_13"]);
-                        Player.SkillTree.Detonation1 = Convert.ToInt32(row["skill_5a"]);
-                        Player.SkillTree.Detonation2 = Convert.ToInt32(row["skill_5b"]);
-                        Player.SkillTree.HeatseekingMissiles = Convert.ToInt32(row["skill_20"]);
-                        Player.SkillTree.RocketFusion = Convert.ToInt32(row["skill_6"]);
-                        Player.SkillTree.Cruelty1 = Convert.ToInt32(row["skill_21a"]);
-                        Player.SkillTree.Cruelty2 = Convert.ToInt32(row["skill_21b"]);
+                        player.SkillTree.Engineering = Convert.ToInt32(row["skill_13"]);
+                        player.SkillTree.Detonation1 = Convert.ToInt32(row["skill_5a"]);
+                        player.SkillTree.Detonation2 = Convert.ToInt32(row["skill_5b"]);
+                        player.SkillTree.HeatseekingMissiles = Convert.ToInt32(row["skill_20"]);
+                        player.SkillTree.RocketFusion = Convert.ToInt32(row["skill_6"]);
+                        player.SkillTree.Cruelty1 = Convert.ToInt32(row["skill_21a"]);
+                        player.SkillTree.Cruelty2 = Convert.ToInt32(row["skill_21b"]);
+                        player.SkillTree.Explosives = Convert.ToInt32(row["skill_1"]);
                     }
 
-                    string settingsSql = $"SELECT * FROM player_settings WHERE userId = {Player.Id} ";
+                    string settingsSql = $"SELECT * FROM player_settings WHERE userId = {player.Id} ";
                     var settingsResult = mySqlClient.ExecuteQueryRow(settingsSql);
 
-                    if (settingsResult["audio"].ToString() != "") Player.Settings.Audio = JsonConvert.DeserializeObject<AudioBase>(settingsResult["audio"].ToString());
-                    if (settingsResult["quality"].ToString() != "") Player.Settings.Quality = JsonConvert.DeserializeObject<QualityBase>(settingsResult["quality"].ToString());
-                    if (settingsResult["classY2T"].ToString() != "") Player.Settings.ClassY2T = JsonConvert.DeserializeObject<ClassY2TBase>(settingsResult["classY2T"].ToString());
-                    if (settingsResult["display"].ToString() != "") Player.Settings.Display = JsonConvert.DeserializeObject<DisplayBase>(settingsResult["display"].ToString());
-                    if (settingsResult["gameplay"].ToString() != "") Player.Settings.Gameplay = JsonConvert.DeserializeObject<GameplayBase>(settingsResult["gameplay"].ToString());
-                    if (settingsResult["window"].ToString() != "") Player.Settings.Window = JsonConvert.DeserializeObject<WindowBase>(settingsResult["window"].ToString());
-                    if (settingsResult["inGameSettings"].ToString() != "") Player.Settings.InGameSettings = JsonConvert.DeserializeObject<InGameSettingsBase>(settingsResult["inGameSettings"].ToString());
-                    if (settingsResult["cooldowns"].ToString() != "") Player.Settings.Cooldowns = JsonConvert.DeserializeObject<Dictionary<string, int>>(settingsResult["cooldowns"].ToString());
-                    if (settingsResult["boundKeys"].ToString() != "") Player.Settings.BoundKeys = JsonConvert.DeserializeObject<List<BoundKeysBase>>(settingsResult["boundKeys"].ToString());
-                    if (settingsResult["slotbarItems"].ToString() != "") Player.Settings.SlotBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["slotbarItems"].ToString());
-                    if (settingsResult["premiumSlotbarItems"].ToString() != "") Player.Settings.PremiumSlotBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["premiumSlotbarItems"].ToString());
-                    if (settingsResult["proActionBarItems"].ToString() != "") Player.Settings.ProActionBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["proActionBarItems"].ToString());
+                    if (settingsResult["audio"].ToString() != "") player.Settings.Audio = JsonConvert.DeserializeObject<AudioBase>(settingsResult["audio"].ToString());
+                    if (settingsResult["quality"].ToString() != "") player.Settings.Quality = JsonConvert.DeserializeObject<QualityBase>(settingsResult["quality"].ToString());
+                    if (settingsResult["classY2T"].ToString() != "") player.Settings.ClassY2T = JsonConvert.DeserializeObject<ClassY2TBase>(settingsResult["classY2T"].ToString());
+                    if (settingsResult["display"].ToString() != "") player.Settings.Display = JsonConvert.DeserializeObject<DisplayBase>(settingsResult["display"].ToString());
+                    if (settingsResult["gameplay"].ToString() != "") player.Settings.Gameplay = JsonConvert.DeserializeObject<GameplayBase>(settingsResult["gameplay"].ToString());
+                    if (settingsResult["window"].ToString() != "") player.Settings.Window = JsonConvert.DeserializeObject<WindowBase>(settingsResult["window"].ToString());
+                    if (settingsResult["inGameSettings"].ToString() != "") player.Settings.InGameSettings = JsonConvert.DeserializeObject<InGameSettingsBase>(settingsResult["inGameSettings"].ToString());
+                    if (settingsResult["cooldowns"].ToString() != "") player.Settings.Cooldowns = JsonConvert.DeserializeObject<Dictionary<string, int>>(settingsResult["cooldowns"].ToString());
+                    if (settingsResult["boundKeys"].ToString() != "") player.Settings.BoundKeys = JsonConvert.DeserializeObject<List<BoundKeysBase>>(settingsResult["boundKeys"].ToString());
+                    if (settingsResult["slotbarItems"].ToString() != "") player.Settings.SlotBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["slotbarItems"].ToString());
+                    if (settingsResult["premiumSlotbarItems"].ToString() != "") player.Settings.PremiumSlotBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["premiumSlotbarItems"].ToString());
+                    if (settingsResult["proActionBarItems"].ToString() != "") player.Settings.ProActionBarItems = JsonConvert.DeserializeObject<Dictionary<short, string>>(settingsResult["proActionBarItems"].ToString());
 
-                    string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
+                    string sql = $"SELECT * FROM player_equipment WHERE userId = {player.Id} ";
                     var querySet = mySqlClient.ExecuteQueryRow(sql);
 
-                    Player.BoosterManager.Boosters = JsonConvert.DeserializeObject<Dictionary<short, List<BoosterBase>>>(querySet["boosters"].ToString());
-                    Player.Storage.BattleStationModules = JsonConvert.DeserializeObject<List<ModuleBase>>(querySet["modules"].ToString());
+                    player.BoosterManager.Boosters = JsonConvert.DeserializeObject<Dictionary<short, List<BoosterBase>>>(querySet["boosters"].ToString());
+                    player.Storage.BattleStationModules = JsonConvert.DeserializeObject<List<ModuleBase>>(querySet["modules"].ToString());
 
-                    Player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase(Player.Ship.BaseHitpoints, 0, 0, 300, Player.Ship.BaseHitpoints, 0, 0, 300); //TODO: GGA (i dont remember what i said )
+                    player.Equipment = querySet["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(querySet["configs"].ToString()) : new EquipmentBase(player.Ship.BaseHitpoints, 0, 0, 300, player.Ship.BaseHitpoints, 0, 0, 300);
                 }
             }
             catch (Exception e)
             {
-                Out.WriteLine("Failed getting player account [ID: " + Player.Id + "] " + e);
+                Out.WriteLine("Failed getting player account [ID: " + player.Id + "] " + e);
             }
         }
 

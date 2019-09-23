@@ -17,16 +17,16 @@ namespace Ow.Game.Objects.Collectables
 
         public override void Reward(Player player)
         {
-            var luck = Randoms.random.Next(0,2);
+            double rand = Randoms.random.NextDouble();
 
-            if (luck == 1)
+            if (rand <= 0.50)
             {
-                var uridium = Randoms.random.Next(0, 150);
+                var uridium = Randoms.random.Next(30, 150);
                 player.ChangeData(DataType.URIDIUM, uridium);
             }
             else
             {
-                var credits = Randoms.random.Next(0, 1000);
+                var credits = Randoms.random.Next(150, 15000);
                 player.ChangeData(DataType.CREDITS, credits);
             }
         }

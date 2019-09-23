@@ -77,7 +77,9 @@
     <Compile Include="Game\Objects\Npcs\NpcAI.cs" />
     <Compile Include="Game\Objects\Players\Group.cs" />
     <Compile Include="Game\Objects\Players\Managers\AbstractManager.cs" />
+    <Compile Include="Game\Objects\Players\Skills\AegisShieldRepair.cs" />
     <Compile Include="Game\Objects\Players\Skills\Afterburner.cs" />
+    <Compile Include="Game\Objects\Players\Skills\AegisHpRepair.cs" />
     <Compile Include="Game\Objects\Players\Skills\Venom.cs" />
     <Compile Include="Game\Objects\Players\Skills\Spectrum.cs" />
     <Compile Include="Game\Objects\Players\Skills\Solace.cs" />
@@ -159,6 +161,9 @@
     <Compile Include="Net\mysql\QueryException.cs" />
     <Compile Include="Net\mysql\TransactionException.cs" />
     <Compile Include="Net\mysql\TransactionQueryReactor.cs" />
+    <Compile Include="Net\netty\commands\AbilityEffectDeActivationCommand.cs" />
+    <Compile Include="Net\netty\commands\AbilityStopCommand.cs" />
+    <Compile Include="Net\netty\commands\AbilityEffectActivationCommand.cs" />
     <Compile Include="Net\netty\commands\AssetRemoveCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationManagementUiInitializationCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationNoClanUiInitializationCommand.cs" />

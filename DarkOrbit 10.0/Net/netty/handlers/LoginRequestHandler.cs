@@ -92,8 +92,7 @@ namespace Ow.Net.netty.handlers
 
                 Player.Spacemap.AddCharacter(Player);
 
-                Program.TickManager.AddTick(GameSession.Player, out var tickId);
-                Player.TickId = tickId;
+                Program.TickManager.AddTick(GameSession.Player);
 
                 Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
             }

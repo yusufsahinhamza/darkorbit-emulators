@@ -15,7 +15,6 @@ namespace Ow.Game.Objects
 {
     abstract class Collectable : Object, Tick
     {
-        public int TickId { get; set; }
         public int CollectableId { get; set; }
         public string Hash { get; set; }
         public bool Respawnable { get; set; }
@@ -34,8 +33,7 @@ namespace Ow.Game.Objects
 
             if (this is CargoBox)
             {
-                Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
+                Program.TickManager.AddTick(this);
                 disposeTime = DateTime.Now;
             }
         }
@@ -101,8 +99,7 @@ namespace Ow.Game.Objects
             else if (Character is Pet pet)
                 pet.SendPacketToInRangePlayers(packet);
 
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public void Dispose()
@@ -124,8 +121,7 @@ namespace Ow.Game.Objects
 
             if (this is CargoBox)
             {
-                Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
+                Program.TickManager.AddTick(this);
             }
 
             Disposed = false;

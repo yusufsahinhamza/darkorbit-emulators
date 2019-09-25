@@ -12,48 +12,34 @@ namespace Ow.Game.Ticks
     {
         public static short TICKS_PER_SECOND = 84;
 
-        public ConcurrentDictionary<int, Tick> Ticks = new ConcurrentDictionary<int, Tick>();
+        public List<Tick> Ticks = new List<Tick>();
 
-        private int GetNextTickId()
+        public void AddTick(Tick tick)
         {
-            var i = 0;
-            while (true)
-            {
-                if (Ticks.ContainsKey(i))
-                    i++;
-                else return i;
-            }
-        }
-
-        public void AddTick(Tick tick, out int id)
-        {
-            id = -1;
-            if (Ticks.Values.Contains(tick)) return;
-
-            id = GetNextTickId();
-            Ticks.TryAdd(id, tick);
+            if (!Ticks.Contains(tick))
+                Ticks.Add(tick);
         }
 
         public void RemoveTick(Tick tick)
         {
-            if (!Ticks.ContainsKey(tick.TickId)) return;
-
-            Ticks.TryRemove(tick.TickId, out tick);
+            if (Ticks.Contains(tick))
+                Ticks.Remove(tick);
         }
 
         public bool Exists(Tick tickable)
         {
             if (Ticks.Count == 0) return false;
-            if (Ticks.ContainsKey(tickable.TickId)) return true;
+            if (Ticks.Contains(tickable)) return true;
             return false;
         }
 
         public async void Tick()
         {
             while (true)
-            {
-                foreach (var tickable in Ticks.Values)
-                    tickable.Tick();
+            {       
+                for (var i = 0; i < Ticks.Count; i++)
+                    Ticks[i].Tick();
+
                 await Task.Delay(TICKS_PER_SECOND);
             }
         }

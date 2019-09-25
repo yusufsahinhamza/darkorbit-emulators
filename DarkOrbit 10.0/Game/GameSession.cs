@@ -27,7 +27,6 @@ namespace Ow.Game
             ERROR
         }
 
-        public int TickId { get; set; }
         public Player Player { get; set; }
         public GameClient Client { get; set; }
 
@@ -39,8 +38,7 @@ namespace Ow.Game
         {
             Player = player;
 
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public void Tick()

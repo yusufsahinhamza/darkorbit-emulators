@@ -42,7 +42,6 @@ namespace Ow.Game
         public ConcurrentDictionary<int, Object> Objects = new ConcurrentDictionary<int, Object>();
         public ConcurrentDictionary<string, POI> POIs = new ConcurrentDictionary<string, POI>();
 
-        public int TickId { get; set; }
         public int Id { get; set; }
         public string Name { get; set; }
         public int FactionId { get; set; }
@@ -64,8 +63,7 @@ namespace Ow.Game
             ParseLimits();
             LoadObjects();
 
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public void Tick()

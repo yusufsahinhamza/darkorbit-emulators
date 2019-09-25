@@ -8,7 +8,6 @@ namespace Ow.Game.Ticks
 {
     interface Tick
     {
-        int TickId { get; set; }
         void Tick();
     }
 }

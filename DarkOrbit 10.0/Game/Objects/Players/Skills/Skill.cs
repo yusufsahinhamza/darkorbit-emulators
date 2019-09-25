@@ -9,7 +9,6 @@ namespace Ow.Game.Objects.Players.Skills
 {
     abstract class Skill : Tick
     {
-        public int TickId { get; set; }
         public abstract string LootId { get; }
 
         public abstract int Duration { get; }
@@ -24,8 +23,7 @@ namespace Ow.Game.Objects.Players.Skills
         {
             Player = player;
 
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public abstract void Tick();

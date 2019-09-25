@@ -16,7 +16,6 @@ namespace Ow.Game.Events
 {
     class JackpotBattle : Tick
     {
-        public int TickId { get; set; }
         public string Name = "*****";
         public bool Active = false;
         public Spacemap Spacemap = GameManager.GetSpacemap(42);
@@ -61,8 +60,7 @@ namespace Ow.Game.Events
                             }
                         }
 
-                        Program.TickManager.AddTick(this, out var tickId);
-                        TickId = tickId;
+                        Program.TickManager.AddTick(this);
 
                         StartDate = DateTime.Now;
                         jpbTimer = DateTime.Now;

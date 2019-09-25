@@ -19,7 +19,6 @@ namespace Ow.Game.Objects
         public const int RANGE = 200;
         public const int ACTIVATION_TIME = 1750;
 
-        public int TickId { get; set; }
         public int MineTypeId { get; set; }
         public string Hash { get; set; }
         public Player Player { get; set; }
@@ -42,8 +41,7 @@ namespace Ow.Game.Objects
 
             activationTime = DateTime.Now;
 
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public abstract void Action(Player player);

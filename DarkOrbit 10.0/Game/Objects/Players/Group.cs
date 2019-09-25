@@ -20,7 +20,6 @@ namespace Ow.Game.Objects
         public const int LOOT_MODE_WYTIWYG = 3;
         public const int DEFAULT_MAX_GROUP_SIZE = 7;
 
-        public int TickId { get; set; }
         public int Id { get; }
         public Player Leader { get; set; }
         public ConcurrentDictionary<int, Player> Members = new ConcurrentDictionary<int, Player>();
@@ -43,8 +42,7 @@ namespace Ow.Game.Objects
 
                 SendInitToAll();
 
-                Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
+                Program.TickManager.AddTick(this);
             }
             catch (Exception e)
             {

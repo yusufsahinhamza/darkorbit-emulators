@@ -14,8 +14,6 @@ namespace Ow.Game.Events
 {
     class Duel : Tick
     {
-        public int TickId { get; set; }
-
         public bool PeaceArea = true;
 
         public ConcurrentDictionary<int, Player> Players { get; set; }
@@ -65,8 +63,7 @@ namespace Ow.Game.Events
                 if (i <= 1)
                 {
                     PeaceArea = false;
-                    Program.TickManager.AddTick(this, out var tickId);
-                    TickId = tickId;
+                    Program.TickManager.AddTick(this);
                 }
             }
         }

@@ -185,8 +185,7 @@ namespace Ow.Game.Objects
                 Initialization();
                 Spacemap.AddCharacter(this);
 
-                Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
+                Program.TickManager.AddTick(this);
             }
             else
             {

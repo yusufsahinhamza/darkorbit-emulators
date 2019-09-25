@@ -14,13 +14,11 @@ namespace Ow.Game.Events
 {
     class UltimateBattleArena : Tick
     {
-        public int TickId { get; set; }
         public static ConcurrentDictionary<int, Player> WaitingPlayers = new ConcurrentDictionary<int, Player>();
 
         public UltimateBattleArena()
         {
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public void Tick()
@@ -67,8 +65,6 @@ namespace Ow.Game.Events
 
     class Uba : Tick
     {
-        public int TickId { get; set; }
-
         public bool PeaceArea = true;
 
         public ConcurrentDictionary<int, Player> Players { get; set; }

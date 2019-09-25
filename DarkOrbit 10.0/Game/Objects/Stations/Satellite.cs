@@ -75,8 +75,7 @@ namespace Ow.Game.Objects.Stations
             //CurrentShieldPoints = 250000;
             //MaxShieldPoints = 500000;
 
-            Program.TickManager.AddTick(this, out var tickId);
-            TickId = tickId;
+            Program.TickManager.AddTick(this);
         }
 
         public DateTime installationTime = new DateTime();

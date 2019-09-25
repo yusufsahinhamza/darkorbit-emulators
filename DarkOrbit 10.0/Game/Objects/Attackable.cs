@@ -20,8 +20,6 @@ namespace Ow.Game.Objects
 {
     abstract class Attackable : Tick
     {
-        public int TickId { get; set; }
-
         public int Id { get; }
 
         public abstract string Name { get; set; }

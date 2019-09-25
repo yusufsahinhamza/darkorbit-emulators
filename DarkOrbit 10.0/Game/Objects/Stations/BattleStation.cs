@@ -67,8 +67,7 @@ namespace Ow.Game.Objects.Stations
                 this.deflectorTime = DateTime.Now;
                 Invincible = true;
                 AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.BATTLESTATION_DEFLECTOR, DeflectorSecondsLeft, "", 0, true));
-                Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
+                Program.TickManager.AddTick(this);
             }
 
             foreach (var modifier in visualModifiers)
@@ -100,8 +99,7 @@ namespace Ow.Game.Objects.Stations
             {
                 BuildTimeInMinutes = BuildTimeInMinutes - (int)DateTime.Now.Subtract(buildTime).TotalMinutes;
                 this.buildTime = DateTime.Now;
-                Program.TickManager.AddTick(this, out var tickId);
-                TickId = tickId;
+                Program.TickManager.AddTick(this);
             }
             else if (Clan.Id != 0 && !InBuildingState)
                 Build();

@@ -35,7 +35,6 @@ namespace Ow.Net.netty.handlers
                         player.Storage.KillscreenDeathLocationRepairTime = DateTime.Now;
                         player.Respawn(false, true, false);
                     }
-                    else UpdateKillScreen(player);
                     break;
                 case KillScreenOptionTypeModule.AT_JUMPGATE_REPAIR:
                     if (player.Data.uridium >= 200)
@@ -44,26 +43,8 @@ namespace Ow.Net.netty.handlers
                         player.Storage.KillscreenPortalRepairTime = DateTime.Now;
                         player.Respawn(false, false, true);
                     }
-                    else UpdateKillScreen(player);
                     break;
             }
-        }
-
-        public static void UpdateKillScreen(Player player)
-        {
-            /*
-             * TODO: LAZIMSA YAP
-            var killScreenOptionModules = new List<KillScreenOptionModule>();
-            var basicRepair =
-                   new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.BASIC_REPAIR),
-                                              new PriceModule(PriceModule.URIDIUM, 0), true, 0,
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()),
-                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new List<MessageWildcardReplacementModule>()));
-            killScreenOptionModules.Add(basicRepair);
-            player.SendCommand(KillScreenUpdateCommand.write(killScreenOptionModules));
-            */
         }
     }
 }

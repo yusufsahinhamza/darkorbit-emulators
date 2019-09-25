@@ -39,8 +39,7 @@ namespace Ow.Game
     {
         public ConcurrentDictionary<int, Character> Characters = new ConcurrentDictionary<int, Character>();
         public ConcurrentDictionary<int, Activatable> Activatables = new ConcurrentDictionary<int, Activatable>();
-        public ConcurrentDictionary<string, Collectable> Collectables = new ConcurrentDictionary<string, Collectable>();
-        public ConcurrentDictionary<string, Mine> Mines = new ConcurrentDictionary<string, Mine>();
+        public ConcurrentDictionary<int, Object> Objects = new ConcurrentDictionary<int, Object>();
         public ConcurrentDictionary<string, POI> POIs = new ConcurrentDictionary<string, POI>();
 
         public int TickId { get; set; }
@@ -71,23 +70,8 @@ namespace Ow.Game
 
         public void Tick()
         {
-            foreach (var thisCharacter in Characters.Values)
-            {
-                foreach (var otherCharacter in Characters.Values)
-                {
-                    if (!thisCharacter.Equals(otherCharacter))
-                    {
-                        if (thisCharacter.InRange(otherCharacter, otherCharacter.RenderRange))
-                        {
-                            thisCharacter.AddInRangeCharacter(otherCharacter);
-                        }
-                        else if (thisCharacter.SelectedCharacter == null || (thisCharacter.SelectedCharacter != null && !thisCharacter.SelectedCharacter.Equals(otherCharacter)))
-                        {
-                            thisCharacter.RemoveInRangeCharacter(otherCharacter);
-                        }
-                    }
-                }
-            }
+            CharacterTicker();
+            //ObjectsTicker();
         }
 
         private void ParseLimits()
@@ -100,8 +84,7 @@ namespace Ow.Game
         }
 
         public void LoadObjects()
-        {
-            
+        {   
             if (StationBase != null && StationBase.Count >= 1) {
                 foreach (var station in StationBase)
                 {
@@ -153,68 +136,90 @@ namespace Ow.Game
             }
         }
 
-        public void CheckCollectables(Player player)
+        public void CharacterTicker()
         {
-            foreach (var collectable in Collectables.Values)
+            foreach (var character in Characters.Values)
             {
-                if (collectable.ToPlayer == null || (collectable.ToPlayer != null && player == collectable.ToPlayer))
+                foreach (var otherCharacter in Characters.Values.Where(x => x.Id != character.Id && !x.Equals(character)))
                 {
-                    if (player.Position.DistanceTo(collectable.Position) <= 1250)
+                    if (character.InRange(otherCharacter, otherCharacter.RenderRange))
+                        character.AddInRangeCharacter(otherCharacter);
+                    else if (character.SelectedCharacter == null || (character.SelectedCharacter != null && !character.SelectedCharacter.Equals(otherCharacter)))
+                        character.RemoveInRangeCharacter(otherCharacter);
+                }
+
+                if (character is Player player)
+                {
+                    foreach (var obj in Objects.Values)
                     {
-                        if (!player.Storage.InRangeCollectables.ContainsKey(collectable.Hash))
+                        if (obj is Collectable collectable)
                         {
-                            player.Storage.InRangeCollectables.TryAdd(collectable.Hash, collectable);
-                            player.SendCommand(collectable.GetCollectableCreateCommand());
+                            if (!(collectable.ToPlayer == null || (collectable.ToPlayer != null && player == collectable.ToPlayer))) continue;
+                        }
+                        else if (obj is Mine mine)
+                        {
+                            if (!(player == mine.Player || !Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == mine.Player))) continue;
+                        }
+
+                        if (player.Position.DistanceTo(obj.Position) <= 1250)
+                        {
+                            if (!player.Storage.InRangeObjects.ContainsKey(obj.Id))
+                            {
+                                player.Storage.InRangeObjects.TryAdd(obj.Id, obj);
+
+                                if (obj is Collectable)
+                                    player.SendCommand((obj as Collectable).GetCollectableCreateCommand());
+                                else if (obj is Mine)
+                                    player.SendCommand((obj as Mine).GetMineCreateCommand());
+                                else if (obj is Asset)
+                                    player.SendCommand((obj as Asset).GetAssetCreateCommand());
+                            }
+                            else
+                            {
+                                if (obj is Mine )
+                                {
+                                    var mine = obj as Mine;
+                                    if (mine.Active && mine.activationTime.AddMilliseconds(Mine.ACTIVATION_TIME) < DateTime.Now)
+                                    {
+                                        if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
+                                        {
+                                            mine.Remove();
+                                            mine.Explode();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (player.Storage.InRangeObjects.ContainsKey(obj.Id))
+                            {
+                                player.Storage.InRangeObjects.TryRemove(obj.Id, out var outObj);
+
+                                if (obj is Collectable)
+                                    player.SendCommand(DisposeBoxCommand.write((obj as Collectable).Hash, true));
+                                else if (obj is Mine)
+                                    player.SendPacket($"0|{ServerCommands.REMOVE_ORE}|{(obj as Mine).Hash}");
+                                else if (obj is Asset)
+                                    player.SendCommand(AssetRemoveCommand.write(new AssetTypeModule((obj as Asset).AssetTypeId), obj.Id));
+                            }
                         }
                     }
-                    else
-                    {
-                        if (player.Storage.InRangeCollectables.ContainsKey(collectable.Hash))
-                        {
-                            var outCollectable = collectable;
-                            player.Storage.InRangeCollectables.TryRemove(collectable.Hash, out outCollectable);
-                            player.SendCommand(DisposeBoxCommand.write(collectable.Hash, true));
-                        }
-                    }
+
+                    if (CheckRadiation(player) || CheckActivatables(player))
+                        player.SendCommand(player.GetBeaconCommand());
                 }
             }
         }
 
-        public void CheckMines(Player player)
+        private void ObjectsTicker()
         {
-            foreach (var mine in Mines.Values)
+            /*
+            foreach (var obj in Objects)
             {
-                if (player == mine.Player || !Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == mine.Player))
-                {
-                    if (player.Position.DistanceTo(mine.Position) <= 1250)
-                    {
-                        if (!player.Storage.InRangeMines.ContainsKey(mine.Hash))
-                        {
-                            player.Storage.InRangeMines.TryAdd(mine.Hash, mine);
-                            player.SendCommand(mine.GetMineCreateCommand());
-                        }
-                        else
-                        {
-                            if (mine.Active)
-                                if (mine.activationTime.AddMilliseconds(Mine.ACTIVATION_TIME) < DateTime.Now)
-                                    if (player.Position.DistanceTo(mine.Position) < Mine.RANGE)
-                                    {
-                                        mine.Remove();
-                                        mine.Explode();
-                                    }
-                        }
-                    }
-                    else
-                    {
-                        if (player.Storage.InRangeMines.ContainsKey(mine.Hash))
-                        {
-                            var outMine = mine;
-                            player.Storage.InRangeMines.TryRemove(mine.Hash, out outMine);
-                            player.SendPacket("0|" + ServerCommands.REMOVE_ORE + "|" + mine.Hash);
-                        }
-                    }
-                }
+                obj.Value?.Tick();
             }
+            */
         }
 
         public bool CheckActivatables(Player Player)
@@ -292,10 +297,8 @@ namespace Ow.Game
 
                 Player.SendCommand(EquipReadyCommand.write(Player.Storage.IsInEquipZone));
 
-                if (Player.Storage.IsInEquipZone)
-                    Player.SendPacket("0|A|STM|msg_equip_ready");
-                else
-                    Player.SendPacket("0|A|STM|msg_equip_not_ready");
+                var packet = Player.Storage.IsInEquipZone ? "0|A|STM|msg_equip_ready" : "0|A|STM|msg_equip_not_ready";
+                Player.SendPacket(packet);
             }
 
             if (Player.Storage.IsInDemilitarizedZone != isInSecureZone)
@@ -342,15 +345,20 @@ namespace Ow.Game
                 short relationType = player.Clan.Id != 0 && activatable.Clan.Id != 0 ? activatable.Clan.GetRelation(player.Clan) : (short)0;
                 player.SendCommand(activatable.GetAssetCreateCommand(relationType));
             }
+
             foreach (var poi in POIs.Values)
                 player.SendCommand(poi.GetPOICreateCommand());
+
+            foreach (var obj in Objects.Values)
+                if (obj is Asset asset)
+                    player.SendCommand(asset.GetAssetCreateCommand());
         }
 
         public void AddAndInitPlayer(Player player)
         {
             AddCharacter(player);
             LoginRequestHandler.SendSettings(player, false);
-            LoginRequestHandler.SendPlayerItems(player, false);
+            LoginRequestHandler.SendPlayer(player);
         }
 
         public Activatable GetActivatableMapEntity(int pAssetId)

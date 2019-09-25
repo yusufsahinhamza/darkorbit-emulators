@@ -3,6 +3,7 @@ using Ow.Game.Movements;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Game.Ticks;
 using Ow.Managers;
+using Ow.Net.netty;
 using Ow.Net.netty.commands;
 using Ow.Utils;
 using System;
@@ -11,9 +12,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Game.Objects.Mines
+namespace Ow.Game.Objects
 {
-    abstract class Mine : Tick
+    abstract class Mine : Object, Tick
     {
         public const int RANGE = 200;
         public const int ACTIVATION_TIME = 1750;
@@ -22,29 +23,23 @@ namespace Ow.Game.Objects.Mines
         public int MineTypeId { get; set; }
         public string Hash { get; set; }
         public Player Player { get; set; }
-        public Spacemap Spacemap { get; set; }
-        public Position Position { get; set; }
-        public DateTime activationTime = new DateTime();
         public bool Lance { get; set; }
         public bool Pulse { get; set; }
         public bool Detonation { get; set; }
         public bool Active = true;
         public int ExplodeRange = 275;
 
-        public Mine(Player player, Spacemap spacemap, Position position, int mineTypeId)
+        public Mine(Player player, Spacemap spacemap, Position position, int mineTypeId) : base(Randoms.CreateRandomID(), position, spacemap)
         {
-            Player = player;
-            Spacemap = spacemap;
-            Position = position;
-            MineTypeId = mineTypeId;
             Hash = Randoms.GenerateHash(16);
+            Player = player;
+            MineTypeId = mineTypeId;
 
             Lance = Player.Settings.InGameSettings.selectedFormation == DroneManager.LANCE_FORMATION;
             Detonation = (Player.SkillTree.Detonation1 + Player.SkillTree.Detonation2 == 5);
             Pulse = Player.SkillTree.Explosives == 5;
             ExplodeRange += Maths.GetPercentage(ExplodeRange, Player.GetSkillPercentage("Explosives"));
 
-            Spacemap.Mines.TryAdd(Hash, this);
             activationTime = DateTime.Now;
 
             Program.TickManager.AddTick(this, out var tickId);
@@ -65,27 +60,31 @@ namespace Ow.Game.Objects.Mines
             }
         }
 
+        public DateTime activationTime = new DateTime();
         public void Tick()
         {
             if (Active && activationTime.AddMinutes(3) < DateTime.Now)
-                Remove();
+                Remove(true);
         }
 
-        public void Remove()
+        public void Remove(bool timeOut = false)
         {
             Active = false;
-            var mine = this;
 
             foreach (var gameSession in GameManager.GameSessions?.Values)
             {
                 var player = gameSession.Player;
 
-                if (player.Storage.InRangeMines.ContainsKey(Hash))
-                    player.Storage.InRangeMines.TryRemove(Hash, out mine);
+                if (player.Storage.InRangeObjects.ContainsKey(Id))
+                    player.Storage.InRangeObjects.TryRemove(Id, out var mine);
             }
 
-            Spacemap.Mines.TryRemove(Hash, out mine);
-            GameManager.SendPacketToMap(Spacemap.Id, $"0|n|MIN|{Hash}");
+            Spacemap.Objects.TryRemove(Id, out var obj);
+
+            var packet = timeOut ? $"0|{ServerCommands.REMOVE_ORE}|{Hash}" : $"0|n|MIN|{Hash}";
+
+            GameManager.SendPacketToMap(Spacemap.Id, packet);
+
             Program.TickManager.RemoveTick(this);
         }
 

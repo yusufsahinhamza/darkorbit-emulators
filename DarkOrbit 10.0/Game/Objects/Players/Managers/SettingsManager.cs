@@ -230,26 +230,20 @@ namespace Ow.Game.Objects.Players.Managers
         public WindowBase Window = new WindowBase();
         public InGameSettingsBase InGameSettings = new InGameSettingsBase();
 
-        public Dictionary<string, int> Cooldowns = new Dictionary<string, int>
+        public Dictionary<string, string> Cooldowns = new Dictionary<string, string>
         {
-                { AmmunitionManager.SMB_01, 0 },
-                { AmmunitionManager.ISH_01, 0 },
-                { AmmunitionManager.EMP_01, 0 },
-                { AmmunitionManager.ACM_01, 0 }, //tüm mayın tipleri için
-                { AmmunitionManager.DCR_250, 0 },
-                { AmmunitionManager.PLD_8, 0 },
-                { AmmunitionManager.R_IC3, 0 },
-                { TechManager.TECH_ENERGY_LEECH, 0 },
-                { TechManager.TECH_CHAIN_IMPULSE, 0 },
-                { TechManager.TECH_PRECISION_TARGETER, 0 },
-                { TechManager.TECH_BACKUP_SHIELDS, 0 },
-                { TechManager.TECH_BATTLE_REPAIR_BOT, 0 },
-                { SkillManager.SOLACE, 0 },
-                { SkillManager.SENTINEL, 0 },
-                { SkillManager.SPECTRUM, 0 },
-                { SkillManager.DIMINISHER, 0 },
-                { SkillManager.VENOM, 0 },
-                { SkillManager.LIGHTNING, 0 }
+                { AmmunitionManager.SMB_01, "" },
+                { AmmunitionManager.ISH_01, "" },
+                { AmmunitionManager.EMP_01, "" },
+                { "ammunition_mine", "" },
+                { AmmunitionManager.DCR_250, "" },
+                { AmmunitionManager.PLD_8, "" },
+                { AmmunitionManager.R_IC3, "" },
+                { TechManager.TECH_ENERGY_LEECH, "" },
+                { TechManager.TECH_CHAIN_IMPULSE, "" },
+                { TechManager.TECH_PRECISION_TARGETER, "" },
+                { TechManager.TECH_BACKUP_SHIELDS, "" },
+                { TechManager.TECH_BATTLE_REPAIR_BOT, "" }
         };
 
         public List<BoundKeysBase> BoundKeys = new List<BoundKeysBase>
@@ -405,9 +399,9 @@ namespace Ow.Game.Objects.Players.Managers
         public static string[] AbilitiesCategory =
         {
             SkillManager.SPECTRUM, SkillManager.VENOM, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.DIMINISHER,
-            SkillManager.LIGHTNING, SkillManager.AEGIS_HP_REPAIR, SkillManager.AEGIS_SHIELD_REPAIR
+            SkillManager.LIGHTNING, SkillManager.AEGIS_HP_REPAIR, SkillManager.AEGIS_SHIELD_REPAIR, SkillManager.AEGIS_REPAIR_POD
             /*
-                SkillManager.AEGIS_REPAIR_POD, SkillManager.CITADEL_DRAW_FIRE,
+                SkillManager.CITADEL_DRAW_FIRE,
                 SkillManager.CITADEL_FORTIFY, SkillManager.CITADEL_PROTECTION, SkillManager.CITADEL_TRAVEL, SkillManager.DIMINISHER,
                 SkillManager.LIGHTNING, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.SPEARHEAD_DOUBLE_MINIMAP,
                 SkillManager.SPEARHEAD_JAM_X, SkillManager.SPEARHEAD_TARGET_MARKER, SkillManager.SPEARHEAD_ULTIMATE_CLOAK,
@@ -1144,6 +1138,8 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_2204);
                 case SkillManager.AEGIS_SHIELD_REPAIR:
                     return new CooldownTypeModule(CooldownTypeModule.short_2342);
+                case SkillManager.AEGIS_REPAIR_POD:
+                    return new CooldownTypeModule(CooldownTypeModule.short_2419);
 
                 case AmmunitionManager.R_IC3:
                     return new CooldownTypeModule(CooldownTypeModule.short_1789);
@@ -1272,6 +1268,7 @@ namespace Ow.Game.Objects.Players.Managers
                 case SkillManager.LIGHTNING:
                 case SkillManager.AEGIS_HP_REPAIR:
                 case SkillManager.AEGIS_SHIELD_REPAIR:
+                case SkillManager.AEGIS_REPAIR_POD:
                     if (Player.Storage.Skills.ContainsKey(pItemId))
                     {
                         var cooldown = (DateTime.Now - Player.Storage.Skills[pItemId].cooldown).TotalMilliseconds;

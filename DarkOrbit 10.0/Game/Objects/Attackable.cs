@@ -261,9 +261,6 @@ namespace Ow.Game.Objects
 
                 if (!(this is Activatable))
                 {
-                    using (var mySqlClient = SqlDatabaseManager.GetClient())
-                        mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
-
                     var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
 
                     if (count < 13 && !Duel.InDuel(destroyerPlayer))
@@ -288,8 +285,13 @@ namespace Ow.Game.Objects
                     else if (count > 13 && !Duel.InDuel(destroyerPlayer))
                         destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
 
-                    if (this is Player) //TODO CHECK FOR NPC AND ETC...
+                    if (this is Player)//TODO CHECK FOR NPC AND ETC...
+                    {
+                        using (var mySqlClient = SqlDatabaseManager.GetClient())
+                            mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
+
                         new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
+                    }
                 }
             }
 

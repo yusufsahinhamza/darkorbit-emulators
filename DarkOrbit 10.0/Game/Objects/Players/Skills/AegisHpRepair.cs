@@ -42,8 +42,13 @@ namespace Ow.Game.Objects.Players.Skills
 
                 var target = Player.Selected;
 
-                if (target != null && (Player.Group != null && Player.Group.Members.ContainsKey(target.Id)))
-                    targetIds.Add(target.Id);
+                if (target != null)
+                {
+                    short relationType = Player.Clan.Id != 0 && target.Clan.Id != 0 ? Player.Clan.GetRelation(target.Clan) : (short)0;
+
+                    if ((Player.Group != null && Player.Group.Members.ContainsKey(target.Id)) || relationType != ClanRelationModule.AT_WAR)
+                        targetIds.Add(target.Id);
+                }
 
                 Player.SendCooldown(LootId, Duration, true);
                 Player.CpuManager.DisableCloak();
@@ -78,19 +83,21 @@ namespace Ow.Game.Objects.Players.Skills
         {
             if (HealTime.AddSeconds(1) < DateTime.Now)
             {
-                var abilityEffectActivationCommand = AbilityEffectActivationCommand.write(101, Player.Id, targetIds);
-
-                Player.SendCommand(abilityEffectActivationCommand);
-                Player.SendCommandToInRangePlayers(abilityEffectActivationCommand);
-
                 Player.Heal(20000);
 
                 foreach (var id in targetIds)
                 {
                     var player = GameManager.GetPlayerById(id);
 
-                    if (player.Position.DistanceTo(Player.Position) < 700)
+                    if (player.Position.DistanceTo(Player.Position) < 500)
+                    {
+                        var abilityEffectActivationCommand = AbilityEffectActivationCommand.write(101, Player.Id, targetIds);
+
+                        Player.SendCommand(abilityEffectActivationCommand);
+                        Player.SendCommandToInRangePlayers(abilityEffectActivationCommand);
+
                         player.Heal(40000, Player.Id);
+                    }
                 }
 
                 HealTime = DateTime.Now;

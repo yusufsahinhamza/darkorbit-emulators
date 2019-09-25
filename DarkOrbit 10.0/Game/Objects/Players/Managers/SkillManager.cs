@@ -56,6 +56,7 @@ namespace Ow.Game.Objects.Players.Managers
                 case Ship.AEGIS:
                     Player.Storage.Skills.Add(SkillManager.AEGIS_HP_REPAIR, new AegisHpRepair(Player));
                     Player.Storage.Skills.Add(SkillManager.AEGIS_SHIELD_REPAIR, new AegisShieldRepair(Player));
+                    Player.Storage.Skills.Add(SkillManager.AEGIS_REPAIR_POD, new AegisRepairPod(Player));
                     break;
             }
         }

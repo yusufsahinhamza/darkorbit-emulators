@@ -17,7 +17,7 @@ namespace Ow.Net.netty.handlers
 {
     class LoginRequestHandler
     {
-        public static Player Player { get; set; }
+        public Player Player { get; set; }
         public GameSession GameSession { get; set; }
 
         public LoginRequestHandler(GameClient client, int userId)
@@ -25,31 +25,36 @@ namespace Ow.Net.netty.handlers
             try
             {
                 client.UserId = userId;
-                var firstLogin = true;
 
                 var gameSession = GameManager.GetGameSession(userId);
                 if (gameSession != null)
                 {
-                    firstLogin = false;
                     Player = gameSession.Player;
                     gameSession.Disconnect(GameSession.DisconnectionType.NORMAL);
                 }
                 else Player = QueryManager.GetPlayer(userId);
 
-                if (Player != null) GameSession = CreateSession(client, Player);
+                if (Player != null)
+                {
+                    GameSession = new GameSession(Player)
+                    {
+                        Client = client,
+                        LastActiveTime = DateTime.Now
+                    };
+                }
                 else
                 {
                     Out.WriteLine("Failed loading user ship / ShipInitializationHandler ERROR");
                     return;
                 }
 
-                Execute(firstLogin);
+                Execute();
 
                 if (Player.Destroyed) Player.KillScreen(null, DestructionType.MISC, true);
                 else
                 {
                     SendSettings(Player);
-                    SendPlayerItems(Player);
+                    SendPlayer(Player);
                 }
             }
             catch (Exception e)
@@ -58,16 +63,7 @@ namespace Ow.Net.netty.handlers
             }
         }
 
-        private GameSession CreateSession(GameClient client, Player player)
-        {
-            return new GameSession(player)
-            {
-                Client = client,
-                LastActiveTime = DateTime.Now
-            };
-        }
-
-        public void Execute(bool firstLogin)
+        public void Execute()
         {
             try
             {
@@ -81,23 +77,8 @@ namespace Ow.Net.netty.handlers
                     GameManager.GameSessions[Player.Id] = GameSession;
                 }
 
-                QueryManager.LoadUser(Player);
-                LoadPlayer(firstLogin);
-            }
-            catch (Exception e)
-            {
-                Out.WriteLine("UID: "+Player.Id+" Execute void exception: " + e, "LoginRequestHandler.cs");
-            }
-        }
-
-        private void LoadPlayer(bool firstLogin = true)
-        {
-            try
-            {
-                Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
-                if (firstLogin || EventManager.JackpotBattle.InEvent(Player) || Duel.InDuel(Player))
+                if (Player.Spacemap == null || Player.Position == null || GameManager.GetSpacemap(Player.Spacemap.Id) == null)
                 {
-                    Player.InRangeCharacters.Clear(); //TODO check
                     Player.CurrentHitPoints = Player.MaxHitPoints;
                     Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;
                     Player.CurrentShieldConfig2 = Player.Equipment.Config2Shield;
@@ -112,15 +93,17 @@ namespace Ow.Net.netty.handlers
                 Player.Spacemap.AddCharacter(Player);
 
                 Program.TickManager.AddTick(GameSession.Player, out var tickId);
-                GameSession.Player.TickId = tickId;
+                Player.TickId = tickId;
+
+                Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)
             {
-                Out.WriteLine("UID: " + Player.Id + " LoadPlayer void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: "+Player.Id+" Execute void exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
-        public static void SendPlayerItems(Player player, bool isLogin = true)
+        public static void SendPlayer(Player player)
         {
             try
             {
@@ -133,13 +116,12 @@ namespace Ow.Net.netty.handlers
                 player.SendCommand(DroneFormationChangeCommand.write(player.Id, DroneManager.GetSelectedFormationId(player.Settings.InGameSettings.selectedFormation)));
                 player.SendPacket("0|S|CFG|" + player.CurrentConfig);
 
-                if (isLogin)
-                {
+                
                     player.SendPacket("0|A|BK|100"); //yeşil kutu miktarı
                     player.SendPacket("0|A|JV|100"); //atlama kuponu miktarı
 
                     player.Group?.InitializeGroup(player);
-                }
+                
 
                 var spaceball = EventManager.Spaceball.Character;
                 if (EventManager.Spaceball.Active && spaceball != null)
@@ -162,6 +144,15 @@ namespace Ow.Net.netty.handlers
 
                 player.SendCommand(SetSpeedCommand.write(player.Speed, player.Speed));
                 player.Spacemap.SendObjects(player);
+
+                player.BoosterManager.Update();
+
+                
+                    player.SendCommand(PetInitializationCommand.write(true, true, true));
+                    player.UpdateStatus();
+
+                //player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(0, 0, 0, 0), new Uba64iModule("", 0, new //List<UbaHtModule>()), new UbahsModule(new List<Ubal4bModule>())), 0));
+
 
                 //player.SendCommand(VideoWindowCreateCommand.write(1, "l", true, new List<string> { "start_head", "tutorial_video_msg_reward_premium_intro" }, 1, 1));    
 
@@ -186,17 +177,6 @@ namespace Ow.Net.netty.handlers
                 player.SendCommand(ContactsListUpdateCommand.write(new class_o3q(contacts), new class_g1a(true, true, true, true), new class_H4Q(false)));
                 */
 
-
-                Player.BoosterManager.Update();
-
-                if (isLogin)
-                {
-                    player.SendCommand(PetInitializationCommand.write(true, true, true));
-                    player.UpdateStatus();
-
-                    player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(0, 0, 0, 0), new Uba64iModule("", 0, new List<UbaHtModule>()), new UbahsModule(new List<Ubal4bModule>())), 0));
-                }
-
                 /*
                 if (isLogin)
                 {
@@ -214,11 +194,13 @@ namespace Ow.Net.netty.handlers
                 }
                 */
 
+                player.SendCommand(player.GetBeaconCommand());
+
                 QueryManager.SavePlayer.Information(player);
             }
             catch (Exception e)
             {
-                Out.WriteLine("UID: " + Player.Id + " SendPlayerItems void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: " + player.Id + " SendPlayerItems void exception: " + e, "LoginRequestHandler.cs");
             }
         }
 
@@ -227,10 +209,8 @@ namespace Ow.Net.netty.handlers
             try
             {
                 if (isLogin)
-                {
-                    player.UpdateCurrentCooldowns();
                     player.SetCurrentCooldowns();
-                }
+
                 player.SettingsManager.SendUserKeyBindingsUpdateCommand();
                 player.SettingsManager.SendUserSettingsCommand();
                 player.SettingsManager.SendMenuBarsCommand();
@@ -239,7 +219,7 @@ namespace Ow.Net.netty.handlers
             }
             catch (Exception e)
             {
-                Out.WriteLine("UID: " + Player.Id + " SendSettings void exception: " + e, "LoginRequestHandler.cs");
+                Out.WriteLine("UID: " + player.Id + " SendSettings void exception: " + e, "LoginRequestHandler.cs");
             }
         }
     }

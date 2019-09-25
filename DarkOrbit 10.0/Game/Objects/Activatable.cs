@@ -1,5 +1,6 @@
 ﻿using Ow.Game;
 using Ow.Game.Movements;
+using Ow.Game.Objects.Stations;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Utils;
@@ -9,12 +10,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Game.Objects.Stations
+namespace Ow.Game.Objects
 {
     abstract class Activatable : Attackable
     {
-        public const int ACTIVATED_RANGE = 500;
-
         public abstract byte[] GetAssetCreateCommand(short clanRelationModule = ClanRelationModule.NONE);
 
         public abstract void Click(GameSession gameSession);

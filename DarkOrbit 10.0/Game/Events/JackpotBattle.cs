@@ -158,8 +158,7 @@ namespace Ow.Game.Events
             Players.Clear();
             Finalists.Clear();
             Spacemap.Characters.Clear();
-            Spacemap.Collectables.Clear();
-            Spacemap.Mines.Clear();
+            Spacemap.Objects.Clear();
             Spacemap.POIs.Clear();
         }
 

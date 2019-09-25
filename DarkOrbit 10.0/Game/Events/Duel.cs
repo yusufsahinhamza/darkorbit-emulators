@@ -94,9 +94,9 @@ namespace Ow.Game.Events
             {
                 if (player.GameSession != null)
                 {
-                    var mines = Spacemap.Mines.Where(x => x.Value.Player == player);
-                    foreach (var mine in mines)
-                        mine.Value.Remove();
+                    var objects = Spacemap.Objects.Values.Where(x => x is Mine mine && mine.Player == player);
+                    foreach (var obj in objects)
+                        (obj as Mine).Remove();
 
                     player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
                     RemovePlayer(player);

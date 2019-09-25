@@ -38,6 +38,9 @@ namespace Ow.Game.Objects.Players.Managers
         public const int AEGIS_HP_REPAIR_DURATION = 7000;
         public const int AEGIS_HP_REPAIR_COOLDOWN = 90000;
 
+        public const int AEGIS_REPAIR_POD_DURATION = 10000;
+        public const int AEGIS_REPAIR_POD_COOLDOWN = 120000;
+
         public const int AEGIS_SHIELD_REPAIR_DURATION = 5000;
         public const int AEGIS_SHIELD_REPAIR_COOLDOWN = 30000;
 

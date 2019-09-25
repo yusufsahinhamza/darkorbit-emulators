@@ -33,8 +33,7 @@ namespace Ow.Game.Objects.Players
     {
         public Player Player { get; set; }
 
-        public ConcurrentDictionary<string, Collectable> InRangeCollectables = new ConcurrentDictionary<string, Collectable>();
-        public ConcurrentDictionary<string, Mine> InRangeMines = new ConcurrentDictionary<string, Mine>();
+        public ConcurrentDictionary<int, Object> InRangeObjects = new ConcurrentDictionary<int, Object>();
         public Dictionary<int, Group> GroupInvites = new Dictionary<int, Group>();
         public ConcurrentDictionary<int, Activatable> InRangeAssets = new ConcurrentDictionary<int, Activatable>();
         public ConcurrentDictionary<int, Player> DuelInvites = new ConcurrentDictionary<int, Player>();

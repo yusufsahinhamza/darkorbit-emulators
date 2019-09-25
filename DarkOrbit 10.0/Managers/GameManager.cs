@@ -37,14 +37,10 @@ namespace Ow.Managers
                     foreach (var gameSession in GameSessions.Values)
                         gameSession.Disconnect(DisconnectionType.NORMAL);
 
-
                     foreach (var battleStation in BattleStations.Values)
                     {
-                          //TODO
-                                QueryManager.BattleStations.BattleStation(battleStation);
-                                QueryManager.BattleStations.Modules(battleStation);
-                            
-                        
+                        QueryManager.BattleStations.BattleStation(battleStation);
+                        QueryManager.BattleStations.Modules(battleStation);
                     }
 
                     Environment.Exit(0);

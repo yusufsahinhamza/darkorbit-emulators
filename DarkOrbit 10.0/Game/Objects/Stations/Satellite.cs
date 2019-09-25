@@ -136,12 +136,12 @@ namespace Ow.Game.Objects.Stations
         public DateTime repairTime = new DateTime();
         public void RepairModules()
         {
-            //TODO
-            if (repairTime.AddSeconds(1) < DateTime.Now)
+            //TODO check
+            if (!Destroyed && repairTime.AddSeconds(1) < DateTime.Now)
             {
                 foreach (var module in BattleStation.EquippedStationModule[Clan.Id])
                 {
-                    //kontroller
+                    if (module.LastCombatTime.AddSeconds(10) >= DateTime.Now) return;
                     module.Heal(7500);
                 }
 
@@ -149,51 +149,19 @@ namespace Ow.Game.Objects.Stations
             }
         }
 
-        public int RandomizeDamage(int baseDmg, double missProbability = 1.00) //TODO
-        {
-            var random = new Random();
-
-            var randNums = random.Next(0, 6);
-
-            if (missProbability == 0)
-                randNums = random.Next(0, 3) | random.Next(4, 7);
-            if (missProbability < 1.00 && missProbability != 0)
-                randNums = random.Next(0, 7);
-            if (missProbability > 1.00 && missProbability < 2.00)
-                randNums = random.Next(0, 4);
-            if (missProbability >= 2.00)
-                randNums = random.Next(2, 4);
-
-            switch (randNums)
-            {
-                case 0:
-                    return (int)(baseDmg * 1.10);
-                case 1:
-                    return (int)(baseDmg * 0.98);
-                case 2:
-                    return (int)(baseDmg * 1.02);
-                case 3:
-                    return 0;
-                case 4:
-                    return (int)(baseDmg * 0.92);
-                case 5:
-                    return (int)(baseDmg * 0.99);
-                default:
-                    return baseDmg;
-            }
-        }
-
         public DateTime lastAttackTime = new DateTime();
         public void Attack(Attackable target, double shieldPenetration = 0)
         {
-            var damage = RandomizeDamage((Type == StationModuleModule.LASER_LOW_RANGE ? 59850 : Type == StationModuleModule.LASER_MID_RANGE ? 48450 : Type == StationModuleModule.LASER_HIGH_RANGE ? 28500 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 85500 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 71250 : 0), 2); //TODO
+            var missProbability = Type == StationModuleModule.LASER_LOW_RANGE ? 0.1 : Type == StationModuleModule.LASER_MID_RANGE ? 0.3 : Type == StationModuleModule.LASER_HIGH_RANGE ? 0.4 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 0.5 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 0.3 : 1.00;
+
+            var damage = AttackManager.RandomizeDamage((Type == StationModuleModule.LASER_LOW_RANGE ? 59850 : Type == StationModuleModule.LASER_MID_RANGE ? 48450 : Type == StationModuleModule.LASER_HIGH_RANGE ? 28500 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 85500 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 71250 : 0), missProbability);
             damage = 1000; //for test
 
             var damageType = (Type == StationModuleModule.LASER_LOW_RANGE || Type == StationModuleModule.LASER_MID_RANGE || Type == StationModuleModule.LASER_HIGH_RANGE) ? DamageType.LASER : (Type == StationModuleModule.ROCKET_LOW_ACCURACY || Type == StationModuleModule.ROCKET_MID_ACCURACY) ? DamageType.ROCKET : DamageType.LASER;
-            var range = Type == StationModuleModule.LASER_LOW_RANGE ? 590 : Type == StationModuleModule.LASER_MID_RANGE ? 650 : Type == StationModuleModule.LASER_HIGH_RANGE ? 720 : Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 900 : Type == StationModuleModule.ROCKET_MID_ACCURACY ? 780 : 0;
+
             var cooldown = 1;
 
-            if (target.Position.DistanceTo(Position) < range)
+            if (target.Position.DistanceTo(Position) < GetRange())
             {
                 if (!TargetDefinition(target)) return;
 
@@ -235,18 +203,16 @@ namespace Ow.Game.Objects.Stations
                         if (target is Player && (target as Player).Storage.Sentinel)
                             damageShd -= Maths.GetPercentage(damageShd, 30);
 
-                        /*TODO
                         if (target is Player && (target as Player).Storage.Diminisher)
-                            if ((target as Player).Storage.UnderDiminisherPlayer == Player)
+                            if ((target as Player).Storage.UnderDiminisherEntity == this)
                                 damageShd += Maths.GetPercentage(damage, 30);
-                        */
 
                         var laserRunCommand = AttackLaserRunCommand.write(Id, target.Id, 0, false, false);
                         SendCommandToInRangeCharacters(laserRunCommand);
                     }
                     else if (damageType == DamageType.ROCKET)
                     {
-                        var rocketRunPacket = "0|v|" + Id + "|" + target.Id + "|H|" + 1 + "|1|1";
+                        var rocketRunPacket = $"0|v|{Id}|{target.Id}|H|" + 1 + "|0|1";
                         SendPacketToInRangeCharacters(rocketRunPacket);
                     }
 
@@ -254,7 +220,7 @@ namespace Ow.Game.Objects.Stations
                     {
                         SendCommandToInRangeCharacters(AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 1), target);
 
-                        //check
+                        //TODO check
                         if (target is Player)
                             (target as Player).SendCommand(AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 0));
                     }

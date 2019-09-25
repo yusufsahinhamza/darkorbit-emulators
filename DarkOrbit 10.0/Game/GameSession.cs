@@ -55,9 +55,6 @@ namespace Ow.Game
         {
             try
             {
-                QueryManager.SavePlayer.Information(Player);
-                QueryManager.SavePlayer.Boosters(Player);
-                Player.SaveSettings();
                 Player.Group?.UpdateTarget(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
                 Player.Pet.Deactivate();
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
@@ -65,8 +62,6 @@ namespace Ow.Game
                 Program.TickManager.RemoveTick(Player);
                 Player.Spacemap.RemoveCharacter(Player);
                 Player.Deselection();
-                Player.Storage.InRangeAssets.Clear();
-                Player.InRangeCharacters.Clear();
             }
             catch (Exception e)
             {
@@ -78,7 +73,14 @@ namespace Ow.Game
         {
             try
             {
+                QueryManager.SavePlayer.Information(Player);
+                QueryManager.SavePlayer.Boosters(Player);
                 Player.UpdateCurrentCooldowns();
+                Player.SaveSettings();
+                Player.Storage.InRangeAssets.Clear();
+                Player.Storage.InRangeObjects.Clear();
+                Player.InRangeCharacters.Clear();
+
                 InProcessOfDisconnection = true;
 
                 if (dcType == DisconnectionType.SOCKET_CLOSED)
@@ -103,9 +105,8 @@ namespace Ow.Game
                 PrepareForDisconnect();
                 Client.Disconnect();
                 InProcessOfDisconnection = false;
-                var gameSession = this;
                 Program.TickManager.RemoveTick(this);
-                GameManager.GameSessions.TryRemove(Player.Id, out gameSession);
+                GameManager.GameSessions.TryRemove(Player.Id, out var gameSession);
                 Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)

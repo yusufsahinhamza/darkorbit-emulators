@@ -1,5 +1,6 @@
 ﻿using Ow.Game;
 using Ow.Game.Movements;
+using Ow.Game.Objects;
 using Ow.Net.netty.commands;
 using Ow.Net.netty.requests;
 using System;
@@ -19,9 +20,9 @@ namespace Ow.Net.netty.handlers
 
             var player = gameSession.Player;
 
-            var collectable = player.Spacemap.Collectables.Values.Where(x => x.Hash == read.hash).FirstOrDefault();
-            if (collectable != null)
-                collectable.Collect(player);
+            var obj = player.Spacemap.Objects.Values.Where(x => x is Collectable collectable && collectable.Hash == read.hash).FirstOrDefault();
+            if (obj != null)
+                (obj as Collectable).Collect(player);
         }
     }
 }

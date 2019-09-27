@@ -31,6 +31,8 @@ namespace Ow.Game.Objects.Players.Skills
                 else
                     ExecuteHeal();
             }
+            else if (!Player.VisualModifiers.ContainsKey(VisualModifierCommand.HEALING_POD) && cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now)
+                Player.AddVisualModifier(VisualModifierCommand.HEALING_POD, 0, "", 0, true);
         }
 
         public override void Send()
@@ -45,6 +47,7 @@ namespace Ow.Game.Objects.Players.Skills
 
                 Player.SendCooldown(LootId, Duration, true);
                 Player.CpuManager.DisableCloak();
+                Player.RemoveVisualModifier(VisualModifierCommand.HEALING_POD);
 
                 cooldown = DateTime.Now;
             }

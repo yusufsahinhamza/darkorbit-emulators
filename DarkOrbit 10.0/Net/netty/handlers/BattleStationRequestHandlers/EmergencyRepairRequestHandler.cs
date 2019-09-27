@@ -37,10 +37,10 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
 
             var activatable = satellite.Type == StationModuleModule.HULL || satellite.Type == StationModuleModule.DEFLECTOR ? (Activatable)satellite.BattleStation : satellite;
 
-            if (activatable != null && activatable.CurrentHitPoints >= activatable.MaxHitPoints)
+            if (activatable != null && activatable.CurrentHitPoints < activatable.MaxHitPoints)
             {
                 satellite.EmergencyRepairActive = true;
-                activatable.AddVisualModifier(new VisualModifierCommand(activatable.Id, VisualModifierCommand.EMERGENCY_REPAIR, 0, "", 0, true));
+                activatable.AddVisualModifier(VisualModifierCommand.EMERGENCY_REPAIR, 0, "", 0, true);
 
                 for (int i = seconds; i > 0; i--)
                 {

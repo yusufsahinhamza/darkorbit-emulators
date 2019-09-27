@@ -48,6 +48,7 @@ namespace Ow.Net
                 AllDone.Set();
                 var listener = (Socket)ar.AsyncState;
                 var handler = listener.EndAccept(ar);
+                handler.NoDelay = true;
                 new ChatClient(handler);
             }
             catch (Exception e)

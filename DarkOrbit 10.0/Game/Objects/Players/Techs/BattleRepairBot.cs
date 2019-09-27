@@ -41,7 +41,7 @@ namespace Ow.Game.Objects.Players.Techs
         {
             if (cooldown.AddMilliseconds(TimeManager.BATTLE_REPAIR_BOT_DURATION + TimeManager.BATTLE_REPAIR_BOT_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.BATTLE_REPAIR_BOT, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.BATTLE_REPAIR_BOT, 0, "", 0, true);
                 Player.SendCooldown(TechManager.TECH_BATTLE_REPAIR_BOT, TimeManager.BATTLE_REPAIR_BOT_DURATION, true);
                 Active = true;
                 cooldown = DateTime.Now;

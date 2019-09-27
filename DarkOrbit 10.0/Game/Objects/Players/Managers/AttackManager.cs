@@ -292,7 +292,7 @@ namespace Ow.Game.Objects.Players.Managers
                 var enemyPlayer = enemy as Player;
 
                 var shipId = Ship.GetRandomShipId(enemyPlayer.Ship.Id);
-                enemyPlayer.AddVisualModifier(new VisualModifierCommand(enemyPlayer.Id, VisualModifierCommand.WIZARD_ATTACK, 0, GameManager.GetShip(shipId).LootId, 0, true));
+                enemyPlayer.AddVisualModifier(VisualModifierCommand.WIZARD_ATTACK, 0, GameManager.GetShip(shipId).LootId, 0, true);
             }
             
         }
@@ -632,10 +632,17 @@ namespace Ow.Game.Objects.Players.Managers
                 target.Destroy(Player, DestructionType.PLAYER);
             else
             {
-                //TODO properly
                 if (target.CurrentNanoHull > 0)
-                    target.CurrentNanoHull -= damageHp;
-                else
+                {
+                    if (target.CurrentNanoHull - damageHp < 0)
+                    {
+                        var nanoDamage = damageHp - target.CurrentNanoHull;
+                        target.CurrentNanoHull = 0;
+                        target.CurrentHitPoints -= nanoDamage;
+                    }
+                    else
+                        target.CurrentNanoHull -= damageHp;
+                } else
                     target.CurrentHitPoints -= damageHp;
             }
 
@@ -670,7 +677,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             target.LastCombatTime = DateTime.Now;
 
-            if (toHp && toDestroy && (damage >= target.CurrentHitPoints || target.CurrentHitPoints == 0))
+            if (toHp && toDestroy && (damage >= target.CurrentHitPoints || target.CurrentHitPoints <= 0))
             {
                 if (damageType == DamageType.RADIATION)
                     target.Destroy(null, DestructionType.RADITATION);
@@ -679,7 +686,22 @@ namespace Ow.Game.Objects.Players.Managers
                 else
                     target.Destroy(attacker, DestructionType.PLAYER);
             }
-            else if (toHp) target.CurrentHitPoints -= damage;
+            else if (toHp)
+            {
+                if (target.CurrentNanoHull > 0)
+                {
+                    if (target.CurrentNanoHull - damage < 0)
+                    {
+                        var nanoDamage = damage - target.CurrentNanoHull;
+                        target.CurrentNanoHull = 0;
+                        target.CurrentHitPoints -= nanoDamage;
+                    }
+                    else
+                        target.CurrentNanoHull -= damage;
+                }
+                else
+                    target.CurrentHitPoints -= damage;
+            }
 
             if (toShd)
                 target.CurrentShieldPoints -= damage;

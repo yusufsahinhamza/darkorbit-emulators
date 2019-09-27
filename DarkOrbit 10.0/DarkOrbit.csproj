@@ -167,6 +167,7 @@
     <Compile Include="Net\netty\commands\AbilityEffectDeActivationCommand.cs" />
     <Compile Include="Net\netty\commands\AbilityStopCommand.cs" />
     <Compile Include="Net\netty\commands\AbilityEffectActivationCommand.cs" />
+    <Compile Include="Net\netty\commands\LoginErrorCommand.cs" />
     <Compile Include="Net\netty\commands\AssetRemoveCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationManagementUiInitializationCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationNoClanUiInitializationCommand.cs" />

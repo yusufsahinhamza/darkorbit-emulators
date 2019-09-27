@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Ow.Utils;
 
 namespace Ow.Game.Ticks
 {
@@ -35,12 +36,19 @@ namespace Ow.Game.Ticks
 
         public async void Tick()
         {
-            while (true)
-            {       
-                for (var i = 0; i < Ticks.Count; i++)
-                    Ticks[i].Tick();
+            try
+            {
+                while (true)
+                {
+                    for (var i = 0; i < Ticks.Count; i++)
+                        Ticks[i].Tick();
 
-                await Task.Delay(TICKS_PER_SECOND);
+                    await Task.Delay(TICKS_PER_SECOND);
+                }
+            }
+            catch (Exception e)
+            {
+                Out.WriteLine("Exception: " + e, "TickManager.cs");
             }
         }
     }

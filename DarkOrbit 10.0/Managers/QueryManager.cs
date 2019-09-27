@@ -34,7 +34,7 @@ namespace Ow.Managers
             public static void Information(Player player)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}', level = {player.Level} WHERE userID = {player.Id}");
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}', level = {player.Level}, nanohull = {player.CurrentNanoHull}  WHERE userID = {player.Id}");
             }
 
             public static void Boosters(Player player)
@@ -119,6 +119,7 @@ namespace Ow.Managers
                         player.Premium = Convert.ToBoolean(row["premium"]);
                         player.Title = Convert.ToString(row["title"]);
                         player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
+                        player.CurrentNanoHull = Convert.ToInt32(row["nanohull"]);
                     }
 
                     var skill = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_skilltree WHERE userID = {playerId}");

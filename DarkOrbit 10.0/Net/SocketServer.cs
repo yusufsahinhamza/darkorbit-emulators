@@ -58,6 +58,7 @@ namespace Ow.Net
                 AllDone.Set();
                 var listener = (Socket)ar.AsyncState;
                 var socket = listener.EndAccept(ar);
+                socket.NoDelay = true;
                 int count = socket.Receive(buffer);
                 var json = Parse(Encoding.UTF8.GetString(buffer, 0, count));
 

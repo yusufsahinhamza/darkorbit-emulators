@@ -32,7 +32,7 @@ namespace Ow.Game.Objects.Players.Skills
 
                 Player.Storage.Sentinel = true;
 
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.FORTRESS, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.FORTRESS, 0, "", 0, true);
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;

@@ -36,7 +36,7 @@ namespace Ow.Game.Objects.Players.Techs
         {
             if (cooldown.AddMilliseconds(TimeManager.ENERGY_LEECH_DURATION + TimeManager.ENERGY_LEECH_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.ENERGY_LEECH_ARRAY, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.ENERGY_LEECH_ARRAY, 0, "", 0, true);
 
                 Player.SendCooldown(TechManager.TECH_ENERGY_LEECH, TimeManager.ENERGY_LEECH_DURATION, true);
                 Player.Storage.EnergyLeech = true;

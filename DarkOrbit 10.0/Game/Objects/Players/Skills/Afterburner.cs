@@ -34,7 +34,7 @@ namespace Ow.Game.Objects.Players.Skills
                 Player.Storage.Lightning = true;
                 Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
 
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.TRAVEL_MODE, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.TRAVEL_MODE, 0, "", 0, true);
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;

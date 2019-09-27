@@ -66,12 +66,12 @@ namespace Ow.Game.Objects.Stations
                 DeflectorSecondsLeft = DeflectorSecondsLeft - (int)DateTime.Now.Subtract(deflectorTime).TotalMinutes;
                 this.deflectorTime = DateTime.Now;
                 Invincible = true;
-                AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.BATTLESTATION_DEFLECTOR, DeflectorSecondsLeft, "", 0, true));
+                AddVisualModifier(VisualModifierCommand.BATTLESTATION_DEFLECTOR, DeflectorSecondsLeft, "", 0, true);
                 Program.TickManager.AddTick(this);
             }
 
             foreach (var modifier in visualModifiers)
-                AddVisualModifier(new VisualModifierCommand(Id, (short)modifier, 0, "", 0, true));
+                AddVisualModifier((short)modifier, 0, "", 0, true);
 
             foreach (var module in modules)
             {
@@ -88,7 +88,7 @@ namespace Ow.Game.Objects.Stations
                     s.MaxShieldPoints = m.MaxShieldPoints;
 
                     if (DeflectorActive)
-                        s.AddVisualModifier(new VisualModifierCommand(s.Id, VisualModifierCommand.BATTLESTATION_DEFLECTOR, 0, "", 0, true));
+                        s.AddVisualModifier(VisualModifierCommand.BATTLESTATION_DEFLECTOR, 0, "", 0, true);
                     satellite.Add(s);
                 }
 

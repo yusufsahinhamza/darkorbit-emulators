@@ -58,12 +58,13 @@ namespace Ow.Managers
         {
             var spacemap = GetSpacemap(mapId);
 
-            if (spacemap != null && command != null)
+            if (spacemap != null)
             {
-                foreach (var player in spacemap.Characters.Values)
-                    if (player.Spacemap == spacemap)
-                        if(player is Player)
-                            (player as Player).SendCommand(command);
+                foreach (var gameSession in GameSessions.Values.Where(x => x.Player?.Spacemap.Id == spacemap.Id))
+                {
+                    var player = gameSession.Player;
+                    player.SendCommand(command);
+                }
             }
         }
 
@@ -71,12 +72,13 @@ namespace Ow.Managers
         {
             var spacemap = GetSpacemap(mapId);
 
-            if (spacemap != null && packet != null)
+            if (spacemap != null)
             {
-                foreach (var player in spacemap.Characters.Values)
-                    if (player.Spacemap == spacemap)
-                        if(player is Player)
-                            (player as Player).SendPacket(packet);
+                foreach (var gameSession in GameSessions.Values.Where(x => x.Player?.Spacemap.Id == spacemap.Id))
+                {
+                    var player = gameSession.Player;
+                    player.SendPacket(packet);
+                }
             }
         }
 
@@ -98,16 +100,13 @@ namespace Ow.Managers
             }
         }
 
-        public static void SendCommandToUser(int userId, byte[] command)
+        public static void SendPacketToClan(string packet, int clanId)
         {
-            var player = GetPlayerById(userId);
-            player.SendCommand(command);
-        }
-
-        public static void SendPacketToUser(int userId, string packet)
-        {
-            var player = GetPlayerById(userId);
-            player.SendPacket(packet);
+            foreach (var gameSession in GameSessions.Values.Where(x => x.Player?.Clan.Id == clanId))
+            {
+                var player = gameSession.Player;
+                player.SendPacket(packet);
+            }
         }
 
         public static GameSession GetGameSession(int UserID)

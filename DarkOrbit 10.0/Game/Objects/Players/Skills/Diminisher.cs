@@ -41,8 +41,8 @@ namespace Ow.Game.Objects.Players.Skills
                 Player.Storage.Diminisher = true;
                 Player.Storage.UnderDiminisherEntity = target;
 
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
-                target.AddVisualModifier(new VisualModifierCommand(target.Id, VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true);
+                target.AddVisualModifier(VisualModifierCommand.WEAKEN_SHIELDS, 0, "", 0, true);
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;

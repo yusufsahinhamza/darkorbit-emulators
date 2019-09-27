@@ -33,6 +33,10 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
 
                 if (!battleStation.EquippedStationModule.ContainsKey(player.Clan.Id))
                     battleStation.EquippedStationModule[player.Clan.Id] = new List<Satellite>();
+                else
+                {
+                    if (battleStation.EquippedStationModule[player.Clan.Id].Count >= 10) return;
+                }
 
                 if (battleStation.EquippedStationModule[player.Clan.Id].Where(x => !x.Installed && x.OwnerId == player.Id).ToList().Count > 0)
                 {
@@ -52,9 +56,14 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
 
                     if (read.replace || equippedModule != null)
                     {
-                        if (equippedModule.OwnerId != player.Id && read.replace)
+                        if (read.replace && equippedModule.OwnerId != player.Id)
                         {
                             player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.ITEM_NOT_OWNED));
+                            return;
+                        }
+                        else if (!read.replace && !equippedModule.Installed && equippedModule.OwnerId != player.Id)
+                        {
+                            player.SendCommand(BattleStationErrorCommand.write(BattleStationErrorCommand.CONCURRENT_EQUIP));
                             return;
                         }
 
@@ -71,7 +80,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     int designId = module.Type == StationModuleModule.REPAIR ? 3 : module.Type == StationModuleModule.LASER_HIGH_RANGE ? 4 : module.Type == StationModuleModule.LASER_MID_RANGE ? 5 : module.Type == StationModuleModule.LASER_LOW_RANGE ? 6 : module.Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 8 : module.Type == StationModuleModule.ROCKET_MID_ACCURACY ? 7 : module.Type == StationModuleModule.HONOR_BOOSTER ? 9 : module.Type == StationModuleModule.DAMAGE_BOOSTER ? 10 : module.Type == StationModuleModule.EXPERIENCE_BOOSTER ? 11 : 0;
 
                     var satellite = new Satellite(battleStation, player.Id, Satellite.GetName(module.Type), designId, module.Id, read.slotId, module.Type, Satellite.GetPosition(battleStation.Position, read.slotId));
-                    satellite.InstallationSecondsLeft = battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION ? 240 : 60;
+                    satellite.InstallationSecondsLeft = battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION ? 0 : 0;
 
                     module.InUse = true;
 
@@ -79,7 +88,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
 
                     if (battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
                     {
-                        satellite.AddVisualModifier(new VisualModifierCommand(satellite.Id, VisualModifierCommand.BATTLESTATION_INSTALLING, 0, "", 0, true));
+                        satellite.AddVisualModifier(VisualModifierCommand.BATTLESTATION_INSTALLING, 0, "", 0, true);
                         satellite.Spacemap.Activatables.TryAdd(satellite.Id, satellite);
 
                         foreach (var character in satellite.Spacemap.Characters.Values)

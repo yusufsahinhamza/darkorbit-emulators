@@ -34,7 +34,7 @@ namespace Ow.Game.Objects.Players.Skills
 
                 Player.Storage.Spectrum = true;
 
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.PRISMATIC_SHIELD, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.PRISMATIC_SHIELD, 0, "", 0, true);
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;

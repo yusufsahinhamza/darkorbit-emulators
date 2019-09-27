@@ -31,7 +31,7 @@ namespace Ow.Game.Events
             {
                 if (player.GameSession != null)
                 {
-                    player.AddVisualModifier(new VisualModifierCommand(player.Id, VisualModifierCommand.CAMERA, 0, "", 0, true));
+                    player.AddVisualModifier(VisualModifierCommand.CAMERA, 0, "", 0, true);
                     player.Storage.Duel = this;
                     player.CpuManager.DisableCloak();
 

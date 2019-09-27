@@ -38,15 +38,18 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                 battleStation.Clan = player.Clan;
 
                 foreach (var module in battleStation.EquippedStationModule[player.Clan.Id])
+                {
                     module.Clan = player.Clan;
+                    module.FactionId = module.Clan.FactionId;
+                }
 
                 battleStation.FactionId = battleStation.Clan.FactionId;
-                battleStation.BuildTimeInMinutes = read.buildTimeInMinutes;
+                battleStation.BuildTimeInMinutes = 0;
                 battleStation.buildTime = DateTime.Now;
 
                 Program.TickManager.AddTick(battleStation);
 
-                battleStation.AddVisualModifier(new VisualModifierCommand(battleStation.Id, VisualModifierCommand.BATTLESTATION_CONSTRUCTING, 0, "", 0, true));
+                battleStation.AddVisualModifier(VisualModifierCommand.BATTLESTATION_CONSTRUCTING, 0, "", 0, true);
 
                 player.SendCommand(BattleStationBuildingStateCommand.write(battleStation.Id, battleStation.Id, battleStation.Name, (int)TimeSpan.FromMinutes(battleStation.BuildTimeInMinutes).TotalSeconds, 3600, battleStation.Clan.Name, new FactionModule((short)battleStation.FactionId)));
 

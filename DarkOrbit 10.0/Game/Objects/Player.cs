@@ -53,9 +53,7 @@ namespace Ow.Game.Objects
             RankId = rankId;
             InitiateManagers();
 
-            //TODO
-            //MaxNanoHull = 500000;
-            //CurrentNanoHull = MaxNanoHull;
+            MaxNanoHull = ship.BaseHitpoints;
         }
 
         public void InitiateManagers()
@@ -91,7 +89,7 @@ namespace Ow.Game.Objects
         public DateTime lastHpRepairTime = new DateTime();
         private void CheckHitpointsRepair()
         {
-            if (CurrentHitPoints == MaxHitPoints || AttackingOrUnderAttack())
+            if (CurrentHitPoints >= MaxHitPoints || AttackingOrUnderAttack())
             {
                 if (Storage.RepairBotActivated)
                     RepairBot(false);
@@ -115,7 +113,7 @@ namespace Ow.Game.Objects
         private void CheckShieldPointsRepair()
         {
             if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastShieldRepairTime.AddSeconds(1) >= DateTime.Now ||
-                CurrentShieldPoints == MaxShieldPoints || Settings.InGameSettings.selectedFormation == DroneManager.MOTH_FORMATION
+                CurrentShieldPoints >= MaxShieldPoints || Settings.InGameSettings.selectedFormation == DroneManager.MOTH_FORMATION
                 || Settings.InGameSettings.selectedFormation == DroneManager.WHEEL_FORMATION) return;
 
             int repairShield = MaxShieldPoints / 25;
@@ -841,7 +839,7 @@ namespace Ow.Game.Objects
 
         public void Respawn(bool basicRepair = false, bool deathLocation = false, bool atNearestPortal = false, bool fullRepair = false)
         {
-            AddVisualModifier(new VisualModifierCommand(Id, VisualModifierCommand.INVINCIBILITY, 0, "", 0, true));
+            AddVisualModifier(VisualModifierCommand.INVINCIBILITY, 0, "", 0, true);
 
             Storage.IsInDemilitarizedZone = basicRepair || fullRepair ? true : false;
             Storage.IsInEquipZone = basicRepair || fullRepair ? true : false;
@@ -884,6 +882,8 @@ namespace Ow.Game.Objects
 
         public void ChangeData(DataType dataType, int amount, ChangeType changeType = ChangeType.INCREASE)
         {
+            if (amount == 0) return;
+
             amount = Convert.ToInt32(amount);
             switch (dataType)
             {
@@ -1038,7 +1038,7 @@ namespace Ow.Game.Objects
 
             if (!LoggingOut) return;
 
-            if (AttackingOrUnderAttack() || Moving || Spacemap.Options.LogoutBlocked)
+            if (!Storage.IsInDemilitarizedZone && (AttackingOrUnderAttack() || Moving || Spacemap.Options.LogoutBlocked))
             {
                 AbortLogout();
                 return;

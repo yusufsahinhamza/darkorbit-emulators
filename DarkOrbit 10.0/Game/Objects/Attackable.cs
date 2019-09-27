@@ -214,12 +214,22 @@ namespace Ow.Game.Objects
             }
             else if (this is BattleStation battleStation)
             {
+                if (destroyer.Clan.Id != 0)
+                {
+                    GameManager.SendPacketToAll($"0|A|STM|msg_station_destroyed_by_clan|%DESTROYER%|{destroyer.Clan.Name}|%MAP%|{Spacemap.Name}|%LOSER%|{battleStation.Clan.Name}|%STATION%|{battleStation.AsteroidName}");
+                }
+                else
+                {
+                    GameManager.SendPacketToAll($"0|A|STM|msg_station_destroyed|%MAP%|{Spacemap.Name}|%LOSER%|{battleStation.Clan.Name}|%STATION%|{battleStation.AsteroidName}");
+                }
+
                 foreach (var module in battleStation.EquippedStationModule[battleStation.Clan.Id])
                     module.Destroy(destroyer, destructionType);
 
                 battleStation.VisualModifiers.Clear();
                 battleStation.EquippedStationModule.Remove(battleStation.Clan.Id);
                 battleStation.Clan = GameManager.GetClan(0);
+                battleStation.Name = battleStation.AsteroidName;
                 battleStation.InBuildingState = false;
                 battleStation.FactionId = 0;
                 battleStation.BuildTimeInMinutes = 0;
@@ -233,6 +243,11 @@ namespace Ow.Game.Objects
             }
             else if (this is Satellite satellite)
             {
+                if (!satellite.BattleStation.Destroyed && satellite.Type != StationModuleModule.HULL && satellite.Type != StationModuleModule.DEFLECTOR)
+                {
+                    GameManager.SendPacketToClan($"0|A|STM|msg_station_module_destroyed|%STATION%|{satellite.BattleStation.AsteroidName}|%MAP%|{Spacemap.Name}|%MODULE%|{satellite.Name}|%LEVEL%|16", satellite.Clan.Id);
+                }
+
                 satellite.Remove(true);
                 satellite.Type = StationModuleModule.NONE;
                 satellite.CurrentHitPoints = 0;
@@ -242,8 +257,7 @@ namespace Ow.Game.Objects
 
                 if (satellite.BattleStation.Destroyed)
                 {
-                    var activatable = satellite as Activatable;
-                    satellite.Spacemap.Activatables.TryRemove(satellite.Id, out activatable);
+                    Spacemap.Activatables.TryRemove(satellite.Id, out var activatable);
                     GameManager.SendCommandToMap(Spacemap.Id, AssetRemoveCommand.write(satellite.GetAssetType(), satellite.Id));
                 }
                 else if (satellite.BattleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
@@ -257,39 +271,53 @@ namespace Ow.Game.Objects
                 var destroyerPlayer = destroyer as Player;
                 destroyerPlayer.Deselection();
 
-                if (!(this is Activatable))
+                int experience = 0;
+                int honor = 0;
+                int uridium = 0;
+                int credits = 0;
+
+                bool reward = true;
+                var changeType = destroyerPlayer.TargetDefinition(this) ? ChangeType.INCREASE : ChangeType.DECREASE;
+
+                if (this is Character)
                 {
+                    experience = destroyerPlayer.Ship.GetExperienceBoost((this as Character).Ship.Rewards.Experience);
+                    honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost((this as Character).Ship.Rewards.Honor));
+                    uridium = (this as Character).Ship.Rewards.Uridium;
+
                     var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
-
-                    if (count < 13 && !Duel.InDuel(destroyerPlayer))
+                    if (count > 13 && !Duel.InDuel(destroyerPlayer))
                     {
-                        int experience = destroyerPlayer.Ship.GetExperienceBoost((this as Character).Ship.Rewards.Experience);
-                        experience += Maths.GetPercentage(experience, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.EP));
-
-                        int honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost((this as Character).Ship.Rewards.Honor));
-                        honor += Maths.GetPercentage(honor, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.HONOUR));
-                        honor += Maths.GetPercentage(honor, destroyerPlayer.GetSkillPercentage("Cruelty"));
-
-                        int uridium = (this as Character).Ship.Rewards.Uridium;
-                        var changeType = ChangeType.INCREASE;
-
-                        if (!destroyerPlayer.TargetDefinition(this))
-                            changeType = ChangeType.DECREASE;
-
-                        destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
-                        destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
-                        destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
-                    }
-                    else if (count > 13 && !Duel.InDuel(destroyerPlayer))
+                        reward = false;
                         destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
-
-                    if (this is Player)//TODO CHECK FOR NPC AND ETC...
-                    {
-                        using (var mySqlClient = SqlDatabaseManager.GetClient())
-                            mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
-
-                        new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
                     }
+                }
+                else if (this is Activatable)
+                {
+                    credits = 512000;
+                    experience = 512000;
+                    honor = 512;
+                    uridium = 512;
+                }
+
+                experience += Maths.GetPercentage(experience, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.EP));
+                honor += Maths.GetPercentage(honor, destroyerPlayer.BoosterManager.GetPercentage(BoostedAttributeType.HONOUR));
+                honor += Maths.GetPercentage(honor, destroyerPlayer.GetSkillPercentage("Cruelty"));
+
+                if (reward)
+                {
+                    destroyerPlayer.ChangeData(DataType.CREDITS, credits);
+                    destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
+                    destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
+                    destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                }
+
+                if (this is Player)
+                {
+                    using (var mySqlClient = SqlDatabaseManager.GetClient())
+                        mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
+
+                    new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
                 }
             }
 
@@ -447,33 +475,38 @@ namespace Ow.Game.Objects
             UpdateStatus();
         }
 
-        public void AddVisualModifier(VisualModifierCommand visualModifier)
+        public void AddVisualModifier(short modifier, int attribute, string shipLootId, int count, bool activated)
         {
-            VisualModifiers.TryAdd(visualModifier.modifier, visualModifier);
-
-            if (this is Character)
-                SendCommandToInRangePlayers(visualModifier.writeCommand());
-            else if (this is Activatable)
-                GameManager.SendCommandToMap(Spacemap.Id, visualModifier.writeCommand());
-
-            if (this is Player player)
+            if (!VisualModifiers.ContainsKey(modifier))
             {
-                player.SendCommand(visualModifier.writeCommand());
+                var visualModifier = new VisualModifierCommand(Id, modifier, attribute, shipLootId, count, activated);
 
-                switch (visualModifier.modifier)
+                VisualModifiers.TryAdd(visualModifier.modifier, visualModifier);
+
+                if (this is Character)
+                    SendCommandToInRangePlayers(visualModifier.writeCommand());
+                else if (this is Activatable)
+                    GameManager.SendCommandToMap(Spacemap.Id, visualModifier.writeCommand());
+
+                if (this is Player player)
                 {
-                    case VisualModifierCommand.INVINCIBILITY:
-                        player.Invincible = true;
-                        player.Storage.invincibilityEffectTime = DateTime.Now;
-                        break;
-                    case VisualModifierCommand.MIRRORED_CONTROLS:
-                        player.Storage.mirroredControlEffect = true;
-                        player.Storage.mirroredControlEffectTime = DateTime.Now;
-                        break;
-                    case VisualModifierCommand.WIZARD_ATTACK:
-                        player.Storage.wizardEffect = true;
-                        player.Storage.wizardEffectTime = DateTime.Now;
-                        break;
+                    player.SendCommand(visualModifier.writeCommand());
+
+                    switch (visualModifier.modifier)
+                    {
+                        case VisualModifierCommand.INVINCIBILITY:
+                            player.Invincible = true;
+                            player.Storage.invincibilityEffectTime = DateTime.Now;
+                            break;
+                        case VisualModifierCommand.MIRRORED_CONTROLS:
+                            player.Storage.mirroredControlEffect = true;
+                            player.Storage.mirroredControlEffectTime = DateTime.Now;
+                            break;
+                        case VisualModifierCommand.WIZARD_ATTACK:
+                            player.Storage.wizardEffect = true;
+                            player.Storage.wizardEffectTime = DateTime.Now;
+                            break;
+                    }
                 }
             }
         }

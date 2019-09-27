@@ -89,7 +89,7 @@ namespace Ow.Game.Objects.Players.Skills
                 {
                     var player = GameManager.GetPlayerById(id);
 
-                    if (player.Position.DistanceTo(Player.Position) < 500)
+                    if (player != null && player.Position.DistanceTo(Player.Position) < 500)
                     {
                         var abilityEffectActivationCommand = AbilityEffectActivationCommand.write(104, Player.Id, targetIds);
 

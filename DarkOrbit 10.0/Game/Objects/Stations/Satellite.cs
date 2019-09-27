@@ -141,6 +141,8 @@ namespace Ow.Game.Objects.Stations
                 foreach (var module in BattleStation.EquippedStationModule[Clan.Id])
                 {
                     if (module.LastCombatTime.AddSeconds(10) >= DateTime.Now) return;
+                    if (module.CurrentHitPoints >= module.MaxHitPoints) return;
+
                     module.Heal(7500);
                 }
 
@@ -158,7 +160,7 @@ namespace Ow.Game.Objects.Stations
 
             var damageType = (Type == StationModuleModule.LASER_LOW_RANGE || Type == StationModuleModule.LASER_MID_RANGE || Type == StationModuleModule.LASER_HIGH_RANGE) ? DamageType.LASER : (Type == StationModuleModule.ROCKET_LOW_ACCURACY || Type == StationModuleModule.ROCKET_MID_ACCURACY) ? DamageType.ROCKET : DamageType.LASER;
 
-            var cooldown = 1;
+            var cooldown = (Type == StationModuleModule.ROCKET_LOW_ACCURACY || Type == StationModuleModule.ROCKET_MID_ACCURACY) ? 2 : 1;
 
             if (target.Position.DistanceTo(Position) < GetRange())
             {
@@ -234,10 +236,24 @@ namespace Ow.Game.Objects.Stations
                         SendCommandToInRangeCharacters(attackHitCommand);
                     }
 
-                    if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints == 0)
+                    if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints <= 0)
                         target.Destroy(this, DestructionType.MISC);
                     else
-                        target.CurrentHitPoints -= damageHp;
+                    {
+                        if (target.CurrentNanoHull > 0)
+                        {
+                            if (target.CurrentNanoHull - damageHp < 0)
+                            {
+                                var nanoDamage = damageHp - target.CurrentNanoHull;
+                                target.CurrentNanoHull = 0;
+                                target.CurrentHitPoints -= nanoDamage;
+                            }
+                            else
+                                target.CurrentNanoHull -= damageHp;
+                        }
+                        else
+                            target.CurrentHitPoints -= damageHp;
+                    }
 
                     target.CurrentShieldPoints -= damageShd;
                     target.LastCombatTime = DateTime.Now;

@@ -46,8 +46,8 @@ namespace Ow.Game.Objects.Players.Skills
                 Player.Storage.Venom = true;
                 Player.Storage.UnderVenomEntity = target;
 
-                Player.AddVisualModifier(new VisualModifierCommand(Player.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
-                target.AddVisualModifier(new VisualModifierCommand(target.Id, VisualModifierCommand.SINGULARITY, 0, "", 0, true));
+                Player.AddVisualModifier(VisualModifierCommand.SINGULARITY, 0, "", 0, true);
+                target.AddVisualModifier(VisualModifierCommand.SINGULARITY, 0, "", 0, true);
 
                 Player.SendCooldown(LootId, Duration, true);
                 Active = true;

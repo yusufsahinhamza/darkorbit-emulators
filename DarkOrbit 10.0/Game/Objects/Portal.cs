@@ -1,6 +1,8 @@
-﻿using Ow.Game.Movements;
+﻿using Newtonsoft.Json;
+using Ow.Game.Movements;
 using Ow.Game.Objects.Stations;
 using Ow.Managers;
+using Ow.Managers.MySQLManager;
 using Ow.Net.netty.commands;
 using Ow.Net.netty.handlers;
 using Ow.Utils;
@@ -46,37 +48,56 @@ namespace Ow.Game.Objects
 
         public override async void Click(GameSession gameSession)
         {
-            var player = gameSession.Player;
-            var pet = player.Pet.Activated;
-            var gearId = player.Pet.GearId;
-            var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
-
-            if (!Working || GameManager.GetSpacemap(TargetSpaceMapId) == null || TargetPosition == null) return;
-            if (player.Storage.Jumping) return;
-
-            player.Storage.Jumping = true;
-
-            player.Pet.Deactivate(true);
-            player.Spacemap.RemoveCharacter(player);
-            player.CurrentInRangePortalId = -1;
-            player.Deselection();
-            player.Storage.InRangeAssets.Clear();
-            player.InRangeCharacters.Clear();
-            player.SetPosition(TargetPosition);
-
-            var targetSpacemap = GameManager.GetSpacemap(TargetSpaceMapId);
-            player.Spacemap = targetSpacemap;
-
-            player.SendCommand(apc);
-            await Task.Delay(JUMP_DELAY);
-
-            player.Spacemap.AddAndInitPlayer(player);
-            player.Storage.Jumping = false;
-
-            if (pet)
+            try
             {
-                player.Pet.Activate();
-                player.Pet.SwitchGear(gearId);
+                var player = gameSession.Player;
+                var pet = player.Pet.Activated;
+                var gearId = player.Pet.GearId;
+                var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
+
+                if (!Working || GameManager.GetSpacemap(TargetSpaceMapId) == null || TargetPosition == null) return;
+                if (player.Storage.Jumping) return;
+
+                player.Storage.Jumping = true;
+
+                player.Pet.Deactivate(true);
+                player.Spacemap.RemoveCharacter(player);
+                player.CurrentInRangePortalId = -1;
+                player.Deselection();
+                player.Storage.InRangeAssets.Clear();
+                player.InRangeCharacters.Clear();
+                player.SetPosition(TargetPosition);
+
+                var targetSpacemap = GameManager.GetSpacemap(TargetSpaceMapId);
+                player.Spacemap = targetSpacemap;
+
+                /*
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    var result = mySqlClient.ExecuteQueryRow($"SELECT info FROM player_accounts WHERE userId = {player.Id}");
+                    dynamic info = JsonConvert.DeserializeObject(result["info"].ToString());
+
+                    info["MapID"] = player.Spacemap.Id;
+
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Info = '{JsonConvert.SerializeObject(info)}' WHERE userId = {player.Id}");
+                }
+                */
+
+                player.SendCommand(apc);
+                await Task.Delay(JUMP_DELAY);
+
+                player.Spacemap.AddAndInitPlayer(player);
+                player.Storage.Jumping = false;
+
+                if (pet)
+                {
+                    player.Pet.Activate();
+                    player.Pet.SwitchGear(gearId);
+                }
+            }
+            catch (Exception e)
+            {
+                Out.WriteLine("Click void exception: " + e, "Portal.cs");
             }
         }
 

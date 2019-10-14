@@ -14,6 +14,7 @@ using Ow.Game.Objects.Players;
 using Ow.Net.netty;
 using System.Threading.Tasks;
 using Ow.Managers.MySQLManager;
+using Newtonsoft.Json;
 
 namespace Ow.Game.Objects
 {
@@ -22,7 +23,7 @@ namespace Ow.Game.Objects
         public int RankId { get; set; }
         public bool Premium { get; set; }
         public string Title { get; set; }
-        public int Level { get; set; }
+        public int Level = 1; //TODO
 
         public int CurrentInRangePortalId = -1;
         public int CurrentShieldConfig1 { get; set; }
@@ -503,7 +504,7 @@ namespace Ow.Game.Objects
 
             if (permanent)
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '{Title}' WHERE userID = {Id}");
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '{Title}' WHERE userId = {Id}");
         }
 
         public byte[] GetBeaconCommand()
@@ -667,7 +668,7 @@ namespace Ow.Game.Objects
                 {
                     var character = InRangeCharacters.Values.Where(x => x.Id == entityId).FirstOrDefault();
 
-                    if (character != null)
+                    if (character != null && !character.Destroyed)
                     {
                         if (character is Player player && (player.AttackManager.EmpCooldown.AddMilliseconds(TimeManager.EMP_DURATION) > DateTime.Now)) return;
                         Selected = character;
@@ -688,7 +689,7 @@ namespace Ow.Game.Objects
                 {
                     var asset = Storage.InRangeAssets.Values.Where(x => x.Id == entityId).FirstOrDefault();
 
-                    if (asset != null && (asset is BattleStation || asset is Satellite))
+                    if (asset != null && (asset is BattleStation || asset is Satellite) && !asset.Destroyed)
                     {
                         Selected = asset;
 
@@ -696,7 +697,7 @@ namespace Ow.Game.Objects
                             asset.Id,
                             asset.GetAssetType(),
                             asset is Satellite satellite ? satellite.DesignId : 0,
-                            0,
+                            3,
                             asset.CurrentHitPoints,
                             asset.MaxHitPoints,
                             asset.MaxShieldPoints > 0 ? true : false,
@@ -752,32 +753,43 @@ namespace Ow.Game.Objects
 
         public async void Jump(int mapId, Position targetPosition)
         {
-            var player = this;
-            var pet = player.Pet.Activated;
-            var gearId = player.Pet.GearId;
+            var pet = Pet.Activated;
+            var gearId = Pet.GearId;
 
-            player.Storage.Jumping = true;
+            Storage.Jumping = true;
 
-            player.Pet.Deactivate(true);
-            player.Spacemap.RemoveCharacter(player);
-            player.CurrentInRangePortalId = -1;
-            player.Deselection();
-            player.Storage.InRangeAssets.Clear();
-            player.InRangeCharacters.Clear();
-            player.SetPosition(targetPosition);
+            Pet.Deactivate(true);
+            Spacemap.RemoveCharacter(this);
+            CurrentInRangePortalId = -1;
+            Deselection();
+            Storage.InRangeAssets.Clear();
+            InRangeCharacters.Clear();
+            SetPosition(targetPosition);
 
             var targetSpacemap = GameManager.GetSpacemap(mapId);
-            player.Spacemap = targetSpacemap;
+            Spacemap = targetSpacemap;
+
+            /*
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                var result = mySqlClient.ExecuteQueryRow($"SELECT info FROM player_accounts WHERE userId = {Id}");
+                dynamic info = JsonConvert.DeserializeObject(result["info"].ToString());
+
+                info["MapID"] = Spacemap.Id;
+
+                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Info = '{JsonConvert.SerializeObject(info)}' WHERE userId = {Id}");
+            }
+            */
 
             await Task.Delay(Portal.JUMP_DELAY);
 
-            player.Spacemap.AddAndInitPlayer(player);
-            player.Storage.Jumping = false;
+            Spacemap.AddAndInitPlayer(this);
+            Storage.Jumping = false;
 
             if (pet)
             {
-                player.Pet.Activate();
-                player.Pet.SwitchGear(gearId);
+                Pet.Activate();
+                Pet.SwitchGear(gearId);
             }
         }
 
@@ -883,33 +895,41 @@ namespace Ow.Game.Objects
         public void ChangeData(DataType dataType, int amount, ChangeType changeType = ChangeType.INCREASE)
         {
             if (amount == 0) return;
-
             amount = Convert.ToInt32(amount);
+
+            using (var mySqlClient = SqlDatabaseManager.GetClient())
+            {
+                var result = mySqlClient.ExecuteQueryRow($"SELECT data FROM player_accounts WHERE userId = {Id}");
+                Data = JsonConvert.DeserializeObject<DataBase>(result["data"].ToString());
+            }
+
             switch (dataType)
             {
                 case DataType.URIDIUM:
                     Data.uridium = (changeType == ChangeType.INCREASE ? (Data.uridium + amount) : (Data.uridium - amount));
                     if (Data.uridium < 0) Data.uridium = 0;
-                    SendPacket("0|LM|ST|URI|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.uridium);
+                    SendPacket($"0|LM|ST|URI|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.uridium}");
                     break;
                 case DataType.CREDITS:
                     Data.credits = (changeType == ChangeType.INCREASE ? (Data.credits + amount) : (Data.credits - amount));
                     if (Data.credits < 0) Data.credits = 0;
-                    SendPacket("0|LM|ST|CRE|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.credits);
+                    SendPacket($"0|LM|ST|CRE|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.credits}");
                     break;
                 case DataType.HONOR:
                     Data.honor = (changeType == ChangeType.INCREASE ? (Data.honor + amount) : (Data.honor - amount));
-                    SendPacket("0|LM|ST|HON|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.honor);
+                    if (Data.honor < 0) Data.honor = 0;
+                    SendPacket($"0|LM|ST|HON|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.honor}");
                     break;
                 case DataType.EXPERIENCE:
                     Data.experience = (changeType == ChangeType.INCREASE ? (Data.experience + amount) : (Data.experience - amount));
                     if (Data.experience < 0) Data.experience = 0;
-                    SendPacket("0|LM|ST|EP|" + (changeType == ChangeType.DECREASE ? "-" : "") + "" + amount + "|" + Data.experience + "|" + Level);
+                    SendPacket($"0|LM|ST|EP|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.experience}|{Level}");
                     CheckNextLevel(Data.experience);
                     break;
                 case DataType.JACKPOT:
                     break;
             }
+
             QueryManager.SavePlayer.Information(this);
         }
 

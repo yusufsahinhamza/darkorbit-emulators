@@ -12,11 +12,11 @@ namespace Ow.Game.Objects.Players.Managers
 {
     public class DataBase
     {
-        public int uridium = 0;
-        public int credits = 0;
-        public int honor = 0;
-        public int experience = 0;
-        public int jackpot = 0;
+        public long uridium = 0;
+        public long credits = 0;
+        public long honor = 0;
+        public long experience = 0;
+        public long jackpot = 0;
     }
 
     public class SkillTreeBase
@@ -399,9 +399,9 @@ namespace Ow.Game.Objects.Players.Managers
         public static string[] AbilitiesCategory =
         {
             SkillManager.SPECTRUM, SkillManager.VENOM, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.DIMINISHER,
-            SkillManager.LIGHTNING, SkillManager.AEGIS_HP_REPAIR, SkillManager.AEGIS_SHIELD_REPAIR, SkillManager.AEGIS_REPAIR_POD
+            SkillManager.LIGHTNING, SkillManager.AEGIS_HP_REPAIR, SkillManager.AEGIS_SHIELD_REPAIR, SkillManager.AEGIS_REPAIR_POD,
+            SkillManager.CITADEL_DRAW_FIRE
             /*
-                SkillManager.CITADEL_DRAW_FIRE,
                 SkillManager.CITADEL_FORTIFY, SkillManager.CITADEL_PROTECTION, SkillManager.CITADEL_TRAVEL, SkillManager.DIMINISHER,
                 SkillManager.LIGHTNING, SkillManager.SENTINEL, SkillManager.SOLACE, SkillManager.SPEARHEAD_DOUBLE_MINIMAP,
                 SkillManager.SPEARHEAD_JAM_X, SkillManager.SPEARHEAD_TARGET_MARKER, SkillManager.SPEARHEAD_ULTIMATE_CLOAK,
@@ -470,7 +470,7 @@ namespace Ow.Game.Objects.Players.Managers
                 leftItems.Add("pet", "title_pet");
             if (EventManager.Spaceball.Active)
                 leftItems.Add("spaceball", "title_spaceball");
-            if (Player.RankId == 21)
+            if (Player.BoosterManager.Boosters.Count >= 1)
                 leftItems.Add("booster", "title_booster");
             if (Player.RankId == 21)
                 leftItems.Add("traininggrounds", "title_traininggrounds");
@@ -1134,12 +1134,16 @@ namespace Ow.Game.Objects.Players.Managers
                     return new CooldownTypeModule(CooldownTypeModule.short_1736);
                 case SkillManager.LIGHTNING:
                     return new CooldownTypeModule(CooldownTypeModule.SPEED_BUFF);
+
                 case SkillManager.AEGIS_HP_REPAIR:
                     return new CooldownTypeModule(CooldownTypeModule.short_2204);
                 case SkillManager.AEGIS_SHIELD_REPAIR:
                     return new CooldownTypeModule(CooldownTypeModule.short_2342);
                 case SkillManager.AEGIS_REPAIR_POD:
                     return new CooldownTypeModule(CooldownTypeModule.short_2419);
+
+                case SkillManager.CITADEL_DRAW_FIRE:
+                    return new CooldownTypeModule(CooldownTypeModule.short_255);
 
                 case AmmunitionManager.R_IC3:
                     return new CooldownTypeModule(CooldownTypeModule.short_1789);
@@ -1269,6 +1273,7 @@ namespace Ow.Game.Objects.Players.Managers
                 case SkillManager.AEGIS_HP_REPAIR:
                 case SkillManager.AEGIS_SHIELD_REPAIR:
                 case SkillManager.AEGIS_REPAIR_POD:
+                case SkillManager.CITADEL_DRAW_FIRE:
                     if (Player.Storage.Skills.ContainsKey(pItemId))
                     {
                         var cooldown = (DateTime.Now - Player.Storage.Skills[pItemId].cooldown).TotalMilliseconds;

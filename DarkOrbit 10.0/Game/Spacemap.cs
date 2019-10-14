@@ -52,11 +52,11 @@ namespace Ow.Game
         private List<PortalBase> PortalBase { get; set; }
         private List<StationBase> StationBase { get; set; }
 
-        public Spacemap(int mapID, string name, int factionID, List<PortalBase> portals, List<StationBase> stations, OptionsBase options)
+        public Spacemap(int mapId, string name, int factionId, List<PortalBase> portals, List<StationBase> stations, OptionsBase options)
         {
-            Id = mapID;
+            Id = mapId;
             Name = name;
-            FactionId = factionID;
+            FactionId = factionId;
             PortalBase = portals;
             StationBase = stations;
             Options = options;
@@ -110,10 +110,10 @@ namespace Ow.Game
             
             if (new int[] { 13, 14, 15 }.Contains(Id))
             {
-                for (int i = 0; i <= 85; i++)
-                    new BonusBox(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
-                //for (int i = 0; i <= 500; i++)
-                    //new GreenBooty(Position.Random(this, 1000, 19800, 1000, 11800), this, true);
+                for (int i = 0; i <= 125; i++)
+                    new BonusBox(Position.Random(this, 0, 20800, 0, 12800), this, true);
+                //for (int i = 0; i <= 25; i++)
+                    //new GreenBooty(Position.Random(this, 0, 20800, 0, 12800), this, true);
             }
 
             if (Id == 101)
@@ -261,7 +261,7 @@ namespace Ow.Game
                     if (entity is Portal portal && !portal.Working)
                         status = MapAssetActionAvailableCommand.OFF;
 
-                    //check old = if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && !battleStation.InBuildingState && battleStation.Clan.Id != Player.Clan.Id)
+                    //TODO check old = if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && !battleStation.InBuildingState && battleStation.Clan.Id != Player.Clan.Id)
 
                     if (entity is BattleStation battleStation && battleStation.Clan.Id != 0 && battleStation.Clan.Id != Player.Clan.Id)
                         status = MapAssetActionAvailableCommand.OFF;
@@ -355,7 +355,6 @@ namespace Ow.Game
         public void AddAndInitPlayer(Player player)
         {
             AddCharacter(player);
-            LoginRequestHandler.SendSettings(player, false);
             LoginRequestHandler.SendPlayer(player);
         }
 

@@ -79,6 +79,7 @@ namespace Ow.Net.netty.handlers
 
                 if (Player.Spacemap == null || Player.Position == null || GameManager.GetSpacemap(Player.Spacemap.Id) == null)
                 {
+                    Player.SetCurrentCooldowns();
                     Player.CurrentHitPoints = Player.MaxHitPoints;
                     Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;
                     Player.CurrentShieldConfig2 = Player.Equipment.Config2Shield;
@@ -92,8 +93,9 @@ namespace Ow.Net.netty.handlers
 
                 Player.Spacemap.AddCharacter(Player);
 
-                Program.TickManager.AddTick(GameSession.Player);
+                Program.TickManager.AddTick(Player);
 
+                QueryManager.SavePlayer.Information(Player);
                 Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)
@@ -194,8 +196,6 @@ namespace Ow.Net.netty.handlers
                 */
 
                 player.SendCommand(player.GetBeaconCommand());
-
-                QueryManager.SavePlayer.Information(player);
             }
             catch (Exception e)
             {
@@ -203,13 +203,10 @@ namespace Ow.Net.netty.handlers
             }
         }
 
-        public static void SendSettings(Player player, bool isLogin = true)
+        public static void SendSettings(Player player)
         {
             try
             {
-                if (isLogin)
-                    player.SetCurrentCooldowns();
-
                 player.SettingsManager.SendUserKeyBindingsUpdateCommand();
                 player.SettingsManager.SendUserSettingsCommand();
                 player.SettingsManager.SendMenuBarsCommand();

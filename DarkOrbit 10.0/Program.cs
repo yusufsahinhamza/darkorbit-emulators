@@ -25,6 +25,7 @@ namespace Ow
 
         public static void Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             CheckMySQLConnection();
             LoadDatabase();
             InitiateServer();
@@ -106,6 +107,13 @@ namespace Ow
             {
                 case "restart":
                     GameManager.Restart(Convert.ToInt32(splitted[1]));
+                    break;
+                case "list_players":
+                    foreach (var gameSession in GameManager.GameSessions.Values)
+                    {
+                        if (gameSession != null)
+                            Out.WriteLine($"{gameSession.Player.Name} ({gameSession.Player.Id})");
+                    }
                     break;
             }        
         }

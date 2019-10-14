@@ -96,6 +96,9 @@ namespace Ow.Game.Objects.Players
         public bool underPLD8 = false;
         public DateTime underPLD8Time = new DateTime();
 
+        public bool underDrawFire = false;
+        public DateTime underDrawFireTime = new DateTime();
+
         public Storage(Player player) { Player = player; }
 
         public void Tick()
@@ -114,6 +117,8 @@ namespace Ow.Game.Objects.Players
                 DeactiveMirroredControlEffect();
             if (wizardEffect && wizardEffectTime.AddMilliseconds(TimeManager.WIZARD_DURATION) < DateTime.Now)
                 DeactiveWizardEffect();
+            if (underDrawFire && underDrawFireTime.AddMilliseconds(TimeManager.CITADEL_DRAWFIRE_DURATION) < DateTime.Now)
+                DeactiveDrawFireEffect();
         }
 
         public void DeactivePLD8()
@@ -192,6 +197,15 @@ namespace Ow.Game.Objects.Players
             {
                 wizardEffect = false;
                 Player.RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
+            }
+        }
+
+        public void DeactiveDrawFireEffect()
+        {
+            if (underDrawFire)
+            {
+                underDrawFire = false;
+                Player.RemoveVisualModifier(VisualModifierCommand.DRAW_FIRE_TARGET);
             }
         }
     }

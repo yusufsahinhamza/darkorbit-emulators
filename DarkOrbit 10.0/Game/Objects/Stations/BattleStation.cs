@@ -45,10 +45,10 @@ namespace Ow.Game.Objects.Stations
         {
             ShieldAbsorption = 0.8;
 
-            MaxHitPoints = 5850000;
+            MaxHitPoints = 100000;
             CurrentHitPoints = MaxHitPoints;
-            //CurrentShieldPoints = 250000;
-            //MaxShieldPoints = 500000;
+            CurrentShieldPoints = 100000;
+            MaxShieldPoints = 100000;
 
             InBuildingState = inBuildingState;
             BuildTimeInMinutes = buildTimeInMinutes;

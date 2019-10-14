@@ -22,7 +22,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public override void Send()
         {
-            if (Player.Ship.Id == 63 && cooldown.AddMilliseconds(Cooldown) < DateTime.Now || Player.Storage.GodMode)
+            if (Player.Ship.Id == Ship.GOLIATH_SOLACE && cooldown.AddMilliseconds(Cooldown) < DateTime.Now || Player.Storage.GodMode)
             {
                 Player.SkillManager.DisableAllSkills();
 

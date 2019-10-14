@@ -70,10 +70,10 @@ namespace Ow.Game.Objects.Stations
             SlotId = slotId;
             Type = type;
 
-            MaxHitPoints = 1560000;
+            MaxHitPoints = 100000;
             CurrentHitPoints = MaxHitPoints;
-            //CurrentShieldPoints = 250000;
-            //MaxShieldPoints = 500000;
+            CurrentShieldPoints = 100000;
+            MaxShieldPoints = 100000;
 
             Program.TickManager.AddTick(this);
         }
@@ -221,7 +221,6 @@ namespace Ow.Game.Objects.Stations
                     {
                         SendCommandToInRangeCharacters(AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 1), target);
 
-                        //TODO check
                         if (target is Player)
                             (target as Player).SendCommand(AttackMissedCommand.write(new AttackTypeModule((short)damageType), target.Id, 0));
                     }
@@ -310,29 +309,6 @@ namespace Ow.Game.Objects.Stations
             }
 
             Program.TickManager.RemoveTick(this);
-        }
-
-        public void Delete()
-        {
-           
-
-      
-            /*
-            else
-            {
-                using (var mySqlClient = SqlDatabaseManager.GetClient())
-                {
-                    Console.WriteLine("xxx");
-                    string sql = $"SELECT * FROM player_equipment WHERE userId = {OwnerId} ";
-                    var querySet = mySqlClient.ExecuteQueryRow(sql);
-
-                    var modules = JsonConvert.DeserializeObject<List<ModuleBase>>(querySet["modules"].ToString());
-                    modules.RemoveAt(ItemId);
-
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_equipment SET modules = '{JsonConvert.SerializeObject(modules)}' WHERE userId = {OwnerId}");
-                }
-            }
-            */
         }
 
         public int GetRange()

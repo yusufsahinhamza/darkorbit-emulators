@@ -33,31 +33,37 @@ namespace Ow.Game.Objects.Players.Managers
         public void InitiateSkills()
         {
             Player.Storage.Skills.Clear();
-            switch (Player.Ship.Id)
+
+            if (Ship.SENTINELS.Contains(Player.Ship.Id))
+                Player.Storage.Skills.Add(SkillManager.SENTINEL, new Sentinel(Player));
+            else if (Ship.SPECTRUMS.Contains(Player.Ship.Id))
+                Player.Storage.Skills.Add(SkillManager.SPECTRUM, new Spectrum(Player));
+            else if (Ship.DIMINISHERS.Contains(Player.Ship.Id))
+                Player.Storage.Skills.Add(SkillManager.DIMINISHER, new Diminisher(Player));
+            else
             {
-                case Ship.GOLIATH_SENTINEL:
-                    Player.Storage.Skills.Add(SkillManager.SENTINEL, new Sentinel(Player));
-                    break;
-                case Ship.GOLIATH_DIMINISHER:
-                    Player.Storage.Skills.Add(SkillManager.DIMINISHER, new Diminisher(Player));
-                    break;
-                case Ship.GOLIATH_SOLACE:
-                    Player.Storage.Skills.Add(SkillManager.SOLACE, new Solace(Player));
-                    break;
-                case Ship.GOLIATH_SPECTRUM:
-                    Player.Storage.Skills.Add(SkillManager.SPECTRUM, new Spectrum(Player));
-                    break;
-                case Ship.GOLIATH_VENOM:
-                    Player.Storage.Skills.Add(SkillManager.VENOM, new Venom(Player));
-                    break;
-                case Ship.VENGEANCE_LIGHTNING:
-                    Player.Storage.Skills.Add(SkillManager.LIGHTNING, new Afterburner(Player));
-                    break;
-                case Ship.AEGIS:
-                    Player.Storage.Skills.Add(SkillManager.AEGIS_HP_REPAIR, new AegisHpRepair(Player));
-                    Player.Storage.Skills.Add(SkillManager.AEGIS_SHIELD_REPAIR, new AegisShieldRepair(Player));
-                    Player.Storage.Skills.Add(SkillManager.AEGIS_REPAIR_POD, new AegisRepairPod(Player));
-                    break;
+                switch (Player.Ship.Id)
+                {
+                    case Ship.GOLIATH_SOLACE:
+                        Player.Storage.Skills.Add(SkillManager.SOLACE, new Solace(Player));
+                        break;
+                    case Ship.GOLIATH_VENOM:
+                        Player.Storage.Skills.Add(SkillManager.VENOM, new Venom(Player));
+                        break;
+                    case Ship.VENGEANCE_LIGHTNING:
+                        Player.Storage.Skills.Add(SkillManager.LIGHTNING, new Afterburner(Player));
+                        break;
+                    case Ship.AEGIS:
+                    case Ship.AEGIS_VETERAN:
+                    case Ship.AEGIS_ELITE:
+                        Player.Storage.Skills.Add(SkillManager.AEGIS_HP_REPAIR, new AegisHpRepair(Player));
+                        Player.Storage.Skills.Add(SkillManager.AEGIS_SHIELD_REPAIR, new AegisShieldRepair(Player));
+                        Player.Storage.Skills.Add(SkillManager.AEGIS_REPAIR_POD, new AegisRepairPod(Player));
+                        break;
+                    case Ship.CITADEL:
+                        Player.Storage.Skills.Add(SkillManager.CITADEL_DRAW_FIRE, new DrawFire(Player));
+                        break;
+                }
             }
         }
 

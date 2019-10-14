@@ -15,7 +15,19 @@ namespace Ow.Game.Objects.Players.Skills
         public override string LootId { get => SkillManager.AEGIS_HP_REPAIR; }
 
         public override int Duration { get => TimeManager.AEGIS_HP_REPAIR_DURATION; }
-        public override int Cooldown { get => TimeManager.AEGIS_HP_REPAIR_COOLDOWN; }
+
+        public override int Cooldown
+        {
+            get
+            {
+                var value = TimeManager.AEGIS_HP_REPAIR_COOLDOWN;
+
+                if (Player.Ship.Id == Ship.AEGIS_ELITE)
+                    value -= Maths.GetPercentage(value, 10);
+
+                return value;
+            }
+        }
 
         public AegisHpRepair(Player player) : base(player) { }
 
@@ -34,7 +46,7 @@ namespace Ow.Game.Objects.Players.Skills
 
         public override void Send()
         {
-            var aegisIds = new List<int> { 49, 157, 158 };
+            var aegisIds = new List<int> { Ship.AEGIS, Ship.AEGIS_VETERAN, Ship.AEGIS_ELITE };
 
             if (aegisIds.Contains(Player.Ship.Id) && (cooldown.AddMilliseconds(Duration + Cooldown) < DateTime.Now || Player.Storage.GodMode))
             {

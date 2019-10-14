@@ -34,7 +34,7 @@ namespace Ow.Managers
             public static void Information(Player player)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Data = '{JsonConvert.SerializeObject(player.Data)}', level = {player.Level}, nanohull = {player.CurrentNanoHull}  WHERE userID = {player.Id}");
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET data = '{JsonConvert.SerializeObject(player.Data)}', nanohull = {player.CurrentNanoHull}  WHERE userId = {player.Id}");
             }
 
             public static void Boosters(Player player)
@@ -74,7 +74,7 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var result = mySqlClient.ExecuteQueryRow($"SELECT shipName FROM player_accounts WHERE userID = {userId}");
+                var result = mySqlClient.ExecuteQueryRow($"SELECT shipName FROM player_accounts WHERE userId = {userId}");
                 return result["shipName"].ToString();
             }
         }
@@ -83,8 +83,8 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var result = mySqlClient.ExecuteQueryRow($"SELECT sessionID FROM player_accounts WHERE userID = {userId}");
-                return sessionId == result["sessionID"].ToString();
+                var result = mySqlClient.ExecuteQueryRow($"SELECT sessionId FROM player_accounts WHERE userId = {userId}");
+                return sessionId == result["sessionId"].ToString();
             }
         }
 
@@ -104,21 +104,20 @@ namespace Ow.Managers
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userID = {playerId}");
+                    var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userId = {playerId}");
                     foreach (DataRow row in data.Rows)
                     {
                         var name = Convert.ToString(row["shipName"]);
-                        var ship = GameManager.GetShip(Convert.ToInt32(row["shipID"]));
-                        var factionId = Convert.ToInt32(row["factionID"]);
+                        var ship = GameManager.GetShip(Convert.ToInt32(row["shipId"]));
+                        var factionId = Convert.ToInt32(row["factionId"]);
                         var rankId = Convert.ToInt32(row["rankID"]);
                         var clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
 
                         player = new Player(playerId, name, clan, factionId, rankId, ship);
                         player.Pet.Name = Convert.ToString(row["petName"]);
-                        player.Level = Convert.ToInt32(row["level"]);
                         player.Premium = Convert.ToBoolean(row["premium"]);
                         player.Title = Convert.ToString(row["title"]);
-                        player.Data = JsonConvert.DeserializeObject<DataBase>(row["Data"].ToString());
+                        player.Data = JsonConvert.DeserializeObject<DataBase>(row["data"].ToString());
                         player.CurrentNanoHull = Convert.ToInt32(row["nanohull"]);
                     }
 
@@ -253,22 +252,27 @@ namespace Ow.Managers
                 var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_battlestations");
                 foreach (DataRow row in data.Rows)
                 {
-                    string name = Convert.ToString(row["name"]);
-                    int mapId = Convert.ToInt32(row["mapId"]);
-                    int clanId = Convert.ToInt32(row["clanId"]);
-                    int positionX = Convert.ToInt32(row["positionX"]);
-                    int positionY = Convert.ToInt32(row["positionY"]);
-                    var modules = JsonConvert.DeserializeObject<List<EquippedModuleBase>>(row["modules"].ToString());
-                    var inBuildingState = Convert.ToBoolean(Convert.ToInt32(row["inBuildingState"]));
-                    var buildTimeInMinutes = Convert.ToInt32(row["buildTimeInMinutes"]);
-                    var buildTime = DateTime.Parse(row["buildTime"].ToString());
-                    var deflectorActive = Convert.ToBoolean(Convert.ToInt32(row["deflectorActive"]));
-                    var deflectorSecondsLeft = Convert.ToInt32(row["deflectorSecondsLeft"]);
-                    var deflectorTime = DateTime.Parse(row["deflectorTime"].ToString());
-                    var visualModifiers = JsonConvert.DeserializeObject<List<int>>(row["visualModifiers"].ToString());
+                    bool active = Convert.ToBoolean(row["active"]);
 
-                    var battleStation = new BattleStation(name, GameManager.GetSpacemap(mapId), new Position(positionX, positionY), GameManager.GetClan(clanId), modules, inBuildingState, buildTimeInMinutes, buildTime, deflectorActive, deflectorSecondsLeft, deflectorTime, visualModifiers);
-                    GameManager.BattleStations.TryAdd(battleStation.Name, battleStation);
+                    if (active)
+                    {
+                        string name = Convert.ToString(row["name"]);
+                        int mapId = Convert.ToInt32(row["mapId"]);
+                        int clanId = Convert.ToInt32(row["clanId"]);
+                        int positionX = Convert.ToInt32(row["positionX"]);
+                        int positionY = Convert.ToInt32(row["positionY"]);
+                        var modules = JsonConvert.DeserializeObject<List<EquippedModuleBase>>(row["modules"].ToString());
+                        var inBuildingState = Convert.ToBoolean(Convert.ToInt32(row["inBuildingState"]));
+                        var buildTimeInMinutes = Convert.ToInt32(row["buildTimeInMinutes"]);
+                        var buildTime = DateTime.Parse(row["buildTime"].ToString());
+                        var deflectorActive = Convert.ToBoolean(Convert.ToInt32(row["deflectorActive"]));
+                        var deflectorSecondsLeft = Convert.ToInt32(row["deflectorSecondsLeft"]);
+                        var deflectorTime = DateTime.Parse(row["deflectorTime"].ToString());
+                        var visualModifiers = JsonConvert.DeserializeObject<List<int>>(row["visualModifiers"].ToString());
+
+                        var battleStation = new BattleStation(name, GameManager.GetSpacemap(mapId), new Position(positionX, positionY), GameManager.GetClan(clanId), modules, inBuildingState, buildTimeInMinutes, buildTime, deflectorActive, deflectorSecondsLeft, deflectorTime, visualModifiers);
+                        GameManager.BattleStations.TryAdd(battleStation.Name, battleStation);
+                    }
                 }
             }
         }
@@ -294,19 +298,18 @@ namespace Ow.Managers
 
         public static void LoadClans()
         {
-            GameManager.Clans.TryAdd(0, new Clan(0, "", "", 0, 0));
+            GameManager.Clans.TryAdd(0, new Clan(0, "", "", 0));
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_clan");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable("SELECT * FROM server_clans");
                 foreach (DataRow row in data.Rows)
                 {
-                    int id = Convert.ToInt32(row["clanID"]);
+                    int id = Convert.ToInt32(row["id"]);
                     string name = Convert.ToString(row["name"]);
                     string tag = Convert.ToString(row["tag"]);
-                    int rankPoints = Convert.ToInt32(row["rankPoints"]);
-                    int factionId = Convert.ToInt32(row["factionID"]);
+                    int factionId = Convert.ToInt32(row["factionId"]);
 
-                    var clan = new Clan(id, name, tag, factionId, rankPoints);
+                    var clan = new Clan(id, name, tag, factionId);
                     GameManager.Clans.TryAdd(clan.Id, clan);
                     LoadClanDiplomacy(clan);
                 }

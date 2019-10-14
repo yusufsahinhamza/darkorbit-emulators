@@ -52,7 +52,7 @@ namespace Ow.Game.Objects
             {
                 if (character is Player player && player.Position.DistanceTo(Position) < ExplodeRange)
                 {
-                    if (!Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == Player))
+                    if (Player == player || !Duel.InDuel(player) || (Duel.InDuel(player) && player.Storage.Duel?.GetOpponent(player) == Player))
                         Action(player);
                 }
             }

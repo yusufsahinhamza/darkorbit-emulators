@@ -31,33 +31,7 @@ namespace Ow.Game.Objects.Collectables
 
             }
 
-
-
-
-
-            /*
-             * 
-             * 
-             * 
-             * [18:16, 15.09.2019] ERSİN: Yeşil kutudan random credi uri
-[18:16, 15.09.2019] ERSİN: Booster
-[18:16, 15.09.2019] ERSİN: Çok düşük olasılık apis parçası  zeus parçası lf4
-             * 
-             * 
-             * */
-
-
-
-
-
-
-
-
-
-
-
-
-            //QueryManager.SavePlayer.Information(player);
+            QueryManager.SavePlayer.Information(player);
         }
 
         public override byte[] GetCollectableCreateCommand()

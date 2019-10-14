@@ -102,15 +102,14 @@ namespace Ow.Game.Objects
 
             if (this is Player player)
             {
+                player.SendCommand(ShipDeselectionCommand.write());
                 player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
                 player.Group?.UpdateTarget(player, new List<command_i3O> { new GroupPlayerTargetModule(new GroupPlayerShipModule(GroupPlayerShipModule.NONE), "", new GroupPlayerInformationsModule(0, 0, 0, 0, 0, 0)) });
 
                 if (emp)
                 {
-                    string empMessagePacket = "0|A|STM|msg_own_targeting_harmed";
-                    player.SendPacket(empMessagePacket);
-                    player.SendCommand(ShipDeselectionCommand.write());
-                    player.SendPacket("0|UI|MM|NOISE");
+                    player.SendPacket("0|A|STM|msg_own_targeting_harmed");               
+                    player.SendPacket("0|UI|MM|NOISE|1");
                 }
             }
         }
@@ -188,7 +187,7 @@ namespace Ow.Game.Objects
 
             var destroyCommand = ShipDestroyedCommand.write(Id, 0);
 
-            if (this is Activatable && (this is Satellite && (this as Satellite).BattleStation.AssetTypeId == AssetTypeModule.BATTLESTATION))
+            if (this is Activatable)
                 GameManager.SendCommandToMap(Spacemap.Id, destroyCommand);
             else if (this is Character)
                 SendCommandToInRangePlayers(destroyCommand);
@@ -223,10 +222,7 @@ namespace Ow.Game.Objects
                     GameManager.SendPacketToAll($"0|A|STM|msg_station_destroyed|%MAP%|{Spacemap.Name}|%LOSER%|{battleStation.Clan.Name}|%STATION%|{battleStation.AsteroidName}");
                 }
 
-                foreach (var module in battleStation.EquippedStationModule[battleStation.Clan.Id])
-                    module.Destroy(destroyer, destructionType);
 
-                battleStation.VisualModifiers.Clear();
                 battleStation.EquippedStationModule.Remove(battleStation.Clan.Id);
                 battleStation.Clan = GameManager.GetClan(0);
                 battleStation.Name = battleStation.AsteroidName;
@@ -234,10 +230,15 @@ namespace Ow.Game.Objects
                 battleStation.FactionId = 0;
                 battleStation.BuildTimeInMinutes = 0;
                 battleStation.AssetTypeId = AssetTypeModule.ASTEROID;
+                battleStation.CurrentHitPoints = battleStation.MaxHitPoints;
+                battleStation.CurrentShieldPoints = battleStation.MaxShieldPoints;
 
                 Program.TickManager.RemoveTick(battleStation);
 
+                //TODO check
+                GameManager.SendCommandToMap(Spacemap.Id, AssetRemoveCommand.write(battleStation.GetAssetType(), battleStation.Id));
                 GameManager.SendCommandToMap(Spacemap.Id, battleStation.GetAssetCreateCommand(0));
+
                 QueryManager.BattleStations.BattleStation(battleStation);
                 QueryManager.BattleStations.Modules(battleStation);
             }
@@ -253,7 +254,6 @@ namespace Ow.Game.Objects
                 satellite.CurrentHitPoints = 0;
                 satellite.CurrentShieldPoints = 0;
                 satellite.DesignId = 0;
-                Program.TickManager.RemoveTick(satellite);
 
                 if (satellite.BattleStation.Destroyed)
                 {
@@ -266,9 +266,8 @@ namespace Ow.Game.Objects
                 QueryManager.BattleStations.Modules(satellite.BattleStation);
             }
 
-            if (destructionType == DestructionType.PLAYER)
+            if (destroyer is Player destroyerPlayer && destructionType == DestructionType.PLAYER)
             {
-                var destroyerPlayer = destroyer as Player;
                 destroyerPlayer.Deselection();
 
                 int experience = 0;
@@ -277,7 +276,9 @@ namespace Ow.Game.Objects
                 int credits = 0;
 
                 bool reward = true;
-                var changeType = destroyerPlayer.TargetDefinition(this) ? ChangeType.INCREASE : ChangeType.DECREASE;
+                var changeType = ChangeType.INCREASE;
+
+                //TODO decrease
 
                 if (this is Character)
                 {
@@ -286,7 +287,7 @@ namespace Ow.Game.Objects
                     uridium = (this as Character).Ship.Rewards.Uridium;
 
                     var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
-                    if (count > 13 && !Duel.InDuel(destroyerPlayer))
+                    if (count >= 14 && !Duel.InDuel(destroyerPlayer))
                     {
                         reward = false;
                         destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
@@ -322,9 +323,11 @@ namespace Ow.Game.Objects
             }
 
             if (this is Character character)
+            {
                 Spacemap.RemoveCharacter(character);
+                CurrentHitPoints = 0;
+            }
 
-            CurrentHitPoints = 0;
             Deselection();
             InRangeCharacters.Clear();
             VisualModifiers.Clear();
@@ -346,21 +349,32 @@ namespace Ow.Game.Objects
             {
                 if (relationType != ClanRelationModule.AT_WAR)
                 {
-                    if ((target is Player || target is Pet) &&
-                        !(target is Pet && target as Pet == player.Pet) &&
-                        (target.FactionId == FactionId || target.Clan.Id == Clan.Id) &&
-                        (!EventManager.JackpotBattle.InEvent(player) &&
-                        !Duel.InDuel(player)))
+                    var attackable = true;
+                    var packet = "";
+
+                    if (target is Player)
                     {
-                        player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+                        if (!EventManager.JackpotBattle.InEvent(player) && !Duel.InDuel(player))
+                        {
+                            if (FactionId == target.FactionId)
+                                packet = "0|A|STD|You can't attack members of your own company!";
+                            else if (Clan.Id != 0 && target.Clan.Id != 0 && Clan.Id == target.Clan.Id)
+                                packet = "0|A|STD|You can't attack members of your own clan!";
 
-                        if (sendMessage)
-                            player.SendPacket("0|A|STD|You can't attack members of your own company!");
+                            if (packet != "")
+                                attackable = false;
+                        }
 
-                        return false;
+                        if (!attackable)
+                        {
+                            player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
+
+                            if (sendMessage)
+                                player.SendPacket(packet);
+
+                            return false;
+                        }
                     }
-                    else if (!(target is Pet && target as Pet == player.Pet) && (target.FactionId == FactionId || target.Clan.Id == Clan.Id || relationType == ClanRelationModule.ALLIED || relationType == ClanRelationModule.NON_AGGRESSION_PACT))
-                        return false;
                 }
 
                 if (target is Player targetPlayer && targetPlayer.Group != null)

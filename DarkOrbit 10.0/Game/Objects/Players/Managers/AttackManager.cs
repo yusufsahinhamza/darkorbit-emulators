@@ -341,6 +341,7 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.Storage.DeactiveR_RIC3();
                 Player.Storage.DeactiveDCR_250();
                 Player.Storage.DeactiveSLM_01();
+                Player.Storage.DeactiveDrawFireEffect();
 
                 string empPacket = "0|n|EMP|" + Player.Id;
                 Player.SendPacket(empPacket);

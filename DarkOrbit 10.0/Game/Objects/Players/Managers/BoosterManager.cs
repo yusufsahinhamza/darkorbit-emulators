@@ -29,7 +29,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public BoosterManager(Player player) : base(player) { }
 
-        public DateTime boosterTime = new DateTime();
+        private DateTime boosterTime = new DateTime();
         public void Tick()
         {
             if (boosterTime.AddSeconds(5) < DateTime.Now)
@@ -109,6 +109,9 @@ namespace Ow.Game.Objects.Players.Managers
             Player.SendCommand(AttributeBoosterUpdateCommand.write(boostedAttributes));
             Player.SendCommand(AttributeHitpointUpdateCommand.write(Player.CurrentHitPoints, Player.MaxHitPoints, Player.CurrentNanoHull, Player.MaxNanoHull));
             Player.SendCommand(AttributeShieldUpdateCommand.write(Player.CurrentShieldPoints, Player.MaxShieldPoints));
+
+            //TODO dont need every time
+            Player.SettingsManager.SendMenuBarsCommand();
         }
 
         public int GetPercentage(BoostedAttributeType boostedAttributeType)

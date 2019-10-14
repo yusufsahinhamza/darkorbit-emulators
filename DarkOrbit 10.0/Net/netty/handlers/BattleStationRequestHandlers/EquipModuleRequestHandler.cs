@@ -71,8 +71,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
 
                         if (battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION)
                         {
-                            var activatable = equippedModule as Activatable;
-                            equippedModule.Spacemap.Activatables.TryRemove(equippedModule.Id, out activatable);
+                            equippedModule.Spacemap.Activatables.TryRemove(equippedModule.Id, out var activatable);
                             GameManager.SendCommandToMap(equippedModule.Spacemap.Id, AssetRemoveCommand.write(equippedModule.GetAssetType(), equippedModule.Id));
                         }
                     }

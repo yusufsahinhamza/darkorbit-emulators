@@ -23,14 +23,35 @@ namespace Ow.Game.Objects
         public int RankId { get; set; }
         public bool Premium { get; set; }
         public string Title { get; set; }
-        public int Level = 1; //TODO
+
+        public int Level
+        {
+            get
+            {
+                short lvl = 1;
+                long expNext = 10000;
+
+                while (Data.experience >= expNext)
+                {
+                    expNext *= 2;
+                    lvl++;
+                }
+                
+                return lvl;
+            }
+            set
+            {
+                Level = value;
+            }
+        }
 
         public int CurrentInRangePortalId = -1;
         public int CurrentShieldConfig1 { get; set; }
         public int CurrentShieldConfig2 { get; set; }
         public int CurrentConfig { get; set; }
 
-        public Settings Settings = new Settings();
+        public SettingsBase Settings = new SettingsBase();
+        public DestructionsBase Destructions { get; set; }
         public EquipmentBase Equipment { get; set; }
         public DataBase Data { get; set; }
         public SkillTreeBase SkillTree = new SkillTreeBase();
@@ -908,22 +929,22 @@ namespace Ow.Game.Objects
                 case DataType.URIDIUM:
                     Data.uridium = (changeType == ChangeType.INCREASE ? (Data.uridium + amount) : (Data.uridium - amount));
                     if (Data.uridium < 0) Data.uridium = 0;
-                    SendPacket($"0|LM|ST|URI|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.uridium}");
+                    SendPacket($"0|LM|ST|URI|{(changeType == ChangeType.DECREASE ? "-" : "")}{amount}|{Data.uridium}");
                     break;
                 case DataType.CREDITS:
                     Data.credits = (changeType == ChangeType.INCREASE ? (Data.credits + amount) : (Data.credits - amount));
                     if (Data.credits < 0) Data.credits = 0;
-                    SendPacket($"0|LM|ST|CRE|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.credits}");
+                    SendPacket($"0|LM|ST|CRE|{(changeType == ChangeType.DECREASE ? "-" : "")}{amount}|{Data.credits}");
                     break;
                 case DataType.HONOR:
                     Data.honor = (changeType == ChangeType.INCREASE ? (Data.honor + amount) : (Data.honor - amount));
                     if (Data.honor < 0) Data.honor = 0;
-                    SendPacket($"0|LM|ST|HON|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.honor}");
+                    SendPacket($"0|LM|ST|HON|{(changeType == ChangeType.DECREASE ? "-" : "")}{amount}|{Data.honor}");
                     break;
                 case DataType.EXPERIENCE:
                     Data.experience = (changeType == ChangeType.INCREASE ? (Data.experience + amount) : (Data.experience - amount));
                     if (Data.experience < 0) Data.experience = 0;
-                    SendPacket($"0|LM|ST|EP|{(changeType == ChangeType.DECREASE ? " - " : "")}{amount}|{Data.experience}|{Level}");
+                    SendPacket($"0|LM|ST|EP|{(changeType == ChangeType.DECREASE ? "-" : "")}{amount}|{Data.experience}|{Level}");
                     CheckNextLevel(Data.experience);
                     break;
                 case DataType.JACKPOT:

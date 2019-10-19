@@ -358,6 +358,12 @@ namespace Ow.Chat
 
             else if (cmd == "/start_spaceball" && Permission == Permissions.ADMINISTRATOR)
             {
+                if (message.Split(' ').Length > 2)
+                {
+                    var limit = Convert.ToInt32(message.Split(' ')[1]);
+                    EventManager.Spaceball.Limit = limit;
+                }
+
                 EventManager.Spaceball.Start();
             }
             else if (cmd == "/stop_spaceball" && Permission == Permissions.ADMINISTRATOR)

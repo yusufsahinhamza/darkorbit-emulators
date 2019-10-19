@@ -25,11 +25,18 @@ namespace Ow
 
         public static void Main(string[] args)
         {
-            Console.OutputEncoding = Encoding.UTF8;
-            CheckMySQLConnection();
-            LoadDatabase();
-            InitiateServer();
-            KeepAlive();
+            try
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+                CheckMySQLConnection();
+                LoadDatabase();
+                InitiateServer();
+                KeepAlive();
+            } 
+            catch(Exception e)
+            {
+                Out.WriteLine("Main void exception: " + e, "Program.cs");
+            }
         }
 
         private static void KeepAlive()

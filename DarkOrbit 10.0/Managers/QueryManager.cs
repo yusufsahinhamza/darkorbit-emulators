@@ -34,7 +34,7 @@ namespace Ow.Managers
             public static void Information(Player player)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET data = '{JsonConvert.SerializeObject(player.Data)}', nanohull = {player.CurrentNanoHull}  WHERE userId = {player.Id}");
+                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET data = '{JsonConvert.SerializeObject(player.Data)}', nanohull = {player.CurrentNanoHull}, destructions = '{JsonConvert.SerializeObject(player.Destructions)}'  WHERE userId = {player.Id}");
             }
 
             public static void Boosters(Player player)
@@ -74,8 +74,8 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var result = mySqlClient.ExecuteQueryRow($"SELECT shipName FROM player_accounts WHERE userId = {userId}");
-                return result["shipName"].ToString();
+                var result = mySqlClient.ExecuteQueryRow($"SELECT pilotName FROM player_accounts WHERE userId = {userId}");
+                return result["pilotName"].ToString();
             }
         }
 
@@ -107,7 +107,7 @@ namespace Ow.Managers
                     var data = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_accounts WHERE userId = {playerId}");
                     foreach (DataRow row in data.Rows)
                     {
-                        var name = Convert.ToString(row["shipName"]);
+                        var name = Convert.ToString(row["pilotName"]);
                         var ship = GameManager.GetShip(Convert.ToInt32(row["shipId"]));
                         var factionId = Convert.ToInt32(row["factionId"]);
                         var rankId = Convert.ToInt32(row["rankID"]);
@@ -118,6 +118,7 @@ namespace Ow.Managers
                         player.Premium = Convert.ToBoolean(row["premium"]);
                         player.Title = Convert.ToString(row["title"]);
                         player.Data = JsonConvert.DeserializeObject<DataBase>(row["data"].ToString());
+                        player.Destructions = JsonConvert.DeserializeObject<DestructionsBase>(row["destructions"].ToString());
                         player.CurrentNanoHull = Convert.ToInt32(row["nanohull"]);
                     }
 

@@ -75,12 +75,12 @@ namespace Ow.Net
                         break;
                     case "IsOnline":
                         var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                        var online = player != null ? true : false;
+                        var online = player?.GameSession != null ? true : false;
                         socket.Send(Encoding.UTF8.GetBytes(online.ToString()));
                         break;
                     case "IsInEquipZone":
                         player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                        var inEquipZone = player != null ? player.Storage.IsInEquipZone : false;
+                        var inEquipZone = player?.GameSession != null ? player.Storage.IsInEquipZone : false;
                         socket.Send(Encoding.UTF8.GetBytes(inEquipZone.ToString()));
                         break;
                     case "BanUser":
@@ -121,6 +121,11 @@ namespace Ow.Net
                         break;
                     case "SkillTree":
                         UpgradeSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["SkillName"]));
+                        break;
+                    case "GetPosition":
+                        player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                        var spacemapName = player?.GameSession != null ? player.Spacemap.Name : "";
+                        socket.Send(Encoding.UTF8.GetBytes(spacemapName.ToString()));
                         break;
                 }
             }

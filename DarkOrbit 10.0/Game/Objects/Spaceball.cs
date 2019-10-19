@@ -147,7 +147,7 @@ namespace Ow.Game.Objects
 
             Respawn();
 
-            if (Mmo >= 20 || Eic >= 20 || Vru >= 20)
+            if (Mmo >= EventManager.Spaceball.Limit || Eic >= EventManager.Spaceball.Limit || Vru >= EventManager.Spaceball.Limit)
                 EventManager.Spaceball.Stop();
         }
 

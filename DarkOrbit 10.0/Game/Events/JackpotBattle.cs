@@ -135,7 +135,8 @@ namespace Ow.Game.Events
 
             var title = "title_jackpot_battle_winner";
             var oldWinner = GameManager.GameSessions.FirstOrDefault(x => x.Value?.Player.Title == title).Value?.Player;
-            if (oldWinner != null) oldWinner.SetTitle("");
+            if (oldWinner != null) 
+                oldWinner.SetTitle("");
 
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {

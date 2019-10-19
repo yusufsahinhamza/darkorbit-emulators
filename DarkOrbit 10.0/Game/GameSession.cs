@@ -71,10 +71,11 @@ namespace Ow.Game
         {
             try
             {
-                QueryManager.SavePlayer.Information(Player);
-                QueryManager.SavePlayer.Boosters(Player);
                 Player.UpdateCurrentCooldowns();
                 Player.SaveSettings();
+                QueryManager.SavePlayer.Information(Player);
+                QueryManager.SavePlayer.Boosters(Player);
+
                 Player.Storage.InRangeAssets.Clear();
                 Player.Storage.InRangeObjects.Clear();
                 Player.InRangeCharacters.Clear();
@@ -105,6 +106,7 @@ namespace Ow.Game
                 InProcessOfDisconnection = false;
                 Program.TickManager.RemoveTick(this);
                 GameManager.GameSessions.TryRemove(Player.Id, out var gameSession);
+
                 Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)

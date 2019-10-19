@@ -16,6 +16,7 @@ namespace Ow.Game.Events
         public bool Active = false;
         public int Type = Ship.SPACEBALL_SUMMER;
         public List<Portal> Portals = new List<Portal>();
+        public int Limit = 20;
 
         public void Start()
         {

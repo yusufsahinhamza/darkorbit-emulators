@@ -115,7 +115,7 @@ namespace Ow.Game
     {
         PLAYER = 0,
         NPC = 1,
-        RADITATION = 2,
+        RADIATION = 2,
         MINE = 3,
         MISC = 4,
         BATTLESTATION = 5,

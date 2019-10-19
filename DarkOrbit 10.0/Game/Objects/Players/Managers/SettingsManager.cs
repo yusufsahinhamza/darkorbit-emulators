@@ -10,6 +10,14 @@ using System.Linq;
 
 namespace Ow.Game.Objects.Players.Managers
 {
+    public class DestructionsBase
+    {
+        public int fpd = 0;
+        public int dbe = 0;
+        public int dbrz = 0;
+        public int de = 0;
+    }
+
     public class DataBase
     {
         public long uridium = 0;
@@ -220,7 +228,7 @@ namespace Ow.Game.Objects.Players.Managers
         public List<string> selectedCpus = new List<string> { CpuManager.AUTO_ROCKET_CPU, CpuManager.AUTO_HELLSTROM_CPU };
     }
 
-    class Settings
+    class SettingsBase
     {
         public AudioBase Audio = new AudioBase();
         public QualityBase Quality = new QualityBase();

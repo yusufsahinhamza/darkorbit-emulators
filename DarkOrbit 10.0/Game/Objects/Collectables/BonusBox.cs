@@ -19,9 +19,9 @@ namespace Ow.Game.Objects.Collectables
         {
             double rand = Randoms.random.NextDouble();
 
-            if (rand <= 0.50)
+            if (rand <= 0.45)
             {
-                var uridium = Randoms.random.Next(30, 150);
+                var uridium = Randoms.random.Next(30, 175);
                 player.ChangeData(DataType.URIDIUM, uridium);
             }
             else

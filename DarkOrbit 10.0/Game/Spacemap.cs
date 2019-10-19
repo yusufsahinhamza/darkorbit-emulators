@@ -391,8 +391,9 @@ namespace Ow.Game
             if (success)
             {
                 CharacterRemoved?.Invoke(this, new CharacterArgs(character));
-                foreach (var otherCharacter in character.InRangeCharacters.Values)
-                    otherCharacter.RemoveInRangeCharacter(character);
+
+                foreach (var otherCharacter in GameManager.GameSessions.Values.Where(x => x.Player.InRangeCharacters.ContainsKey(character.Id)))
+                    otherCharacter.Player.RemoveInRangeCharacter(character);
             }
             return success;
         }

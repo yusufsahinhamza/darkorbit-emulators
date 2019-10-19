@@ -141,14 +141,26 @@ namespace Ow.Game.Objects.Players.Managers
                     Damage(Player, enemy, damageType, damage, 0, false);
             }
 
-            var attackHitCommand =
-                AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
-                             enemy.Id, enemy.CurrentHitPoints,
-                             enemy.CurrentShieldPoints, enemy.CurrentNanoHull,
-                             damage, false);
+            if (enemy.Invincible || (enemy is Satellite satellite && satellite.BattleStation.Invincible) || (enemy is Player && !(enemy as Player).Attackable()))
+            {
+                damage = 0;
+            }
 
-            Player.SendCommand(attackHitCommand);
-            Player.SendCommandToInRangePlayers(attackHitCommand);
+            if (damage == 0)
+            {
+                if (damageType == DamageType.LASER)
+                    AttackMissed(enemy, damageType);
+            } 
+            else
+            {
+                var attackHitCommand = AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
+                 enemy.Id, enemy.CurrentHitPoints,
+                 enemy.CurrentShieldPoints, enemy.CurrentNanoHull,
+                 damage, false);
+
+                Player.SendCommand(attackHitCommand);
+                Player.SendCommandToInRangePlayers(attackHitCommand);
+            }
 
             RocketLauncher.CurrentLoad = 0;
             Player.SettingsManager.SendNewItemStatus(CpuManager.ROCKET_LAUNCHER);
@@ -681,7 +693,7 @@ namespace Ow.Game.Objects.Players.Managers
             if (toHp && toDestroy && (damage >= target.CurrentHitPoints || target.CurrentHitPoints <= 0))
             {
                 if (damageType == DamageType.RADIATION)
-                    target.Destroy(null, DestructionType.RADITATION);
+                    target.Destroy(null, DestructionType.RADIATION);
                 else if (damageType == DamageType.MINE && attacker.Attackers.Count <= 0)
                     target.Destroy(null, DestructionType.MINE);
                 else

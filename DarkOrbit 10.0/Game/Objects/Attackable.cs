@@ -313,13 +313,21 @@ namespace Ow.Game.Objects
                     destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
                 }
 
+                destroyerPlayer.Destructions.de++;
+
                 if (this is Player)
                 {
                     using (var mySqlClient = SqlDatabaseManager.GetClient())
                         mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
 
                     new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
+
+                    (this as Player).Destructions.dbe++;
                 }
+            } 
+            else if (destructionType == DestructionType.RADIATION && this is Player)
+            {
+                (this as Player).Destructions.dbrz++;
             }
 
             if (this is Character character)
@@ -390,7 +398,7 @@ namespace Ow.Game.Objects
                     }
                 }
 
-                if (target is Player && (target as Player).Storage.IsInDemilitarizedZone || target is Pet && (target as Pet).Owner.Storage.IsInDemilitarizedZone || (Duel.InDuel(player) && player.Storage.Duel.PeaceArea))
+                if ((target is Player && (target as Player).Storage.IsInDemilitarizedZone) || (Duel.InDuel(player) && player.Storage.Duel.PeaceArea))
                 {
                     player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
 

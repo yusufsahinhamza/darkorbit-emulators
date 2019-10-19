@@ -70,7 +70,12 @@ namespace Ow.Game.Objects
         public override void Tick()
         {
             if (!Destroyed)
-                Tick();
+            {
+                if (this is Player)
+                    ((Player)this).Tick();
+                else if (this is Spaceball)
+                    ((Spaceball)this).Tick();
+            }
         }
 
         public void SetPosition(Position targetPosition)

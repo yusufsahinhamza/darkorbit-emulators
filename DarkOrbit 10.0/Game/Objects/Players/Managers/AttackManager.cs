@@ -107,7 +107,7 @@ namespace Ow.Game.Objects.Players.Managers
                         var damage = RandomizeDamage(Player.RocketDamage, Player.RocketMissProbability);
                         Damage(Player, enemy, DamageType.ROCKET, damage, 0);
 
-                        String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.RocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.HeatseekingMissiles == 5 ? 1 : 0)}";
+                        String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
                         Player.SendPacket(rocketRunPacket);
                         Player.SendPacketToInRangePlayers(rocketRunPacket);
 
@@ -221,7 +221,7 @@ namespace Ow.Game.Objects.Players.Managers
 
             if (r_ic3Cooldown.AddMilliseconds(TimeManager.R_IC3_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
             {
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.RocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.HeatseekingMissiles == 5 ? 1 : 0)}";
+                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
                 Player.SendPacket(rocketRunPacket);
                 Player.SendPacketToInRangePlayers(rocketRunPacket);
 
@@ -254,7 +254,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 Player.CpuManager.DisableCloak();
 
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.RocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.HeatseekingMissiles == 5 ? 1 : 0)}";
+                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
                 Player.SendPacket(rocketRunPacket);
                 Player.SendPacketToInRangePlayers(rocketRunPacket);
 
@@ -291,7 +291,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 Player.CpuManager.DisableCloak();
 
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.RocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.HeatseekingMissiles == 5 ? 1 : 0)}";
+                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
                 Player.SendPacket(rocketRunPacket);
                 Player.SendPacketToInRangePlayers(rocketRunPacket);
 
@@ -320,7 +320,7 @@ namespace Ow.Game.Objects.Players.Managers
             {
                 Player.CpuManager.DisableCloak();
 
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.RocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.HeatseekingMissiles == 5 ? 1 : 0)}";
+                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
                 Player.SendPacket(rocketRunPacket);
                 Player.SendPacketToInRangePlayers(rocketRunPacket);
 

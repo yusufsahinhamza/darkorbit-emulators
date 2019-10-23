@@ -530,7 +530,7 @@ namespace Ow.Game.Objects
 
         public byte[] GetBeaconCommand()
         {
-            return BeaconCommand.write(1, 1, 1, 1, Storage.IsInDemilitarizedZone, Storage.RepairBotActivated, (SkillTree.Engineering == 5),
+            return BeaconCommand.write(1, 1, 1, 1, Storage.IsInDemilitarizedZone, Storage.RepairBotActivated, (SkillTree.engineering == 5),
                          "equipment_extra_repbot_rep-4", Storage.IsInRadiationZone);
         }
 
@@ -620,8 +620,6 @@ namespace Ow.Game.Objects
 
             foreach (var skill in Storage.Skills.Values)
                 Settings.Cooldowns[skill.LootId] = Storage.Skills[skill.LootId].cooldown.ToString();
-
-            QueryManager.SavePlayer.Settings(this, "cooldowns", Settings.Cooldowns);
         }
 
         public void SetCurrentCooldowns()
@@ -735,40 +733,40 @@ namespace Ow.Game.Objects
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.ToString());
+                Out.WriteLine("SelectEntity void exception " + e, "Player.cs");
+                Logger.Log("error_log", $"- [Player.cs] SelectEntity void exception: {e}");
             }
         }
 
         public async void ChangeShip(int shipId)
         {
-            var player = this;
-            var pet = player.Pet.Activated;
-            var gearId = player.Pet.GearId;
+            var pet = Pet.Activated;
+            var gearId = Pet.GearId;
 
-            if (player.Storage.Jumping) return;
+            if (Storage.Jumping) return;
 
-            player.Storage.Jumping = true;
+            Storage.Jumping = true;
 
-            player.Pet.Deactivate(true);
-            player.SkillManager.DisableAllSkills();
-            player.Ship = GameManager.GetShip(shipId);
-            player.SkillManager.InitiateSkills();
+            Pet.Deactivate(true);
+            SkillManager.DisableAllSkills();
+            Ship = GameManager.GetShip(shipId);
+            SkillManager.InitiateSkills(true);
 
-            player.Spacemap.RemoveCharacter(player);
-            player.CurrentInRangePortalId = -1;
-            player.Deselection();
-            player.Storage.InRangeAssets.Clear();
-            player.InRangeCharacters.Clear();
+            Spacemap.RemoveCharacter(this);
+            CurrentInRangePortalId = -1;
+            Deselection();
+            Storage.InRangeAssets.Clear();
+            InRangeCharacters.Clear();
 
             await Task.Delay(Portal.JUMP_DELAY);
 
-            player.Spacemap.AddAndInitPlayer(player);
-            player.Storage.Jumping = false;
+            Spacemap.AddAndInitPlayer(this);
+            Storage.Jumping = false;
 
             if (pet)
             {
-                player.Pet.Activate();
-                player.Pet.SwitchGear(gearId);
+                Pet.Activate();
+                Pet.SwitchGear(gearId);
             }
         }
 
@@ -824,6 +822,7 @@ namespace Ow.Game.Objects
                                               new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
                                               new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
                                               new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()));
+
             var portalRepairTime = (int)(15 - ((DateTime.Now - Storage.KillscreenPortalRepairTime).TotalSeconds));
             var portalRepairPrice = 200;
             var portalRepair =
@@ -833,6 +832,7 @@ namespace Ow.Game.Objects
                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
                                              new MessageLocalizedWildcardCommand(Data.uridium >= portalRepairPrice ? "btn_killscreen_repair_for_uri" : "btn_killscreen_payment", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule> { new MessageWildcardReplacementModule("%COUNT%", portalRepairPrice.ToString(), new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED)) }));
+
             var deathLocationRepairTime = (int)(30 - ((DateTime.Now - Storage.KillscreenDeathLocationRepairTime).TotalSeconds));
             var deathLocationRepairPrice = 300;
             var deathLocationRepair =
@@ -842,6 +842,7 @@ namespace Ow.Game.Objects
                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
                                              new MessageLocalizedWildcardCommand("btn_killscreen_repair_for_free", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule>()),
                                              new MessageLocalizedWildcardCommand(Data.uridium >= deathLocationRepairPrice ? "btn_killscreen_repair_for_uri" : "btn_killscreen_payment", new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED), new List<MessageWildcardReplacementModule> { new MessageWildcardReplacementModule("%COUNT%", deathLocationRepairPrice.ToString(), new ClientUITooltipTextFormatModule(ClientUITooltipTextFormatModule.LOCALIZED)) }));
+
             var fullRepair =
                    new KillScreenOptionModule(new KillScreenOptionTypeModule(KillScreenOptionTypeModule.BASIC_FULL_REPAIR),
                                               new PriceModule(PriceModule.URIDIUM, 0), true, 0,
@@ -898,7 +899,7 @@ namespace Ow.Game.Objects
                 CurrentShieldConfig2 = MaxShieldPoints;
             }
 
-            Spacemap.AddAndInitPlayer(this);
+            Spacemap.AddAndInitPlayer(this, Destroyed);
 
             Destroyed = false;
         }
@@ -1034,16 +1035,17 @@ namespace Ow.Game.Objects
             try
             {
                 var gameSession = GameManager.GetGameSession(Id);
+
                 if (gameSession == null) return;
                 if (!Program.TickManager.Exists(this)) return;
-                if (gameSession.Client.Socket == null) return;
-                if (!gameSession.Client.Socket.IsBound) return;
+                if (gameSession.Client.Socket == null || !gameSession.Client.Socket.IsBound || !gameSession.Client.Socket.Connected) return;
 
                 gameSession.Client.Send(LegacyModule.write(packet));
             }
             catch (Exception e)
             {
-                Out.WriteLine("SendPacket Problem: " + e);
+                Out.WriteLine("SendPacket void exception " + e, "Player.cs");
+                Logger.Log("error_log", $"- [Player.cs] SendPacket void exception: {e}");
             }
         }
 
@@ -1052,16 +1054,17 @@ namespace Ow.Game.Objects
             try
             {
                 var gameSession = GameManager.GetGameSession(Id);
+
                 if (gameSession == null) return;
                 if (!Program.TickManager.Exists(this)) return;
-                if (gameSession.Client.Socket == null) return;
-                if (!gameSession.Client.Socket.IsBound) return;
+                if (gameSession.Client.Socket == null || !gameSession.Client.Socket.IsBound || !gameSession.Client.Socket.Connected) return;
 
                 gameSession.Client.Send(command);
             }
             catch (Exception e)
             {
-                Out.WriteLine("SendCommand Problem: " + e);
+                Out.WriteLine("SendCommand void exception " + e, "Player.cs");
+                Logger.Log("error_log", $"- [Player.cs] SendCommand void exception: {e}");
             }
         }
 
@@ -1104,14 +1107,16 @@ namespace Ow.Game.Objects
         {
             int value = 0;
 
-            var detonation1 = SkillTree.Detonation1;
-            var detonation2 = SkillTree.Detonation2;
-            var engineering = SkillTree.Engineering;
-            var heatseekingMissiles = SkillTree.HeatseekingMissiles;
-            var rocketFusion = SkillTree.RocketFusion;
-            var cruelty1 = SkillTree.Cruelty1;
-            var cruelty2 = SkillTree.Cruelty2;
-            var explosives = SkillTree.Explosives;
+            var detonation1 = SkillTree.detonation1;
+            var detonation2 = SkillTree.detonation2;
+            var engineering = SkillTree.engineering;
+            var heatseekingMissiles = SkillTree.heatseekingMissiles;
+            var rocketFusion = SkillTree.rocketFusion;
+            var cruelty1 = SkillTree.cruelty1;
+            var cruelty2 = SkillTree.cruelty2;
+            var explosives = SkillTree.explosives;
+            var luck1 = SkillTree.luck1;
+            var luck2 = SkillTree.luck2;
 
             if (skillName == "Engineering")
             {
@@ -1119,8 +1124,7 @@ namespace Ow.Game.Objects
             }
             else if (skillName == "Detonation")
             {
-                value += detonation1 == 1 ? 7 : detonation1 == 2 ? 14 : 0;
-                value += detonation2 == 1 ? 21 : detonation2 == 2 ? 28 : detonation2 == 3 ? 50 : 0;
+                value += detonation2 >= 1 ? (detonation2 == 1 ? 21 : detonation2 == 2 ? 28 : detonation2 == 3 ? 50 : 0) : (detonation1 == 1 ? 7 : detonation1 == 2 ? 14 : 0);
             }
             else if (skillName == "Heat-seeking Missiles")
             {
@@ -1132,12 +1136,15 @@ namespace Ow.Game.Objects
             }
             else if (skillName == "Cruelty")
             {
-                value += cruelty1 == 1 ? 4 : cruelty1 == 2 ? 8 : 0;
-                value += cruelty2 == 1 ? 12 : cruelty2 == 2 ? 18 : cruelty2 == 3 ? 25 : 0;
+                value += cruelty2 >= 1 ? (cruelty2 == 1 ? 12 : cruelty2 == 2 ? 18 : cruelty2 == 3 ? 25 : 0) : (cruelty1 == 1 ? 4 : cruelty1 == 2 ? 8 : 0);
             }
             else if (skillName == "Explosives")
             {
                 value += explosives == 1 ? 4 : explosives == 2 ? 8 : explosives == 3 ? 12 : explosives == 4 ? 18 : explosives == 5 ? 25 : 0;
+            }
+            else if (skillName == "Luck")
+            {
+                value += luck2 >= 1 ? (luck2 == 1 ? 6 : luck2 == 2 ? 8 : luck2 == 3 ? 12 : 0) : (luck1 == 1 ? 2 : luck1 == 2 ? 4 : 0);
             }
 
             return value;

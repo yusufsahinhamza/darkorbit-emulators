@@ -420,6 +420,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Game\Ticks\Tick.cs" />
     <Compile Include="Game\Ticks\TickManager.cs" />
+    <Compile Include="Utils\Logger.cs" />
     <Compile Include="Utils\Maths.cs" />
     <Compile Include="Utils\Bytes.cs" />
     <Compile Include="Utils\Out.cs" />

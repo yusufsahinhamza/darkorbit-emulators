@@ -13,31 +13,36 @@ namespace Ow.Net
 {
     class ChatServer
     {
-        private static ManualResetEvent AllDone = new ManualResetEvent(false);
+        public static ManualResetEvent allDone = new ManualResetEvent(false);
         public static int Port = 9338;
 
         public static void StartListening()
         {
-            var localEndPoint = new IPEndPoint(IPAddress.Any, Port);
-            var listener = new Socket(AddressFamily.InterNetwork,
+            IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, Port);
+
+            Socket listener = new Socket(AddressFamily.InterNetwork,
                 SocketType.Stream, ProtocolType.Tcp);
+
             try
             {
                 listener.Bind(localEndPoint);
-                listener.Listen(40);
+                listener.Listen(100);
 
                 while (true)
                 {
-                    AllDone.Reset();
-                    listener.BeginAccept(AcceptCallback,
+                    allDone.Reset();
+
+                    listener.BeginAccept(
+                        new AsyncCallback(AcceptCallback),
                         listener);
-                    AllDone.WaitOne();
+
+                    allDone.WaitOne();
                 }
 
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Out.WriteLine("An application is already listening the port " + Port + ".", "ERROR", ConsoleColor.Red);
+                Logger.Log("error_log", $"- [ChatServer.cs] StartListening void exception: {e}");
             }
         }
 
@@ -45,17 +50,17 @@ namespace Ow.Net
         {
             try
             {
-                AllDone.Set();
-                var listener = (Socket)ar.AsyncState;
-                var handler = listener.EndAccept(ar);
-                handler.NoDelay = true;
+                allDone.Set();
+
+                Socket listener = (Socket)ar.AsyncState;
+                Socket handler = listener.EndAccept(ar);
+
                 new ChatClient(handler);
-            }
+            } 
             catch (Exception e)
             {
-                Out.WriteLine(e.Message, "ChatServer ERROR");
+                Logger.Log("error_log", $"- [ChatServer.cs] AcceptCallback void exception: {e}");
             }
         }
-
     }
 }

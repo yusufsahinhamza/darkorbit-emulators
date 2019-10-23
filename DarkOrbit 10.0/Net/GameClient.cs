@@ -17,35 +17,16 @@ namespace Ow.Net
     class GameClient
     {
         public Socket Socket { get; set; }
-        private readonly byte[] buffer = new byte[1024 * 3];
         public int UserId { get; set; }
 
-        public GameClient(Socket Socket)
+        public GameClient(Socket handler)
         {
-            this.Socket = Socket;
-            try
-            {
-                if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to read. Socket is not bound or connected.");
+            Socket = handler;
 
-                this.Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
-            }
-            catch (Exception e)
-            {
-                Out.WriteLine("Error: " + e.Message, "", ConsoleColor.Red);
-            }
-        }
-
-        #region Connection 
-        public void Disconnect()
-        {
-            try
-            {
-                Close();
-            }
-            catch (Exception)
-            {
-                Out.WriteLine("Error disconnecting user from Game", "GAME", ConsoleColor.DarkRed);
-            }
+            StateObject state = new StateObject();
+            state.workSocket = handler;
+            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                new AsyncCallback(ReadCallback), state);
         }
 
         private void OnConnectionClosed()
@@ -59,81 +40,97 @@ namespace Ow.Net
         {
             try
             {
-                if (Socket.IsBound && Socket.Connected)
-                {
-                    Socket.Shutdown(SocketShutdown.Both);
-                    Socket.Close();
-                    Socket.Dispose();
-                }
+                Socket.Shutdown(SocketShutdown.Both);
+                Socket.Close();
 
                 OnConnectionClosed();
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //ignore
-                //Out.WriteLine("Close void exception: " + e, "GameClient.cs");
+                //ignored
+                //Logger.Log("error_log", $"- [GameClient.cs] Close void exception: {e}");
             }
         }
 
-        private void ReadCallback(IAsyncResult ar)
+        public void ReadCallback(IAsyncResult ar)
         {
             try
             {
-                if (Socket == null) return;
+                if (Socket == null || !Socket.IsBound || !Socket.Connected) return;
 
-                var bytesRead = Socket.EndReceive(ar);
+                String content = String.Empty;
 
-                if (bytesRead <= 0)
-                {
-                    Close();
-                    return;
-                }
+                StateObject state = (StateObject)ar.AsyncState;
+                Socket handler = state.workSocket;
+
+                int bytesRead = handler.EndReceive(ar);
 
                 byte[] bytes = new byte[bytesRead];
-                Buffer.BlockCopy(buffer, 0, bytes, 0, bytesRead);
+                Buffer.BlockCopy(state.buffer, 0, bytes, 0, bytesRead);
 
-                var packet = Encoding.UTF8.GetString(buffer, 0, bytesRead).Replace("\n", "");
-                if (packet.StartsWith("<policy-file-request/>"))
+                if (bytesRead > 0)
                 {
-                    const string policyPacket = "<?xml version=\"1.0\"?>\r\n" +
-                            "<!DOCTYPE cross-domain-policy SYSTEM \"/xml/dtds/cross-domain-policy.dtd\">\r\n" +
-                            "<cross-domain-policy>\r\n" +
-                            "<allow-access-from domain=\"*\" to-ports=\"*\" />\r\n" +
-                            "</cross-domain-policy>";
+                    content = Encoding.UTF8.GetString(
+                        state.buffer, 0, bytesRead);
 
-                    Write(Encoding.UTF8.GetBytes(policyPacket + (char)0x00));
+                    if (content.StartsWith("<policy-file-request/>"))
+                    {
+                        const string policyPacket = "<?xml version=\"1.0\"?>\r\n" +
+                           "<!DOCTYPE cross-domain-policy SYSTEM \"/xml/dtds/cross-domain-policy.dtd\">\r\n" +
+                           "<cross-domain-policy>\r\n" +
+                           "<allow-access-from domain=\"*\" to-ports=\"*\" />\r\n" +
+                           "</cross-domain-policy>";
+
+                        Send(policyPacket + (char)0x00);
+                    }
+                    else
+                    {
+                        Handler.Execute(bytes, this);
+
+                        handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                        new AsyncCallback(ReadCallback), state);
+                    }
                 }
-                else { Handler.Execute(bytes, this); }
-
-                Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
-            }
-            catch { Close(); }
-        }
-
-        public void Send(byte[] data)
-        {
-            try
+                else
+                {
+                    Close();
+                }
+            } 
+            catch
             {
-                if (!Socket.Connected) return;
-                Write(data);
-            }
-            catch (Exception e)
-            {
-                Out.WriteLine("Send void exception: " + e, "GameClient.cs");
-                GameManager.GetGameSession(UserId)?.Disconnect(GameSession.DisconnectionType.NORMAL);
+                Close();
             }
         }
 
-        private void Write(byte[] byteArray)
+        public void Send(String data)
         {
-            if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
             try
             {
-                Socket.BeginSend(byteArray, 0, byteArray.Length, SocketFlags.None, null, null);
+                if (Socket == null || !Socket.IsBound || !Socket.Connected) return;
+
+                byte[] byteData = Encoding.UTF8.GetBytes(data);
+
+                Socket.BeginSend(byteData, 0, byteData.Length, 0,
+                    new AsyncCallback(SendCallback), Socket);
             }
             catch (Exception e)
             {
-                new Exception("Something went wrong writting on the socket.\n" + e.Message);
+                Logger.Log("error_log", $"- [GameClient.cs] Send(string) void exception: {e}");
+            }
+        }
+
+        public void Send(byte[] byteData)
+        {
+            try
+            {
+                if (Socket == null || !Socket.IsBound || !Socket.Connected) return;
+
+                Socket.BeginSend(byteData, 0, byteData.Length, 0,
+                    new AsyncCallback(SendCallback), Socket);
+            }
+            catch (Exception e)
+            {
+                Logger.Log("error_log", $"- [GameClient.cs] Send(byte[]) void exception: {e}");
             }
         }
 
@@ -141,14 +138,14 @@ namespace Ow.Net
         {
             try
             {
-                var handler = (Socket)ar.AsyncState;
+                Socket handler = (Socket)ar.AsyncState;
+
                 handler.EndSend(ar);
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.Message);
+                Logger.Log("error_log", $"- [GameClient.cs] SendCallback void exception: {e}");
             }
         }
-        #endregion Connection
     }
 }

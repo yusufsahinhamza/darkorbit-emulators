@@ -46,7 +46,8 @@ namespace Ow.Game.Objects
             }
             catch (Exception e)
             {
-                Out.WriteLine("Exception: " + e, "Group.cs");
+                Out.WriteLine("Group class exception " + e, "Group.cs");
+                Logger.Log("error_log", $"- [Group.cs] Group class exception: {e}");
             }
         }
 
@@ -117,10 +118,12 @@ namespace Ow.Game.Objects
         {
             try
             {
+                if (player == null || player.Group == null) return;
+
                 var groupMembers = new List<GroupPlayerModule>();
                 var nonSelected = new GroupPlayerTargetModule(new GroupPlayerShipModule(GroupPlayerShipModule.NONE), "", new GroupPlayerInformationsModule(0, 0, 0, 0, 0, 0));
 
-                foreach (var groupMember in player.Group.Members.Values)
+                foreach (var groupMember in player.Group?.Members.Values)
                 {
                     groupMembers.Add(new GroupPlayerModule(groupMember.Name, groupMember.Id, new GroupPlayerInformationsModule(groupMember.CurrentHitPoints, groupMember.MaxHitPoints, groupMember.CurrentShieldPoints, groupMember.MaxShieldPoints, groupMember.CurrentNanoHull, groupMember.MaxNanoHull), new GroupPlayerLocationModule(groupMember.Spacemap.Id, groupMember.Position.X, groupMember.Position.Y), groupMember.Level,
                         true, groupMember.Invisible, groupMember.AttackManager.Attacking, !GameManager.GameSessions.ContainsKey(groupMember.Id), true, new GroupPlayerClanModule(groupMember.Clan.Id, groupMember.Clan.Tag), new FactionModule((short)groupMember.FactionId), groupMember.Selected == null ? nonSelected : new GroupPlayerTargetModule(new GroupPlayerShipModule(groupMember.SelectedCharacter.Ship.GroupShipId), groupMember.SelectedCharacter.Name,
@@ -131,7 +134,10 @@ namespace Ow.Game.Objects
 
                 player.Storage.GroupInitialized = true;
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Logger.Log("error_log", $"- [Group.cs] InitializeGroup void exception: {e}");
+            }
         }
 
         public void Ping(Position position)

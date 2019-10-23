@@ -30,7 +30,7 @@ namespace Ow.Game.Objects.Players.Managers
 
         public SkillManager(Player player) : base(player) { InitiateSkills(); }
 
-        public void InitiateSkills()
+        public void InitiateSkills(bool updateSlotbar = false)
         {
             Player.Storage.Skills.Clear();
 
@@ -65,6 +65,9 @@ namespace Ow.Game.Objects.Players.Managers
                         break;
                 }
             }
+
+            if (updateSlotbar)
+                Player.SettingsManager.SendSlotBarCommand();
         }
 
         public void Tick()

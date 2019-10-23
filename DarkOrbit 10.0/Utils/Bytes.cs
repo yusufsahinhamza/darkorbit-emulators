@@ -58,6 +58,12 @@ namespace Ow.Utils
         }
         public void writeUTF(string String)
         {
+            if (String == null)
+            {
+                String = "";
+                Console.WriteLine("HATA???????????????");
+            }
+
             writeShort((short)Encoding.UTF8.GetByteCount(String));
             write(Encoding.UTF8.GetBytes(String), false);
         }

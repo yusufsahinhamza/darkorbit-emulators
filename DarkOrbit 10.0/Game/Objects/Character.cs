@@ -137,6 +137,7 @@ namespace Ow.Game.Objects
             catch (Exception e)
             {
                 Out.WriteLine("AddInRangeCharacter void exception " + e, "Character.cs");
+                Logger.Log("error_log", $"- [Character.cs] AddInRangeCharacter void exception: {e}");
                 return false;
             }
         }
@@ -165,6 +166,7 @@ namespace Ow.Game.Objects
             catch (Exception e)
             {
                 Out.WriteLine("RemoveInRangeCharacter void exception " + e, "Character.cs");
+                Logger.Log("error_log", $"- [Character.cs] RemoveInRangeCharacter void exception: {e}");
                 return false;
             }
         }

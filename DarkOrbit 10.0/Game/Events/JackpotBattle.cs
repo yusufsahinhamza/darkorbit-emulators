@@ -140,7 +140,7 @@ namespace Ow.Game.Events
 
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                mySqlClient.ExecuteNonQuery($"INSERT INTO log_event_jpb (players, finalists, winner_id, start_date, end_date) VALUES ('{JsonConvert.SerializeObject(Players.Keys.ToList())}', '{JsonConvert.SerializeObject(Finalists.ToList())}', {player.Id}, '{StartDate.ToString("yyyy-MM-dd HH:mm:ss.fff")}', '{EndDate.ToString("yyyy-MM-dd HH:mm:ss.fff")}')");
+                mySqlClient.ExecuteNonQuery($"INSERT INTO log_event_jpb (players, finalists, winner_id, start_date, end_date) VALUES ('{JsonConvert.SerializeObject(Players.Keys.ToList())}', '{JsonConvert.SerializeObject(Finalists.ToList())}', {player.Id}, '{StartDate.ToString("yyyy-MM-dd HH:mm:ss")}', '{EndDate.ToString("yyyy-MM-dd HH:mm:ss")}')");
                 mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET title = '' WHERE title = '{title}'");
             }
 

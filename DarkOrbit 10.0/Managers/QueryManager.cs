@@ -52,11 +52,34 @@ namespace Ow.Managers
 
         public class ChatFunctions
         {
-            public static void AddBan(int bannedId, int modId, string reason, int typeId, string untilDate)
+            public static void AddBan(int bannedId, int modId, string reason, int typeId, string endDate)
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    mySqlClient.ExecuteNonQuery($"INSERT INTO server_bans (userId, modId, reason, typeId, until_date) VALUES ({bannedId}, {modId}, '{reason}', {typeId}, '{untilDate}')");
+                    var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT userId FROM player_accounts WHERE userId = {bannedId}");
+                    if (result.Rows.Count >= 1)
+                    {
+                        mySqlClient.ExecuteNonQuery($"INSERT INTO server_bans (userId, modId, reason, typeId, end_date) VALUES ({bannedId}, {modId}, '{reason}', {typeId}, '{endDate}')");
+
+                        GameManager.SendChatSystemMessage($"{QueryManager.GetUserPilotName(bannedId)} has banned.");
+                    }
+                }
+            }
+
+            public static void UnBan(int bannedId, int modId, int typeId)
+            {
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_bans WHERE userId = {bannedId} AND typeId = {typeId}");
+                    if (result.Rows.Count >= 1)
+                    {
+                        mySqlClient.ExecuteNonQuery($"DELETE FROM server_bans WHERE userId = {bannedId} AND typeId = {typeId}");
+
+                        var client = GameManager.ChatClients[modId];
+
+                        if (client != null)
+                            client.Send($"{QueryManager.GetUserPilotName(bannedId)} has unbanned.");
+                    }
                 }
             }
 
@@ -70,7 +93,7 @@ namespace Ow.Managers
             }
         }
 
-        public static string GetUserShipName(int userId)
+        public static string GetUserPilotName(int userId)
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
@@ -122,19 +145,6 @@ namespace Ow.Managers
                         player.CurrentNanoHull = Convert.ToInt32(row["nanohull"]);
                     }
 
-                    var skill = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_skilltree WHERE userID = {playerId}");
-                    foreach (DataRow row in skill.Rows)
-                    {
-                        player.SkillTree.Engineering = Convert.ToInt32(row["skill_13"]);
-                        player.SkillTree.Detonation1 = Convert.ToInt32(row["skill_5a"]);
-                        player.SkillTree.Detonation2 = Convert.ToInt32(row["skill_5b"]);
-                        player.SkillTree.HeatseekingMissiles = Convert.ToInt32(row["skill_20"]);
-                        player.SkillTree.RocketFusion = Convert.ToInt32(row["skill_6"]);
-                        player.SkillTree.Cruelty1 = Convert.ToInt32(row["skill_21a"]);
-                        player.SkillTree.Cruelty2 = Convert.ToInt32(row["skill_21b"]);
-                        player.SkillTree.Explosives = Convert.ToInt32(row["skill_1"]);
-                    }
-
                     var settings = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_settings WHERE userId = {playerId}");
                     foreach (DataRow row in settings.Rows)
                     {
@@ -169,6 +179,7 @@ namespace Ow.Managers
                     {
                         player.BoosterManager.Boosters = JsonConvert.DeserializeObject<Dictionary<short, List<BoosterBase>>>(row["boosters"].ToString());
                         player.Storage.BattleStationModules = JsonConvert.DeserializeObject<List<ModuleBase>>(row["modules"].ToString());
+                        player.SkillTree = JsonConvert.DeserializeObject<SkillTreeBase>(row["skill_points"].ToString());
 
                         player.Equipment = row["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(row["configs"].ToString()) : new EquipmentBase(player.Ship.BaseHitpoints, 0, 0, 300, player.Ship.BaseHitpoints, 0, 0, 300);
                     }
@@ -178,6 +189,7 @@ namespace Ow.Managers
             catch (Exception e)
             {
                 Out.WriteLine("Failed getting player account [ID: " + playerId + "] " + e);
+                Logger.Log("error_log", $"- [QueryManager.cs] GetPlayer Player exception: {e}");
             }
             return player;
         }
@@ -321,18 +333,18 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE senderClan = {clan.Id}");
+                var data = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE senderClanId = {clan.Id}");
                 foreach (DataRow row in data.Rows)
                 {
-                    int id = Convert.ToInt32(row["toClan"]);
+                    int id = Convert.ToInt32(row["toClanId"]);
                     Diplomacy relation = (Diplomacy)Convert.ToInt32(row["diplomacyType"]);
                     clan.Diplomacies.Add(id, relation);
                 }
 
-                var data2 = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE toClan = {clan.Id}");
+                var data2 = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_clan_diplomacy WHERE toClanId = {clan.Id}");
                 foreach (DataRow row in data2.Rows)
                 {
-                    int id = Convert.ToInt32(row["senderClan"]);
+                    int id = Convert.ToInt32(row["senderClanId"]);
                     Diplomacy relation = (Diplomacy)Convert.ToInt32(row["diplomacyType"]);
                     clan.Diplomacies.Add(id, relation);
                 }

@@ -53,7 +53,7 @@ namespace Ow.Game.Events
         {
             for (int i = 25; i > 0; i--)
             {
-                var packet = $"0|A|STD|-={i}=-";
+                var packet = $"0|A|STM|jp_no_attack_n_seconds|%!|{i}";
 
                 foreach (var player in Players.Values)
                     player.SendPacket(packet);
@@ -93,7 +93,7 @@ namespace Ow.Game.Events
                 {
                     var objects = Spacemap.Objects.Values.Where(x => x is Mine mine && mine.Player == player);
                     foreach (var obj in objects)
-                        (obj as Mine).Remove();
+                        (obj as Mine).Remove(true);
 
                     player.RemoveVisualModifier(VisualModifierCommand.CAMERA);
                     RemovePlayer(player);

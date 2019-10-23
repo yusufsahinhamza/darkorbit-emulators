@@ -205,7 +205,7 @@ namespace Ow.Game.Objects.Stations
                             }
 
                             stationModuleModule.Add(new StationModuleModule(Id, mm.ItemId, mm.SlotId, mm.Type, mm.CurrentHitPoints,
-                                    mm.MaxHitPoints, mm.CurrentShieldPoints, mm.MaxShieldPoints, 16, QueryManager.GetUserShipName(mm.OwnerId), 0, mm.InstallationSecondsLeft, 0, 0, 500));
+                                    mm.MaxHitPoints, mm.CurrentShieldPoints, mm.MaxShieldPoints, 16, QueryManager.GetUserPilotName(mm.OwnerId), 0, mm.InstallationSecondsLeft, 0, 0, 500));
                         }
                     }
 
@@ -214,7 +214,7 @@ namespace Ow.Game.Objects.Stations
                     for (var i = 0; i < player.Storage.BattleStationModules.Count; i++)
                     {
                         if (!player.Storage.BattleStationModules[i].InUse)
-                            playerModules.Add(new StationModuleModule(Id, player.Storage.BattleStationModules[i].Id, i, player.Storage.BattleStationModules[i].Type, 1, 1, 1, 1, 16, QueryManager.GetUserShipName(player.Id), 0, 0, 0, 0, 500));
+                            playerModules.Add(new StationModuleModule(Id, player.Storage.BattleStationModules[i].Id, i, player.Storage.BattleStationModules[i].Type, 1, 1, 1, 1, 16, QueryManager.GetUserPilotName(player.Id), 0, 0, 0, 0, 500));
                     }
 
                     if (Clan.Id != 0 && player.Clan.Id == Clan.Id)

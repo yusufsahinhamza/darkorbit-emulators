@@ -19,9 +19,11 @@ namespace Ow.Game.Objects.Collectables
         {
             double rand = Randoms.random.NextDouble();
 
-            if (rand <= 0.45)
+            if (rand <= 0.40)
             {
-                var uridium = Randoms.random.Next(30, 175);
+                var uridium = Randoms.random.Next(25, 150);
+                uridium += Maths.GetPercentage(uridium, player.GetSkillPercentage("Luck"));
+
                 player.ChangeData(DataType.URIDIUM, uridium);
             }
             else

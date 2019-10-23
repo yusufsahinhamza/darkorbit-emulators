@@ -98,6 +98,7 @@ namespace Ow.Game.Objects
             catch (Exception e)
             {
                 Out.WriteLine("Click void exception: " + e, "Portal.cs");
+                Logger.Log("error_log", $"- [Portal.cs] Click void exception: {e}");
             }
         }
 

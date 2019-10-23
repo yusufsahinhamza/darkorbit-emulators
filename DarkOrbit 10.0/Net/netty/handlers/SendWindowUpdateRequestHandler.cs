@@ -26,15 +26,18 @@ namespace Ow.Net.netty.handlers
             var player = gameSession.Player;
             var windowSettings = player.Settings.Window;
 
-            windowSettings.windows[read.itemId].height = read.height;
-            windowSettings.windows[read.itemId].width = read.width;
-            windowSettings.windows[read.itemId].x = read.x;
-            windowSettings.windows[read.itemId].y = read.y;
+            if (windowSettings.windows.ContainsKey(read.itemId))
+            {
+                windowSettings.windows[read.itemId].height = read.height;
+                windowSettings.windows[read.itemId].width = read.width;
+                windowSettings.windows[read.itemId].x = read.x;
+                windowSettings.windows[read.itemId].y = read.y;
 
-            if (!alwaysNotMaximized.Contains(read.itemId))
-                windowSettings.windows[read.itemId].maximixed = read.maximized;
+                if (!alwaysNotMaximized.Contains(read.itemId))
+                    windowSettings.windows[read.itemId].maximixed = read.maximized;
 
-            QueryManager.SavePlayer.Settings(player, "window", windowSettings);
+                QueryManager.SavePlayer.Settings(player, "window", windowSettings);
+            }
         }
     }
 }

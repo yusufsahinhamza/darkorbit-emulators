@@ -3,6 +3,7 @@ using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
 using Ow.Net.netty.commands;
 using Ow.Net.netty.requests;
+using Ow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,10 @@ namespace Ow.Net.netty.handlers
 
                 QueryManager.SavePlayer.Settings(player, "boundKeys", keys);
             }
-            catch (Exception) { }               
+            catch (Exception e)
+            {
+                Logger.Log("error_log", $"- [UserKeyBindingsUpdateHandler.cs] execute void exception: {e}");
+            }
         }
     }
 }

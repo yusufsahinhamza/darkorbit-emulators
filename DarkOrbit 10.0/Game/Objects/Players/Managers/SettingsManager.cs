@@ -29,14 +29,16 @@ namespace Ow.Game.Objects.Players.Managers
 
     public class SkillTreeBase
     {
-        public int Engineering = 0;
-        public int Detonation1 = 0;
-        public int Detonation2 = 0;
-        public int HeatseekingMissiles = 0;
-        public int RocketFusion = 0;
-        public int Cruelty1 = 0;
-        public int Cruelty2 = 0;
-        public int Explosives = 0;
+        public int engineering = 0;
+        public int detonation1 = 0;
+        public int detonation2 = 0;
+        public int heatseekingMissiles = 0;
+        public int rocketFusion = 0;
+        public int cruelty1 = 0;
+        public int cruelty2 = 0;
+        public int explosives = 0;
+        public int luck1 = 0;
+        public int luck2 = 0;
     }
 
     public class EquipmentBase
@@ -539,12 +541,14 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void SendSlotBarCommand()
         {
+            Player.SetCurrentCooldowns();
+
             var windowSettings = Player.Settings.Window;
             var slotBars = new List<ClientUISlotBarModule>();
             slotBars.Add(GetStandardSlotBar());
             slotBars.Add(GetPremiumSlotBar());
 
-            if(Player.Settings.Display.proActionBarEnabled && Player.RankId == 21)
+            if(Player.Premium && Player.Settings.Display.proActionBarEnabled)
                 slotBars.Add(GetProActionSlotBar());
 
             var categories = new List<ClientUISlotBarCategoryModule>();
@@ -1868,6 +1872,9 @@ namespace Ow.Game.Objects.Players.Managers
                         break;
                 }
             }
+
+            Player.UpdateCurrentCooldowns();
+            QueryManager.SavePlayer.Settings(Player, "cooldowns", Player.Settings.Cooldowns);
         }
 
         public void SendMine(string mineLootId)
@@ -1965,6 +1972,9 @@ namespace Ow.Game.Objects.Players.Managers
                     SendNewItemStatus(pSelectedRocketLauncherItem);
 
                     Player.AttackManager.RocketLauncher.ChangeLoad(Player.Settings.InGameSettings.selectedRocketLauncher);
+
+                    if (Player.Storage.AutoRocketLauncher)
+                        Player.AttackManager.RocketLauncher.ReloadingActive = true;
                 }
             }
         }

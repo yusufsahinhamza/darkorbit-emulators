@@ -47,7 +47,8 @@ namespace Ow.Game.Movements
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.ToString());
+                Out.WriteLine("GetTime void exception: " + e, "Movement.cs");
+                Logger.Log("error_log", $"- [Movement.cs] GetTime void exception: {e}");
             }
             return -1;
         }

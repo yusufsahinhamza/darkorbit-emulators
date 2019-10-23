@@ -197,9 +197,6 @@ namespace Ow.Game.Objects
                 if (EventManager.JackpotBattle.InEvent(player))
                     GameManager.SendPacketToMap(EventManager.JackpotBattle.Spacemap.Id, $"0|A|STM|msg_jackpot_players_left|%COUNT%|{(EventManager.JackpotBattle.Spacemap.Characters.Count - 1)}");
 
-                if (Duel.InDuel(player))
-                    Duel.RemovePlayer(player);
-
                 if (destroyer is Player && (destroyer as Player).Storage.KilledPlayerIds.Where(x => x == player.Id).Count() <= 13)
                     (destroyer as Player).Storage.KilledPlayerIds.Add(player.Id);
 
@@ -292,6 +289,9 @@ namespace Ow.Game.Objects
                         reward = false;
                         destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
                     }
+
+                    if (this is Player && Duel.InDuel(this as Player))
+                        reward = false;
                 }
                 else if (this is Activatable)
                 {
@@ -313,26 +313,34 @@ namespace Ow.Game.Objects
                     destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
                 }
 
-                destroyerPlayer.Destructions.de++;
+                if (!Duel.InDuel(destroyerPlayer))
+                    destroyerPlayer.Destructions.de++;
 
                 if (this is Player)
                 {
-                    using (var mySqlClient = SqlDatabaseManager.GetClient())
-                        mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
+                    if (!Duel.InDuel(this as Player))
+                    {
+                        using (var mySqlClient = SqlDatabaseManager.GetClient())
+                            mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
+
+                        (this as Player).Destructions.dbe++;
+                    }
 
                     new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
-
-                    (this as Player).Destructions.dbe++;
                 }
             } 
-            else if (destructionType == DestructionType.RADIATION && this is Player)
+            else if (destructionType == DestructionType.RADIATION && this is Player && !Duel.InDuel(this as Player))
             {
                 (this as Player).Destructions.dbrz++;
             }
 
             if (this is Character character)
             {
+                if (this is Player && Duel.InDuel(this as Player))
+                    Duel.RemovePlayer(this as Player);
+
                 Spacemap.RemoveCharacter(character);
+
                 CurrentHitPoints = 0;
             }
 

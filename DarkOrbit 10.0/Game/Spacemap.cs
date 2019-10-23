@@ -352,10 +352,13 @@ namespace Ow.Game
                     player.SendCommand(asset.GetAssetCreateCommand());
         }
 
-        public void AddAndInitPlayer(Player player)
+        public void AddAndInitPlayer(Player player, bool sendSettings = false)
         {
             AddCharacter(player);
             LoginRequestHandler.SendPlayer(player);
+
+            if (sendSettings)
+                LoginRequestHandler.SendSettings(player);
         }
 
         public Activatable GetActivatableMapEntity(int pAssetId)

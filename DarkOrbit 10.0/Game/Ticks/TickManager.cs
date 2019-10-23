@@ -48,7 +48,8 @@ namespace Ow.Game.Ticks
             }
             catch (Exception e)
             {
-                Out.WriteLine("Exception: " + e, "TickManager.cs");
+                Out.WriteLine("Tick void exception: " + e, "TickManager.cs");
+                Logger.Log("error_log", $"- [TickManager.cs] Tick void exception: {e}");
             }
         }
     }

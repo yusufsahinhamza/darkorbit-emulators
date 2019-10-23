@@ -99,6 +99,8 @@ namespace Ow.Game.Objects.Players
         public bool underDrawFire = false;
         public DateTime underDrawFireTime = new DateTime();
 
+        public DateTime lastChangeShipTime = new DateTime();
+
         public Storage(Player player) { Player = player; }
 
         public void Tick()

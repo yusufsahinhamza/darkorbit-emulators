@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Ow.Game;
 using static Ow.Game.GameSession;
 using System.Collections.Concurrent;
+using Ow.Managers.MySQLManager;
 
 namespace Ow.Chat
 {
@@ -30,9 +31,6 @@ namespace Ow.Chat
     class ChatClient
     {
         public Socket Socket { get; set; }
-        public bool SocketClosed { get; set; }
-        private readonly byte[] buffer = new byte[2048];
-
         public int UserId { get; set; }
         public Permissions Permission { get; set; }
         public List<Int32> ChatsJoined = new List<Int32>();
@@ -54,7 +52,6 @@ namespace Ow.Chat
             "http",
             "bitch",
             "fuck",
-            "lag",
             "restart",
             "amına",
             "piç",
@@ -70,19 +67,14 @@ namespace Ow.Chat
             "perro"
         };
 
-        public ChatClient(Socket Socket)
+        public ChatClient(Socket handler)
         {
-            this.Socket = Socket;
-            try
-            {
-                if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to read. Socket is not bound or connected.");
+            Socket = handler;
 
-                this.Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
-            }
-            catch (Exception e)
-            {
-                Out.WriteLine("Error: " + e.Message, "", ConsoleColor.Red);
-            }
+            StateObject state = new StateObject();
+            state.workSocket = handler;
+            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                new AsyncCallback(ReadCallback), state);
         }
 
         public static void LoadChatRooms()
@@ -110,13 +102,19 @@ namespace Ow.Chat
                         var loginPacket = message.Replace("@", "%").Split('%');
                         UserId = Convert.ToInt32(loginPacket[3]);
 
+                        if (!QueryManager.CheckSessionId(UserId, loginPacket[4]))
+                        {
+                            Close();
+                            return;
+                        }
+
                         var gameSession = GameManager.GetGameSession(UserId);
                         if (gameSession == null) return;
 
                         Permission = (Permissions)QueryManager.GetChatPermission(gameSession.Player.Id);
 
                         if (GameManager.ChatClients.ContainsKey(UserId))
-                            GameManager.ChatClients[gameSession.Player.Id]?.ShutdownConnection();
+                            GameManager.ChatClients[gameSession.Player.Id]?.Close();
 
                         GameManager.ChatClients.TryAdd(gameSession.Player.Id, this);
 
@@ -130,7 +128,7 @@ namespace Ow.Chat
                         if (QueryManager.ChatFunctions.Banned(UserId))
                         {
                             Send($"{ChatConstants.CMD_BANN_USER}%#");
-                            ShutdownConnection();
+                            Close();
                             return;
                         }
                         break;
@@ -157,6 +155,7 @@ namespace Ow.Chat
             catch (Exception e)
             {
                 Out.WriteLine("Exception: " + e, "ChatClient.cs");
+                Logger.Log("error_log", $"- [ChatClient.cs] Execute void exception: {e}");
             }
         }
 
@@ -211,7 +210,7 @@ namespace Ow.Chat
             var cmd = message.Split(' ')[0];
             if (message.StartsWith("/reconnect"))
             {
-                ShutdownConnection();
+                Close();
             }
             else if (cmd == "/w")
             {
@@ -221,8 +220,7 @@ namespace Ow.Chat
                     return;
                 }
 
-                var userName = message.Split(' ')[1];
-                var player = GameManager.GetPlayerByName(userName);
+                var player = GameManager.GetPlayerByName(message.Split(' ')[1]);
 
                 if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
                 {
@@ -240,6 +238,14 @@ namespace Ow.Chat
                 message = message.Remove(0, player.Name.Length + 3);
                 GameManager.ChatClients[player.Id].Send("cv%" + gameSession.Player.Name + "@" + message + "#");
                 Send("cw%" + player.Name + "@" + message + "#");
+
+                foreach (var client in GameManager.ChatClients.Values)
+                {
+                    if (gameSession.Player.Id != client.UserId && client.Permission == Permissions.ADMINISTRATOR && GameManager.ChatClients[player.Id].Permission != Permissions.ADMINISTRATOR)
+                        client.Send($"dq%{gameSession.Player.Name} whispering to {player.Name}:{message}#");
+                }
+
+                Logger.Log("chat_log", $"{gameSession.Player.Name} ({gameSession.Player.Id}) whispering to {player.Name} ({player.Id}):{message}");
             }
             else if (cmd == "/kick" && (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR))
             {
@@ -254,7 +260,7 @@ namespace Ow.Chat
                     {
                         var client = GameManager.ChatClients[player.Id];
                         client.Send($"{ChatConstants.CMD_KICK_USER}%#");
-                        client.ShutdownConnection();
+                        client.Close();
 
                         GameManager.SendChatSystemMessage($"{player.Name} has kicked.");
                     }
@@ -309,7 +315,7 @@ namespace Ow.Chat
                 var userId = Convert.ToInt32(message.Split(' ')[1]);
                 var player = GameManager.GetPlayerById(userId);
 
-                if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
+                if (player == null)
                 {
                     Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
                     return;
@@ -322,9 +328,15 @@ namespace Ow.Chat
                 if (message.Split(' ').Length < 2) return;
 
                 var shipId = Convert.ToInt32(message.Split(' ')[1]);
+                var ship = GameManager.GetShip(shipId);
 
-                gameSession.Player.Ship = GameManager.GetShip(shipId);
-                gameSession.Player.Jump(gameSession.Player.Spacemap.Id, gameSession.Player.Position);
+                if (ship == null)
+                {
+                    Send($"dq%The ship that with entered doesn't exists.#");
+                    return;
+                }
+
+                gameSession.Player.ChangeShip(shipId);
             }
             else if (cmd == "/jump" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -337,9 +349,50 @@ namespace Ow.Chat
             {
                 if (message.Split(' ').Length < 3) return;
 
-                var userId = Convert.ToInt32(message.Split(' ')[1]);
-                var mapId = Convert.ToInt32(message.Split(' ')[2]);
-                GameManager.GetPlayerById(userId)?.Jump(mapId, new Position(0, 0));
+                var player = GameManager.GetPlayerById(Convert.ToInt32(message.Split(' ')[1]));
+                var map = GameManager.GetSpacemap(Convert.ToInt32(message.Split(' ')[2]));
+
+                if (player == null)
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
+
+                if (map == null)
+                {
+                    Send($"dq%The map that with entered doesn't exists.#");
+                    return;
+                }
+
+                GameManager.GetPlayerById(player.Id)?.Jump(map.Id, new Position(0, 0));
+            }
+            else if (cmd == "/teleport" && Permission == Permissions.ADMINISTRATOR)
+            {
+                if (message.Split(' ').Length < 3) return;
+
+                var player = GameManager.GetPlayerById(Convert.ToInt32(message.Split(' ')[1]));
+
+                if (player == null)
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
+
+                gameSession.Player?.Jump(player.Spacemap.Id, player.Position);
+            }
+            else if (cmd == "/pull" && Permission == Permissions.ADMINISTRATOR)
+            {
+                if (message.Split(' ').Length < 3) return;
+
+                var player = GameManager.GetPlayerById(Convert.ToInt32(message.Split(' ')[1]));
+
+                if (player == null)
+                {
+                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
+                    return;
+                }
+
+                player?.Jump(gameSession.Player.Spacemap.Id, gameSession.Player.Position);
             }
             else if (cmd == "/speed+" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -358,7 +411,7 @@ namespace Ow.Chat
 
             else if (cmd == "/start_spaceball" && Permission == Permissions.ADMINISTRATOR)
             {
-                if (message.Split(' ').Length > 2)
+                if (message.Split(' ').Length >= 2)
                 {
                     var limit = Convert.ToInt32(message.Split(' ')[1]);
                     EventManager.Spaceball.Limit = limit;
@@ -384,26 +437,50 @@ namespace Ow.Chat
 
                 var userId = Convert.ToInt32(message.Split(' ')[1]);
                 var typeId = Convert.ToInt32(message.Split(' ')[2]);
-                var day = Convert.ToInt32(message.Split(' ')[3]);
-                var reason = message.Remove(0, (userId.ToString().Length + typeId.ToString().Length + day.ToString().Length) + 5);
+                var hours = Convert.ToInt32(message.Split(' ')[3]);
+                var reason = message.Remove(0, (userId.ToString().Length + typeId.ToString().Length + hours.ToString().Length) + 7);
 
                 if (typeId == 1 && Permission == Permissions.CHAT_MODERATOR) return;
 
                 if (typeId == 0 || typeId == 1)
                 {
+                    QueryManager.ChatFunctions.AddBan(userId, gameSession.Player.Id, reason, typeId, (DateTime.Now.AddHours(hours)).ToString("yyyy-MM-dd HH:mm:ss"));
+
                     var player = GameManager.GetPlayerById(userId);
-                    if (player == null) return;               
 
-                    var client = GameManager.ChatClients[player.Id];
-                    client.Send($"{ChatConstants.CMD_BANN_USER}%#");
-                    client.ShutdownConnection();
+                    if (player != null)
+                    {
+                        var client = GameManager.ChatClients[player.Id];
 
-                    if (typeId == 1)
-                        player.GameSession.Disconnect(DisconnectionType.NORMAL);
+                        if (client != null)
+                        {
+                            client.Send($"{ChatConstants.CMD_BANN_USER}%#");
+                            client.Close();
+                        }
 
-                    QueryManager.ChatFunctions.AddBan(player.Id, gameSession.Player.Id, reason, typeId, (DateTime.Now.AddDays(day)).ToString("yyyy-MM-dd HH:mm:ss.fff"));
-                    GameManager.SendChatSystemMessage($"{player.Name} has banned.");
+                        if (typeId == 1)
+                        {
+                            player.Destroy(null, DestructionType.MISC);
+                            player.GameSession.Disconnect(DisconnectionType.NORMAL);
+                        }
+                    }
                 }
+            }
+            else if (cmd == "/unban" && (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR))
+            {
+                /*
+                0 CHAT BAN
+                1 OYUN BANI
+                */
+                if (message.Split(' ').Length < 4) return;
+
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
+                var typeId = Convert.ToInt32(message.Split(' ')[2]);
+
+                if (typeId == 1 && Permission == Permissions.CHAT_MODERATOR) return;
+
+                if (typeId == 0 || typeId == 1)
+                    QueryManager.ChatFunctions.UnBan(userId, gameSession.Player.Id, typeId);
             }
             else if (cmd == "/restart" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -414,10 +491,10 @@ namespace Ow.Chat
             }
             else if (cmd == "/users")
             {
-                var users = GameManager.GameSessions.Values.Aggregate(String.Empty, (current, user) => current + user.Player.Name + ", ");
+                var users = GameManager.GameSessions.Values.Where(x => x.Player.RankId != 21).Aggregate(String.Empty, (current, user) => current + user.Player.Name + ", ");
                 users = users.Remove(users.Length - 2);
 
-                Send($"dq%Users online {GameManager.GameSessions.Count}: {users}#");
+                Send($"dq%Users online {GameManager.GameSessions.Values.Where(x => x.Player.RankId != 21).Count()}: {users}#");
             }
             else if (cmd == "/system" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -458,15 +535,21 @@ namespace Ow.Chat
             else if (cmd == "/id" && Permission == Permissions.ADMINISTRATOR)
             {
                 if (message.Split(' ').Length < 2) return;
-                var player = GameManager.GetPlayerByName(message.Split(' ')[1]);
 
-                if (player == null || !GameManager.ChatClients.ContainsKey(player.Id))
+                var userName = message.Split(' ')[1];
+
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    Send($"{ChatConstants.CMD_USER_NOT_EXIST}%#");
-                    return;
-                }
+                    var query = $"SELECT userId FROM player_accounts WHERE pilotName = '{userName}'";
 
-                Send($"dq%{player.Name} id : {player.Id}#");
+                    var result = (DataTable)mySqlClient.ExecuteQueryTable(query);
+                    if (result.Rows.Count >= 1)
+                    {
+                        var userId = mySqlClient.ExecuteQueryRow(query)["userId"].ToString();
+
+                        Send($"dq%{userName} id is: {userId}#");
+                    }
+                }
             }
             else if (cmd == "/reward" && Permission == Permissions.ADMINISTRATOR)
             {
@@ -513,7 +596,7 @@ namespace Ow.Chat
                         if (message.ToLower().Contains(m.ToLower()) && Permission == Permissions.NORMAL)
                         {
                             Send($"{ChatConstants.CMD_KICK_BY_SYSTEM}%#");
-                            ShutdownConnection();
+                            Close();
                             return;
                         }
                     }
@@ -532,30 +615,25 @@ namespace Ow.Chat
                             pair.Send(messagePacket + "#");
                         }
                     }
+
+                    Logger.Log("chat_log", $"{gameSession.Player.Name} ({gameSession.Player.Id}): {message}");
                 }
             }
         }
 
-        #region Connection
-
-        public void ShutdownConnection()
+        public void Close()
         {
             try
             {
-                if (Socket.IsBound && Socket.Connected)
-                {
-                    Socket.Shutdown(SocketShutdown.Both);
-                    Socket.Close();
-                    Socket.Dispose();
-                }
+                Socket.Shutdown(SocketShutdown.Both);
+                Socket.Close();
 
-                var value = this;
-                GameManager.ChatClients.TryRemove(UserId, out value);
+                GameManager.ChatClients.TryRemove(UserId, out var value);
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 //ignore
-                //Out.WriteLine("ShutdownConnection() void exception: " + e, "ChatClient.cs");
+                //Logger.Log("error_log", $"- [ChatClient.cs] Close void exception: {e}");
             }
         }
 
@@ -563,31 +641,36 @@ namespace Ow.Chat
         {
             try
             {
-                if (Socket == null) return;
+                if (Socket == null || !Socket.IsBound || !Socket.Connected) return;
 
-                var bytesRead = Socket.EndReceive(ar);
-                var content = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                String content = String.Empty;
 
-                if (content.Trim() == "") return;
+                StateObject state = (StateObject)ar.AsyncState;
+                Socket handler = state.workSocket;
 
-                var packet = Encoding.UTF8.GetString(buffer, 0, bytesRead).Replace("\n", "");
-                if (packet.StartsWith("<policy-file-request/>"))
+                int bytesRead = handler.EndReceive(ar);
+
+                if (bytesRead > 0)
                 {
-                    const string policyPacket = "<?xml version=\"1.0\"?>\r\n" +
-                            "<!DOCTYPE cross-domain-policy SYSTEM \"/xml/dtds/cross-domain-policy.dtd\">\r\n" +
-                            "<cross-domain-policy>\r\n" +
-                            "<allow-access-from domain=\"*\" to-ports=\"*\" />\r\n" +
-                            "</cross-domain-policy>";
+                    content = Encoding.UTF8.GetString(
+                        state.buffer, 0, bytesRead);
 
-                    Write(Encoding.UTF8.GetBytes(policyPacket + (char)0x00));
+                    if (content.Trim() != "")
+                    {
+                        Execute(content);
+
+                        handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                        new AsyncCallback(ReadCallback), state);
+                    }
                 }
-                else { Execute(content); }
-
-                Socket.BeginReceive(buffer, 0, buffer.Length, 0, ReadCallback, this);
+                else
+                {
+                    Close();
+                }
             }
             catch
             {
-                //ignore 
+                Close();
             }
         }
 
@@ -595,25 +678,16 @@ namespace Ow.Chat
         {
             try
             {
-                if (!Socket.Connected) return;
-                Write(Encoding.UTF8.GetBytes(data + (char)0x00));
-            }
-            catch (Exception e)
-            {
-                Out.WriteLine("Send void exception: " + e, "ChatClient.cs");
-            }
-        }
+                if (Socket == null || !Socket.IsBound || !Socket.Connected) return;
 
-        private void Write(byte[] byteArray)
-        {
-            if (!Socket.IsBound && !Socket.Connected) new Exception("Unable to write. Socket is not bound or connected.");
-            try
-            {
-                Socket.BeginSend(byteArray, 0, byteArray.Length, SocketFlags.None, null, null);
+                byte[] byteData = Encoding.UTF8.GetBytes(data);
+
+                Socket.BeginSend(byteData, 0, byteData.Length, 0,
+                    new AsyncCallback(SendCallback), Socket);
             }
             catch (Exception e)
             {
-                new Exception("Something went wrong writting on the socket.\n" + e.Message);
+                Logger.Log("error_log", $"- [ChatClient.cs] Send void exception: {e}");
             }
         }
 
@@ -621,14 +695,14 @@ namespace Ow.Chat
         {
             try
             {
-                var handler = (Socket)ar.AsyncState;
+                Socket handler = (Socket)ar.AsyncState;
+
                 handler.EndSend(ar);
             }
             catch (Exception e)
             {
-                Out.WriteLine(e.Message);
+                Logger.Log("error_log", $"- [ChatClient.cs] SendCallback void exception: {e}");
             }
         }
-        #endregion
     }
 }

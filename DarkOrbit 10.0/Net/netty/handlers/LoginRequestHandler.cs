@@ -60,6 +60,7 @@ namespace Ow.Net.netty.handlers
             catch (Exception e)
             {
                 Out.WriteLine("UID: " + Player.Id + " Exception: " + e, "LoginRequestHandler.cs");
+                Logger.Log("error_log", $"- [LoginRequestHandler.cs] LoginRequestHandler class exception: {e}");
             }
         }
 
@@ -79,10 +80,9 @@ namespace Ow.Net.netty.handlers
 
                 if (Player.Spacemap == null || Player.Position == null || GameManager.GetSpacemap(Player.Spacemap.Id) == null)
                 {
-                    Player.SetCurrentCooldowns();
                     Player.CurrentHitPoints = Player.MaxHitPoints;
-                    Player.CurrentShieldConfig1 = Player.Equipment.Config1Shield;
-                    Player.CurrentShieldConfig2 = Player.Equipment.Config2Shield;
+                    Player.CurrentShieldConfig1 = Player.MaxShieldPoints;
+                    Player.CurrentShieldConfig2 = Player.MaxShieldPoints;
 
                     if (Player.RankId == 21)
                         Player.Premium = true;
@@ -101,6 +101,7 @@ namespace Ow.Net.netty.handlers
             catch (Exception e)
             {
                 Out.WriteLine("UID: "+Player.Id+" Execute void exception: " + e, "LoginRequestHandler.cs");
+                Logger.Log("error_log", $"- [LoginRequestHandler.cs] Execute void exception: {e}");
             }
         }
 
@@ -116,14 +117,13 @@ namespace Ow.Net.netty.handlers
                 player.SendPacket(player.DroneManager.GetDronesPacket());
                 player.SendCommand(DroneFormationChangeCommand.write(player.Id, DroneManager.GetSelectedFormationId(player.Settings.InGameSettings.selectedFormation)));
                 player.SendPacket("0|S|CFG|" + player.CurrentConfig);
+          
+                player.SendPacket("0|A|BK|0"); //yeşil kutu miktarı
+                //player.SendPacket("0|A|JV|0"); //atlama kuponu miktarı
 
+                if (player.Group != null)
+                    player.Group.InitializeGroup(player);
                 
-                    player.SendPacket("0|A|BK|100"); //yeşil kutu miktarı
-                    player.SendPacket("0|A|JV|100"); //atlama kuponu miktarı
-
-                    player.Group?.InitializeGroup(player);
-                
-
                 var spaceball = EventManager.Spaceball.Character;
                 if (EventManager.Spaceball.Active && spaceball != null)
                     player.SendPacket($"0|n|ssi|{spaceball.Mmo}|{spaceball.Eic}|{spaceball.Vru}");
@@ -200,6 +200,7 @@ namespace Ow.Net.netty.handlers
             catch (Exception e)
             {
                 Out.WriteLine("UID: " + player.Id + " SendPlayerItems void exception: " + e, "LoginRequestHandler.cs");
+                Logger.Log("error_log", $"- [LoginRequestHandler.cs] SendPlayerItems void exception: {e}");
             }
         }
 
@@ -207,6 +208,7 @@ namespace Ow.Net.netty.handlers
         {
             try
             {
+                player.SetCurrentCooldowns();
                 player.SettingsManager.SendUserKeyBindingsUpdateCommand();
                 player.SettingsManager.SendUserSettingsCommand();
                 player.SettingsManager.SendMenuBarsCommand();
@@ -216,6 +218,7 @@ namespace Ow.Net.netty.handlers
             catch (Exception e)
             {
                 Out.WriteLine("UID: " + player.Id + " SendSettings void exception: " + e, "LoginRequestHandler.cs");
+                Logger.Log("error_log", $"- [LoginRequestHandler.cs] SendSettings void exception: {e}");
             }
         }
     }

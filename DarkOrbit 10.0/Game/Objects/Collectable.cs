@@ -26,7 +26,7 @@ namespace Ow.Game.Objects
 
         public Collectable(int collectableId, Position position, Spacemap spacemap, bool respawnable, Player toPlayer) : base(Randoms.CreateRandomID(), position, spacemap)
         {
-            Hash = Randoms.GenerateHash(16);
+            Hash = Randoms.GenerateHash(10);
             CollectableId = collectableId;
             Respawnable = respawnable;
             ToPlayer = toPlayer;
@@ -116,13 +116,14 @@ namespace Ow.Game.Objects
 
         public void Respawn()
         {
-            Position = Position.Random(Spacemap, 1000, 19800, 1000, 11800);
+            Position = Position.Random(Spacemap, 0, 20800, 0, 12800);
             Spacemap.Objects.TryAdd(Id, this);
 
             if (this is CargoBox)
-            {
                 Program.TickManager.AddTick(this);
-            }
+
+            foreach (var gameSession in GameManager.GameSessions.Values.Where(x => x.Player.Storage.InRangeObjects.ContainsKey(Id)))
+                gameSession?.Player.Storage.InRangeObjects.TryRemove(Id, out var obj);
 
             Disposed = false;
         }

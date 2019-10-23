@@ -11,7 +11,7 @@ namespace Ow.Managers.MySQLManager
     {
         public static string SERVER = "127.0.0.1";
         public static string UID = "root";
-        public static string PWD = "";
+        public static string PWD = "ZUf65YiqmW5ksL235qMN"; //ZUf65YiqmW5ksL235qMN
         public static string DB = "server";
         public static bool Initialized = false;
 

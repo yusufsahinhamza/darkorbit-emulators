@@ -36,6 +36,7 @@ namespace Ow
             catch(Exception e)
             {
                 Out.WriteLine("Main void exception: " + e, "Program.cs");
+                Logger.Log("error_log", $"- [Program.cs] Main void exception: {e}");
             }
         }
 

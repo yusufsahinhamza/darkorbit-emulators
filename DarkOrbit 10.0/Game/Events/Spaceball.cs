@@ -21,7 +21,7 @@ namespace Ow.Game.Events
         public void Start()
         {
             if (Active) return;
-            GameManager.SendPacketToAll("0|A|STD|Spaceball started!");
+            GameManager.SendPacketToAll("0|A|STD|Spaceball event started!");
             Character = new Objects.Spaceball(Randoms.CreateRandomID(), Type);
 
             Portals.Add(new Portal(Character.Spacemap, Character.MMOPosition, null, 0, 62, 0, true, false));
@@ -29,6 +29,7 @@ namespace Ow.Game.Events
             Portals.Add(new Portal(Character.Spacemap, Character.VRUPosition, null, 0, 61, 0, true, false));
 
             Active = true;
+
             foreach (var gameSession in GameManager.GameSessions.Values)
             {
                 var player = gameSession.Player;
@@ -37,6 +38,7 @@ namespace Ow.Game.Events
                 foreach (var portal in Portals)
                     GameManager.SendCommandToMap(Character.Spacemap.Id, portal.GetAssetCreateCommand());
             }
+
             Character.Spacemap.AddCharacter(Character);
 
             Program.TickManager.AddTick(Character);
@@ -45,8 +47,10 @@ namespace Ow.Game.Events
         public void Stop()
         {
             if (!Active) return;
-            GameManager.SendPacketToAll("0|A|STD|Spaceball stopped!");
+            GameManager.SendPacketToAll("0|A|STD|Spaceball event ended!");
             Active = false;
+            Limit = 20;
+
             foreach (var gameSession in GameManager.GameSessions.Values)
             {
                 var player = gameSession.Player;

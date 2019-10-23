@@ -64,6 +64,7 @@ namespace Ow.Game
             catch (Exception e)
             {
                 Out.WriteLine("PrepareForDisconnect void exception: " + e, "GameSession.cs");
+                Logger.Log("error_log", $"- [GameSession.cs] PrepareForDisconnect void exception: {e}");
             }     
         }
 
@@ -102,7 +103,7 @@ namespace Ow.Game
                 }
 
                 PrepareForDisconnect();
-                Client.Disconnect();
+                Client.Close();
                 InProcessOfDisconnection = false;
                 Program.TickManager.RemoveTick(this);
                 GameManager.GameSessions.TryRemove(Player.Id, out var gameSession);
@@ -112,6 +113,7 @@ namespace Ow.Game
             catch (Exception e)
             {
                 Out.WriteLine("Disconnect void exception: " + e, "GameSession.cs");
+                Logger.Log("error_log", $"- [GameSession.cs] Disconnect void exception: {e}");
             }
         }
     }

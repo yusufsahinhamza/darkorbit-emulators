@@ -145,10 +145,10 @@ namespace Ow.Game.Objects
             for (int i = 0; i <= 20; i++)
                 new CargoBox(Position.Random(Spacemap, Position.X - 1000, Position.X + 500, Position.Y - 1000, Position.Y + 500), Spacemap, false, true);
 
-            Respawn();
-
             if (Mmo >= EventManager.Spaceball.Limit || Eic >= EventManager.Spaceball.Limit || Vru >= EventManager.Spaceball.Limit)
                 EventManager.Spaceball.Stop();
+            else
+                Respawn();
         }
 
         public void Respawn()

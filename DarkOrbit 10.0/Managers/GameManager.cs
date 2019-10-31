@@ -60,7 +60,7 @@ namespace Ow.Managers
 
             if (spacemap != null)
             {
-                foreach (var gameSession in GameSessions.Values.Where(x => x.Player?.Spacemap.Id == spacemap.Id))
+                foreach (var gameSession in GameSessions.Values.Where(x => x.Player != null && x.Player.Spacemap.Id == spacemap.Id))
                 {
                     var player = gameSession.Player;
                     player.SendCommand(command);
@@ -74,7 +74,7 @@ namespace Ow.Managers
 
             if (spacemap != null)
             {
-                foreach (var gameSession in GameSessions.Values.Where(x => x.Player?.Spacemap.Id == spacemap.Id))
+                foreach (var gameSession in GameSessions.Values.Where(x => x.Player != null && x.Player.Spacemap.Id == spacemap.Id))
                 {
                     var player = gameSession.Player;
                     player.SendPacket(packet);
@@ -102,7 +102,7 @@ namespace Ow.Managers
 
         public static void SendPacketToClan(string packet, int clanId)
         {
-            foreach (var gameSession in GameSessions.Values.Where(x => x.Player?.Clan.Id == clanId))
+            foreach (var gameSession in GameSessions.Values.Where(x => x.Player != null && x.Player.Clan.Id == clanId))
             {
                 var player = gameSession.Player;
                 player.SendPacket(packet);

@@ -148,9 +148,15 @@ namespace Ow.Net.netty.handlers
 
                 player.BoosterManager.Update();
 
+                if (player.Pet != null)
+                {
+                    player.SendCommand(PetInitializationCommand.write(true, true, !player.Settings.InGameSettings.petDestroyed));
+
+                    if (player.Settings.InGameSettings.petDestroyed)
+                        player.SendCommand(PetUIRepairButtonCommand.write(true, 250));
+                }
                 
-                    player.SendCommand(PetInitializationCommand.write(true, true, true));
-                    player.UpdateStatus();
+                player.UpdateStatus();
 
                 //player.SendCommand(UbaWindowInitializationCommand.write(new Ubas3wModule(new UbaG3FModule(0, 0, 0, 0), new Uba64iModule("", 0, new //List<UbaHtModule>()), new UbahsModule(new List<Ubal4bModule>())), 0));
 

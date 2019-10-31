@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Net.netty.handlers
+namespace Ow.Net.netty.handlers.PetRequestHandlers
 {
     class PetRequestHandler : IHandler
     {
@@ -18,21 +18,25 @@ namespace Ow.Net.netty.handlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
-            if (player.RankId != 21) return;
+            if (player.Pet == null) return;
 
             switch (read.petRequestType)
             {
                 case PetRequest.LAUNCH:
                     player.Pet.Activate();
                     break;
-                case PetRequest.TOGGLE_ACTIVATION:
-                    player.Pet.Activate();
-                    break;
                 case PetRequest.DEACTIVATE:
                     player.Pet.Deactivate();
                     break;
+                case PetRequest.TOGGLE_ACTIVATION:
+                    player.Pet.Activate();
+                    break;
                 case PetRequest.HOTKEY_GUARD_MODE:
-                    //player.Pet.GuardMode();
+                    player.Pet.SwitchGear(PetGearTypeModule.GUARD);
+                    break;
+                case PetRequest.REPAIR_DESTROYED_PET:
+                    player.Pet.RepairDestroyed();
+                    break;
                 case PetRequest.HOTKEY_REPAIR_SHIP:
                     //player.Pet.ComboShipRepair();
                     break;

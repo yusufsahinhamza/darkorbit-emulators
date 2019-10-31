@@ -4,6 +4,7 @@ using Ow.Net.netty.commands;
 using Ow.Net.netty.handlers;
 using Ow.Net.netty.handlers.BattleStationRequestHandlers;
 using Ow.Net.netty.handlers.GroupRequestHandlers;
+using Ow.Net.netty.handlers.PetRequestHandlers;
 using Ow.Net.netty.handlers.UbaRequestHandlers;
 using Ow.Net.netty.requests;
 using Ow.Net.netty.requests.BattleStationRequests;

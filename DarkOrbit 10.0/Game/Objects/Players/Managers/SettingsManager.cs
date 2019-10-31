@@ -221,6 +221,7 @@ namespace Ow.Game.Objects.Players.Managers
 
     public class InGameSettingsBase
     {
+        public bool petDestroyed = false;
         public bool blockedGroupInvites = false;
         public string selectedLaser = AmmunitionManager.LCB_10;
         public string selectedRocket = AmmunitionManager.R_310;
@@ -476,7 +477,7 @@ namespace Ow.Game.Objects.Players.Managers
             leftItems.Add("minimap", "title_map");
             leftItems.Add("spacemap", "title_spacemap");
             leftItems.Add("log", "title_log");
-            if(Player.RankId == 21)
+            if(Player.Pet != null)
                 leftItems.Add("pet", "title_pet");
             if (EventManager.Spaceball.Active)
                 leftItems.Add("spaceball", "title_spaceball");

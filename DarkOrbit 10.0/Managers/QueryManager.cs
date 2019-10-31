@@ -137,12 +137,12 @@ namespace Ow.Managers
                         var clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
 
                         player = new Player(playerId, name, clan, factionId, rankId, ship);
-                        player.Pet.Name = Convert.ToString(row["petName"]);
                         player.Premium = Convert.ToBoolean(row["premium"]);
                         player.Title = Convert.ToString(row["title"]);
                         player.Data = JsonConvert.DeserializeObject<DataBase>(row["data"].ToString());
                         player.Destructions = JsonConvert.DeserializeObject<DestructionsBase>(row["destructions"].ToString());
                         player.CurrentNanoHull = Convert.ToInt32(row["nanohull"]);
+                        player.PetName = Convert.ToString(row["petName"]);
                     }
 
                     var settings = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_settings WHERE userId = {playerId}");
@@ -181,17 +181,22 @@ namespace Ow.Managers
                         player.Storage.BattleStationModules = JsonConvert.DeserializeObject<List<ModuleBase>>(row["modules"].ToString());
                         player.SkillTree = JsonConvert.DeserializeObject<SkillTreeBase>(row["skill_points"].ToString());
 
+                        dynamic items = JsonConvert.DeserializeObject(row["items"].ToString());
+
+                        if (items["pet"] == "true")
+                            player.Pet = new Pet(player);
+
                         player.Equipment = row["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(row["configs"].ToString()) : new EquipmentBase(player.Ship.BaseHitpoints, 0, 0, 300, player.Ship.BaseHitpoints, 0, 0, 300);
                     }
                 }
 
+                return player;
             }
             catch (Exception e)
             {
-                Out.WriteLine("Failed getting player account [ID: " + playerId + "] " + e);
-                Logger.Log("error_log", $"- [QueryManager.cs] GetPlayer Player exception: {e}");
+                Logger.Log("error_log", $"- [QueryManager.cs] GetPlayer({playerId}) exception: {e}");
+                return null;
             }
-            return player;
         }
 
         public static void LoadMaps()

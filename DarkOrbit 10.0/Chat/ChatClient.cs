@@ -450,12 +450,15 @@ namespace Ow.Chat
 
                     if (player != null)
                     {
-                        var client = GameManager.ChatClients[player.Id];
-
-                        if (client != null)
+                        if (GameManager.ChatClients.ContainsKey(player.Id))
                         {
-                            client.Send($"{ChatConstants.CMD_BANN_USER}%#");
-                            client.Close();
+                            var client = GameManager.ChatClients[player.Id];
+
+                            if (client != null)
+                            {
+                                client.Send($"{ChatConstants.CMD_BANN_USER}%#");
+                                client.Close();
+                            }
                         }
 
                         if (typeId == 1)
@@ -701,7 +704,7 @@ namespace Ow.Chat
             }
             catch (Exception e)
             {
-                Logger.Log("error_log", $"- [ChatClient.cs] SendCallback void exception: {e}");
+                //Logger.Log("error_log", $"- [ChatClient.cs] SendCallback void exception: {e}");
             }
         }
     }

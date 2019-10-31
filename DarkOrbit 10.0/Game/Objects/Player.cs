@@ -20,6 +20,7 @@ namespace Ow.Game.Objects
 {
     class Player : Character
     {
+        public string PetName { get; set; }
         public int RankId { get; set; }
         public bool Premium { get; set; }
         public string Title { get; set; }
@@ -88,7 +89,6 @@ namespace Ow.Game.Objects
             SettingsManager = new SettingsManager(this);
             CpuManager = new CpuManager(this);
             BoosterManager = new BoosterManager(this);
-            Pet = new Pet(this);
         }
 
         public override void Tick()
@@ -740,14 +740,10 @@ namespace Ow.Game.Objects
 
         public async void ChangeShip(int shipId)
         {
-            var pet = Pet.Activated;
-            var gearId = Pet.GearId;
-
             if (Storage.Jumping) return;
 
             Storage.Jumping = true;
 
-            Pet.Deactivate(true);
             SkillManager.DisableAllSkills();
             Ship = GameManager.GetShip(shipId);
             SkillManager.InitiateSkills(true);
@@ -762,22 +758,12 @@ namespace Ow.Game.Objects
 
             Spacemap.AddAndInitPlayer(this);
             Storage.Jumping = false;
-
-            if (pet)
-            {
-                Pet.Activate();
-                Pet.SwitchGear(gearId);
-            }
         }
 
         public async void Jump(int mapId, Position targetPosition)
         {
-            var pet = Pet.Activated;
-            var gearId = Pet.GearId;
-
             Storage.Jumping = true;
 
-            Pet.Deactivate(true);
             Spacemap.RemoveCharacter(this);
             CurrentInRangePortalId = -1;
             Deselection();
@@ -804,12 +790,6 @@ namespace Ow.Game.Objects
 
             Spacemap.AddAndInitPlayer(this);
             Storage.Jumping = false;
-
-            if (pet)
-            {
-                Pet.Activate();
-                Pet.SwitchGear(gearId);
-            }
         }
 
         public void KillScreen(Attackable killerEntity, DestructionType destructionType, bool killedLogin = false)

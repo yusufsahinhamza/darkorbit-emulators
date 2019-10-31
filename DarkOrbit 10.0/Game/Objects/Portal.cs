@@ -51,8 +51,6 @@ namespace Ow.Game.Objects
             try
             {
                 var player = gameSession.Player;
-                var pet = player.Pet.Activated;
-                var gearId = player.Pet.GearId;
                 var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
 
                 if (!Working || GameManager.GetSpacemap(TargetSpaceMapId) == null || TargetPosition == null) return;
@@ -60,7 +58,6 @@ namespace Ow.Game.Objects
 
                 player.Storage.Jumping = true;
 
-                player.Pet.Deactivate(true);
                 player.Spacemap.RemoveCharacter(player);
                 player.CurrentInRangePortalId = -1;
                 player.Deselection();
@@ -71,29 +68,11 @@ namespace Ow.Game.Objects
                 var targetSpacemap = GameManager.GetSpacemap(TargetSpaceMapId);
                 player.Spacemap = targetSpacemap;
 
-                /*
-                using (var mySqlClient = SqlDatabaseManager.GetClient())
-                {
-                    var result = mySqlClient.ExecuteQueryRow($"SELECT info FROM player_accounts WHERE userId = {player.Id}");
-                    dynamic info = JsonConvert.DeserializeObject(result["info"].ToString());
-
-                    info["MapID"] = player.Spacemap.Id;
-
-                    mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Info = '{JsonConvert.SerializeObject(info)}' WHERE userId = {player.Id}");
-                }
-                */
-
                 player.SendCommand(apc);
                 await Task.Delay(JUMP_DELAY);
 
                 player.Spacemap.AddAndInitPlayer(player);
                 player.Storage.Jumping = false;
-
-                if (pet)
-                {
-                    player.Pet.Activate();
-                    player.Pet.SwitchGear(gearId);
-                }
             }
             catch (Exception e)
             {

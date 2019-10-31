@@ -69,10 +69,7 @@ class SocketServer
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
 
-            StateObject state = new StateObject();
-            state.workSocket = handler;
-            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadCallback), state);
+            Connection(handler);
         } 
         catch (Exception e)
         {
@@ -80,104 +77,132 @@ class SocketServer
         }
     }
 
+    public static void Connection(Socket handler)
+    {
+        StateObject state = new StateObject();
+        state.workSocket = handler;
+        handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+            new AsyncCallback(ReadCallback), state);
+    }
+
+    public static void Execute(JObject json, JObject parameters, Socket handler)
+    {
+        switch (String(json["Action"]))
+        {
+            case "OnlineIds":
+                Send(handler, JsonConvert.SerializeObject(GameManager.GameSessions.Keys).ToString());
+                break;
+            case "OnlineCount":
+                Send(handler, GameManager.GameSessions.Count.ToString());
+                break;
+            case "IsOnline":
+                var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                var online = player?.GameSession != null ? true : false;
+                Send(handler, online.ToString());
+                break;
+            case "IsInEquipZone":
+                player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                var inEquipZone = player?.GameSession != null ? player.Storage.IsInEquipZone : false;
+                Send(handler, inEquipZone.ToString());
+                break;
+            case "GetPosition":
+                player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                var spacemapName = player?.GameSession != null ? player.Spacemap.Name : "";
+                Send(handler, spacemapName.ToString());
+                break;
+            case "AvailableToChangeShip":
+                player = GameManager.GetPlayerById(Int(parameters["UserId"]));
+                var available = player?.Storage.lastChangeShipTime.AddSeconds(5) < DateTime.Now ? true : false;
+                Send(handler, available.ToString());
+                break;
+            case "BanUser":
+                BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                break;
+            case "BuyItem":
+                BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), Int(parameters["Amount"]));
+                break;
+            case "ChangeClanData":
+                ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), String(parameters["Name"]), String(parameters["Tag"]), Int(parameters["FactionId"]));
+                break;
+            case "ChangeShip":
+                ChangeShip(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetShip(Int(parameters["ShipId"])));
+                break;
+            case "ChangeCompany":
+                ChangeCompany(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["UridiumPrice"]), Int(parameters["HonorPrice"]));
+                break;
+            case "UpdateStatus":
+                UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])), Parse(parameters["Status"]));
+                break;
+            case "JoinToClan":
+                JoinToClan(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetClan(Int(parameters["ClanId"])));
+                break;
+            case "LeaveFromClan":
+                LeaveFromClan(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                break;
+            case "CreateClan":
+                CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), Int(parameters["FactionId"]), String(parameters["Name"]), String(parameters["Tag"]));
+                break;
+            case "DeleteClan":
+                DeleteClan(GameManager.GetClan(Int(parameters["ClanId"])));
+                break;
+            case "StartDiplomacy":
+                StartDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])), Short(parameters["DiplomacyType"]));
+                break;
+            case "EndDiplomacy":
+                EndDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])));
+                break;
+            case "UpgradeSkillTree":
+                UpgradeSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["Skill"]));
+                break;
+            case "ResetSkillTree":
+                ResetSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])));
+                break;
+        }
+    }
+
     public static void ReadCallback(IAsyncResult ar)
     {
-        String content = string.Empty;
-
-        StateObject state = (StateObject)ar.AsyncState;
-        Socket handler = state.workSocket;
-
-        int bytesRead = handler.EndReceive(ar);
-
-        if (bytesRead > 0)
+        try
         {
-            content = Encoding.UTF8.GetString(
-                state.buffer, 0, bytesRead);
+            String content = string.Empty;
 
-            if (!string.IsNullOrEmpty(content))
+            StateObject state = (StateObject)ar.AsyncState;
+            Socket handler = state.workSocket;
+
+            int bytesRead = handler.EndReceive(ar);
+
+            if (bytesRead > 0)
             {
+                content = Encoding.UTF8.GetString(
+                    state.buffer, 0, bytesRead);
 
-                var json = Parse(content);
-                var parameters = Parse(json["Parameters"]);
-
-                switch (String(json["Action"]))
+                if (!string.IsNullOrEmpty(content))
                 {
-                    case "OnlineIds":
-                        Send(handler, JsonConvert.SerializeObject(GameManager.GameSessions.Keys).ToString());
-                        break;
-                    case "OnlineCount":
-                        Send(handler, GameManager.GameSessions.Count.ToString());
-                        break;
-                    case "IsOnline":
-                        var player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                        var online = player?.GameSession != null ? true : false;
-                        Send(handler, online.ToString());
-                        break;
-                    case "IsInEquipZone":
-                        player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                        var inEquipZone = player?.GameSession != null ? player.Storage.IsInEquipZone : false;
-                        Send(handler, inEquipZone.ToString());
-                        break;
-                    case "GetPosition":
-                        player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                        var spacemapName = player?.GameSession != null ? player.Spacemap.Name : "";
-                        Send(handler, spacemapName.ToString());
-                        break;
-                    case "AvailableToChangeShip":
-                        player = GameManager.GetPlayerById(Int(parameters["UserId"]));
-                        var available = player?.Storage.lastChangeShipTime.AddSeconds(5) < DateTime.Now ? true : false;
-                        Send(handler, available.ToString());
-                        break;
-                    case "BanUser":
-                        BanUser(GameManager.GetPlayerById(Int(parameters["UserId"])));
-                        break;
-                    case "BuyItem":
-                        BuyItem(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["ItemType"]), (DataType)Short(parameters["DataType"]), Int(parameters["Amount"]));
-                        break;
-                    case "ChangeClanData":
-                        ChangeClanData(GameManager.GetClan(Int(parameters["ClanId"])), String(parameters["Name"]), String(parameters["Tag"]), Int(parameters["FactionId"]));
-                        break;
-                    case "ChangeShip":
-                        ChangeShip(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetShip(Int(parameters["ShipId"])));
-                        break;
-                    case "ChangeCompany":
-                        ChangeCompany(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["UridiumPrice"]), Int(parameters["HonorPrice"]));
-                        break;
-                    case "UpdateStatus":
-                        UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])), Parse(parameters["Status"]));
-                        break;
-                    case "JoinToClan":
-                        JoinToClan(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetClan(Int(parameters["ClanId"])));
-                        break;
-                    case "LeaveFromClan":
-                        LeaveFromClan(GameManager.GetPlayerById(Int(parameters["UserId"])));
-                        break;
-                    case "CreateClan":
-                        CreateClan(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["ClanId"]), Int(parameters["FactionId"]), String(parameters["Name"]), String(parameters["Tag"]));
-                        break;
-                    case "DeleteClan":
-                        DeleteClan(GameManager.GetClan(Int(parameters["ClanId"])));
-                        break;
-                    case "StartDiplomacy":
-                        StartDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])), Short(parameters["DiplomacyType"]));
-                        break;
-                    case "EndDiplomacy":
-                        EndDiplomacy(GameManager.GetClan(Int(parameters["SenderClanId"])), GameManager.GetClan(Int(parameters["TargetClanId"])));
-                        break;
-                    case "UpgradeSkillTree":
-                        UpgradeSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["Skill"]));
-                        break;
-                    case "ResetSkillTree":
-                        ResetSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])));
-                        break;
+                    var json = Parse(content);
+                    var parameters = Parse(json["Parameters"]);
+
+                    Execute(json, parameters, handler);
+
+                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                        new AsyncCallback(ReadCallback), state);
                 }
             }
             else
             {
-                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadCallback), state);
+                Close(handler);
             }
         }
+        catch { }
+    }
+
+    public static void Close(Socket handler)
+    {
+        try
+        {
+            handler.Shutdown(SocketShutdown.Both);
+            handler.Close();
+        }
+        catch { }
     }
 
     private static void Send(Socket handler, String data)
@@ -208,7 +233,7 @@ class SocketServer
         }
         catch (Exception e)
         {
-            Logger.Log("error_log", $"- [SocketServer.cs] SendCallback void exception: {e}");
+            //Logger.Log("error_log", $"- [SocketServer.cs] SendCallback void exception: {e}");
         }
     }
 
@@ -464,21 +489,56 @@ class SocketServer
 
     public static int Int(object value)
     {
-        return Convert.ToInt32(value.ToString());
+        try
+        {
+            return Convert.ToInt32(value.ToString());
+
+        }
+        catch (Exception e)
+        {
+            return 0;
+        }
     }
 
     public static short Short(object value)
     {
-        return Convert.ToInt16(value.ToString());
+        try
+        {
+            return Convert.ToInt16(value.ToString());
+
+        }
+        catch (Exception e)
+        {
+            return 0;
+        }
+        
     }
 
     public static string String(object value)
     {
-        return value.ToString();
+        try
+        {
+            return value.ToString();
+
+        }
+        catch (Exception e)
+        {
+            return "";
+        }
+        
     }
 
     public static JObject Parse(object value)
     {
-        return JObject.Parse(value.ToString());
+        try
+        {
+            return JObject.Parse(value.ToString());
+
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+       
     }
 }

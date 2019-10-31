@@ -21,6 +21,7 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
+[Bb]in/Debug/logs/
 [Bb]in/Debug/DarkOrbit.exe.config
 [Bb]in/Debug/DarkOrbit.exe
 [Bb]in/Debug/DarkOrbit.pdb

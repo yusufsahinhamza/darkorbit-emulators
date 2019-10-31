@@ -54,7 +54,6 @@ namespace Ow.Game
             try
             {
                 Player.Group?.UpdateTarget(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
-                Player.Pet.Deactivate();
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                 Duel.RemovePlayer(Player);
                 Program.TickManager.RemoveTick(Player);

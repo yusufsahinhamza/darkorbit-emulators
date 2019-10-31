@@ -67,12 +67,10 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.SendPacket(cloakPacket);
                 Player.SendPacketToInRangePlayers(cloakPacket);
 
-                var pet = Player.Pet;
-                if (pet.Activated)
+                if (Player.Pet.Activated)
                 {
-                    pet.Invisible = true;
-                    string petCloakPacket = "0|n|INV|" + pet.Id + "|1";
-                    pet.SendPacketToInRangePlayers(petCloakPacket);
+                    Player.Pet.Invisible = true;
+                    Player.Pet.SendPacketToInRangePlayers("0|n|INV|" + Player.Pet.Id + "|1");
                 }
 
                 Player.SettingsManager.SendNewItemStatus(CLK_XL);

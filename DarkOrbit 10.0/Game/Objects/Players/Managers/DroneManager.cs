@@ -55,8 +55,7 @@ namespace Ow.Game.Objects.Players.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                string sql = $"SELECT * FROM player_equipment WHERE userId = {Player.Id} ";
-                var querySet = mySqlClient.ExecuteQueryRow(sql);
+                var querySet = mySqlClient.ExecuteQueryRow($"SELECT * FROM player_equipment WHERE userId = {Player.Id}");
                 dynamic config1Drones = JsonConvert.DeserializeObject(querySet["config1_drones"].ToString());
                 dynamic config2Drones = JsonConvert.DeserializeObject(querySet["config2_drones"].ToString());
                 dynamic items = JsonConvert.DeserializeObject(querySet["items"].ToString());

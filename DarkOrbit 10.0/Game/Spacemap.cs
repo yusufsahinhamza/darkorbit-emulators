@@ -354,8 +354,16 @@ namespace Ow.Game
 
         public void AddAndInitPlayer(Player player, bool sendSettings = false)
         {
+            var petActivated = player.Pet != null && player.Pet.Activated;
+
+            if (petActivated)
+                player.Pet.Deactivate(true);
+
             AddCharacter(player);
             LoginRequestHandler.SendPlayer(player);
+
+            if (petActivated)
+                player.Pet.Activate();
 
             if (sendSettings)
                 LoginRequestHandler.SendSettings(player);

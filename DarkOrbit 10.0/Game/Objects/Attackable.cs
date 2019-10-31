@@ -201,7 +201,6 @@ namespace Ow.Game.Objects
                     (destroyer as Player).Storage.KilledPlayerIds.Add(player.Id);
 
                 player.SkillManager.DisableAllSkills();
-                player.Pet.Deactivate(true);
                 player.SendCommand(destroyCommand);
                 player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
                 player.CurrentInRangePortalId = -1;
@@ -275,7 +274,8 @@ namespace Ow.Game.Objects
                 bool reward = true;
                 var changeType = ChangeType.INCREASE;
 
-                //TODO decrease
+                if (this is Pet && (this as Pet).Owner == destroyerPlayer)
+                    changeType = ChangeType.DECREASE;
 
                 if (this is Character)
                 {

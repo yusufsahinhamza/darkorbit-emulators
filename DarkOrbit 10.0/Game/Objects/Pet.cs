@@ -31,12 +31,13 @@ namespace Ow.Game.Objects
 
         public Pet(Player player) : base(Randoms.CreateRandomID(), "P.E.T 15", player.FactionId, GameManager.GetShip(22), player.Position, player.Spacemap, player.Clan)
         {
+            Name = player.PetName;
             Owner = player;
 
             ShieldAbsorption = 0.8;
             Damage = 5000;
-            MaxHitPoints = Ship.BaseHitpoints;
-            CurrentHitPoints = 1000;
+            CurrentHitPoints = 2500;
+            MaxHitPoints = 50000;
             MaxShieldPoints = 50000;
             CurrentShieldPoints = MaxShieldPoints;
         }
@@ -174,22 +175,43 @@ namespace Ow.Game.Objects
 
         public void Activate()
         {
-            if (!Activated)
+            if (!Activated && !Owner.Settings.InGameSettings.petDestroyed)
             {
                 Activated = true;
-                Destroyed = false;
+
+                CurrentHitPoints = 2500;
+
+                SetPosition(Owner.Position);
                 Spacemap = Owner.Spacemap;
                 Invisible = Owner.Invisible;
-                Position = new Position(Owner.Position.X, Owner.Position.Y);
-                Owner.SendPacket("0|A|STM|msg_pet_activated");
-                Initialization();
-                Spacemap.AddCharacter(this);
 
+                Owner.SendPacket("0|A|STM|msg_pet_activated");
+
+                Initialization(GearId);
+
+                Spacemap.AddCharacter(this);
                 Program.TickManager.AddTick(this);
             }
             else
             {
                 Deactivate();
+            }
+        }
+
+        public void RepairDestroyed()
+        {
+            if (Owner.Settings.InGameSettings.petDestroyed)
+            {
+                var cost = Owner.Premium ? 0 : 250;
+
+                if (Owner.Data.uridium >= cost)
+                {
+                    Destroyed = false;
+                    Owner.ChangeData(DataType.URIDIUM, cost, ChangeType.DECREASE);
+                    Owner.SendCommand(PetRepairCompleteCommand.write());
+                    Owner.Settings.InGameSettings.petDestroyed = false;
+                    QueryManager.SavePlayer.Settings(Owner, "inGameSettings", Owner.Settings.InGameSettings);
+                } else Owner.SendPacket("0|A|STM|ttip_pet_repair_disabled_through_money");
             }
         }
 
@@ -199,18 +221,25 @@ namespace Ow.Game.Objects
             {
                 if (LastCombatTime.AddSeconds(10) < DateTime.Now || direct)
                 {
+                    Owner.SendPacket("0|PET|D");
+
                     if (destroyed)
                     {
-                        Owner.SendPacket("0|A|STM|msg_pet_is_dead");
-                        CurrentHitPoints = 1000;
+                        Owner.Settings.InGameSettings.petDestroyed = true;
+                        QueryManager.SavePlayer.Settings(Owner, "inGameSettings", Owner.Settings.InGameSettings);
+
+                        Owner.SendPacket("0|PET|Z");
                         CurrentShieldPoints = 0;
                         UpdateStatus();
+
+                        Owner.SendCommand(PetInitializationCommand.write(true, true, false));
+                        Owner.SendCommand(PetUIRepairButtonCommand.write(true, 250));
                     }
                     else Owner.SendPacket("0|A|STM|msg_pet_deactivated");
 
-                    Owner.SendPacket("0|PET|D");
                     Activated = false;
 
+                    Deselection();
                     Spacemap.RemoveCharacter(this);
                     InRangeCharacters.Clear();
                     Program.TickManager.RemoveTick(this);
@@ -222,13 +251,12 @@ namespace Ow.Game.Objects
             }
         }
 
-        private void Initialization()
+        private void Initialization(short gearId = PetGearTypeModule.PASSIVE)
         {
             Owner.SendCommand(PetStatusCommand.write(Id, 15, 27000000, 27000000, CurrentHitPoints, MaxHitPoints, CurrentShieldPoints, MaxShieldPoints, 50000, 50000, Speed, Name));
             Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.PASSIVE), 0, 0, true));
             Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.GUARD), 0, 0, true));
-            Owner.SendCommand(PetGearAddCommand.write(new PetGearTypeModule(PetGearTypeModule.AUTO_LOOT), 0, 0, true));
-            SwitchGear(PetGearTypeModule.PASSIVE);
+            SwitchGear(gearId);
         }
 
         private void Follow(Character character)
@@ -259,6 +287,7 @@ namespace Ow.Game.Objects
                     break;
             }
             GearId = gearId;
+
             Owner.SendCommand(PetGearSelectCommand.write(new PetGearTypeModule(gearId), new List<int>()));
         }
 

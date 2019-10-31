@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Net.netty.handlers
+namespace Ow.Net.netty.handlers.PetRequestHandlers
 {
     class PetGearActivationRequestHandler : IHandler
     {
@@ -18,6 +18,7 @@ namespace Ow.Net.netty.handlers
             read.readCommand(bytes);
 
             var player = gameSession.Player;
+            if (player.Pet == null) return;
 
             player.Pet.SwitchGear(read.gearId);
         }

@@ -17,10 +17,19 @@ namespace Ow.Utils
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
 
-            fileName += "_" + DateTime.Now.ToString("dd.MM.yyyy") + ".txt";
+            fileName += $"_{DateTime.Now.ToString("dd.MM.yyyy")}.txt";
 
             try
             {
+                if (!File.Exists(path))
+                {
+                    using (FileStream fs = File.Create(path + fileName))
+                    {
+                        fs.Flush();
+                        fs.Close();
+                    }
+                }
+
                 using (StreamWriter sw = File.AppendText(path + fileName))
                 {
                     sw.WriteLine($"[{DateTime.Now.ToString("dd.MM.yyyy HH: mm:ss")}] " + message);

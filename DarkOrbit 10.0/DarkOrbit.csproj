@@ -172,6 +172,7 @@
     <Compile Include="Net\netty\commands\BattleStationManagementUiInitializationCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationNoClanUiInitializationCommand.cs" />
     <Compile Include="Net\netty\commands\OutOfBattleStationRangeCommand.cs" />
+    <Compile Include="Net\netty\commands\PetUIRepairButtonCommand.cs" />
     <Compile Include="Net\netty\commands\RemovePortalCommand.cs" />
     <Compile Include="Net\netty\commands\AssetInfoCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationBuildingStateCommand.cs" />
@@ -187,6 +188,7 @@
     <Compile Include="Net\netty\commands\GroupRemoveCommand.cs" />
     <Compile Include="Net\netty\commands\HeroMoveCommand.cs" />
     <Compile Include="Net\netty\commands\ClanChangedCommand.cs" />
+    <Compile Include="Net\netty\commands\PetRepairCompleteCommand.cs" />
     <Compile Include="Net\netty\commands\UbaD26Module.cs" />
     <Compile Include="Net\netty\commands\UbaM1tModule.cs" />
     <Compile Include="Net\netty\commands\UbaJ39Module.cs" />
@@ -348,10 +350,10 @@
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupRevokeInvitationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupChangeGroupBehaviourRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupLeaveRequestHandler.cs" />
-    <Compile Include="Net\netty\handlers\PetGearActivationRequestHandler.cs" />
+    <Compile Include="Net\netty\handlers\PetRequestHandlers\PetGearActivationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupAcceptInvitationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\GroupRequestHandlers\GroupInvitationRequestHandler.cs" />
-    <Compile Include="Net\netty\handlers\PetRequestHandler.cs" />
+    <Compile Include="Net\netty\handlers\PetRequestHandlers\PetRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\CollectBoxRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\RepairStationRequestHandler.cs" />
     <Compile Include="Net\netty\handlers\LogoutCancelRequestHandler.cs" />

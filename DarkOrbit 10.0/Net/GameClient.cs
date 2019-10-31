@@ -144,7 +144,7 @@ namespace Ow.Net
             }
             catch (Exception e)
             {
-                Logger.Log("error_log", $"- [GameClient.cs] SendCallback void exception: {e}");
+                //Logger.Log("error_log", $"- [GameClient.cs] SendCallback void exception: {e}");
             }
         }
     }

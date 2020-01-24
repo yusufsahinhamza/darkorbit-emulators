@@ -19,6 +19,18 @@ namespace Ow.Game
         SECTOR_CONTROL_SECTOR_ZONE = 8,
     }
 
+    public enum NpcAIOption
+    {
+        DO_NOTHING,
+        SEARCH_FOR_ENEMIES,
+        FLY_TO_ENEMY,
+        WAIT_PLAYER_MOVE,
+        ATTACK_ENEMY,
+        FLEE_FROM_ENEMY,
+        EMP,
+        RANDOM_POSITION_MOVE
+    }
+
     public enum DataType
     {
         URIDIUM,

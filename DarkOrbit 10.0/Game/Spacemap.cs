@@ -35,6 +35,12 @@ namespace Ow.Game
         public bool DeathLocationRepair { get; set; }
     }
 
+    class NpcsBase
+    {
+        public int ShipId { get; set; }
+        public int Amount { get; set; }
+    }
+
     class Spacemap : Tick
     {
         public ConcurrentDictionary<int, Character> Characters = new ConcurrentDictionary<int, Character>();
@@ -49,14 +55,16 @@ namespace Ow.Game
         public Position[] Limits { get; private set; }
         public OptionsBase Options { get; set; }
 
+        private List<NpcsBase> NpcsBase { get; set; }
         private List<PortalBase> PortalBase { get; set; }
         private List<StationBase> StationBase { get; set; }
 
-        public Spacemap(int mapId, string name, int factionId, List<PortalBase> portals, List<StationBase> stations, OptionsBase options)
+        public Spacemap(int mapId, string name, int factionId, List<NpcsBase> npcs, List<PortalBase> portals, List<StationBase> stations, OptionsBase options)
         {
             Id = mapId;
             Name = name;
             FactionId = factionId;
+            NpcsBase = npcs;
             PortalBase = portals;
             StationBase = stations;
             Options = options;
@@ -96,7 +104,16 @@ namespace Ow.Game
                     }
                 }
             }
-            
+
+            if (NpcsBase != null && NpcsBase.Count >= 1)
+            {
+                foreach (var npc in NpcsBase)
+                {
+                    for (int i = 1; i <= npc.Amount; i++)
+                        new Npc(Randoms.CreateRandomID(), GameManager.GetShip(npc.ShipId), this, Position.Random(this, 0, 20800, 0, 12800));
+                }
+            }
+
             if (PortalBase != null && PortalBase.Count >= 1)
             {
                 foreach (var portal in PortalBase)
@@ -110,7 +127,7 @@ namespace Ow.Game
             
             if (new int[] { 13, 14, 15 }.Contains(Id))
             {
-                for (int i = 0; i <= 125; i++)
+                for (int i = 1; i <= 125; i++)
                     new BonusBox(Position.Random(this, 0, 20800, 0, 12800), this, true);
                 //for (int i = 0; i <= 25; i++)
                     //new GreenBooty(Position.Random(this, 0, 20800, 0, 12800), this, true);

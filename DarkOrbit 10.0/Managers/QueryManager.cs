@@ -209,10 +209,11 @@ namespace Ow.Managers
                     int mapId = Convert.ToInt32(row["mapID"]);
                     string name = Convert.ToString(row["name"]);
                     int factionId = Convert.ToInt32(row["factionID"]);
+                    var npcs = JsonConvert.DeserializeObject<List<NpcsBase>>(row["npcs"].ToString());
                     var portals = JsonConvert.DeserializeObject<List<PortalBase>>(row["portals"].ToString());
                     var stations = JsonConvert.DeserializeObject<List<StationBase>>(row["stations"].ToString());
                     var options = JsonConvert.DeserializeObject<OptionsBase>(row["options"].ToString());
-                    var spacemap = new Spacemap(mapId, name, factionId, portals, stations, options);
+                    var spacemap = new Spacemap(mapId, name, factionId, npcs, portals, stations, options);
                     GameManager.Spacemaps.TryAdd(spacemap.Id, spacemap);
                 }
             }
@@ -304,11 +305,16 @@ namespace Ow.Managers
                 {
                     string name = Convert.ToString(row["name"]);
                     int shipID = Convert.ToInt32(row["shipID"]);
+                    int damage = Convert.ToInt32(row["damage"]);
+                    int shields = Convert.ToInt32(row["shield"]);
                     int hitpoints = Convert.ToInt32(row["health"]);
+                    int speed = Convert.ToInt32(row["speed"]);
                     string lootID = Convert.ToString(row["lootID"]);
+                    bool aggressive = Convert.ToBoolean(row["aggressive"]);
+                    bool respawnable = Convert.ToBoolean(row["respawnable"]);
                     var rewards = JsonConvert.DeserializeObject<ShipRewards>(row["reward"].ToString());
 
-                    var ship = new Ship(name, shipID, hitpoints, lootID, rewards);
+                    var ship = new Ship(name, shipID, hitpoints, shields, speed, lootID, damage, aggressive, respawnable, rewards);
                     GameManager.Ships.TryAdd(ship.Id, ship);
                 }
             }

@@ -261,6 +261,13 @@ namespace Ow.Game.Objects
 
                 QueryManager.BattleStations.Modules(satellite.BattleStation);
             }
+            else if (this is Npc npc)
+            {
+                npc.UnderAttack = false;
+
+                if (npc.Ship.Respawnable)
+                    new Npc(Randoms.CreateRandomID(), GameManager.GetShip(npc.Ship.Id), npc.Spacemap, Position.Random(npc.Spacemap, 0, 20800, 0, 12800));
+            }
 
             if (destroyer is Player destroyerPlayer && destructionType == DestructionType.PLAYER)
             {

@@ -55,6 +55,7 @@ namespace Ow.Net.netty.handlers
                 {
                     SendSettings(Player);
                     SendPlayer(Player);
+                    Player.Spacemap.AddCharacter(Player);
                 }
             }
             catch (Exception e)
@@ -90,8 +91,6 @@ namespace Ow.Net.netty.handlers
                     Player.Spacemap = GameManager.GetSpacemap(Player.GetBaseMapId());
                     Player.SetPosition(Player.GetBasePosition());
                 }
-
-                Player.Spacemap.AddCharacter(Player);
 
                 Program.TickManager.AddTick(Player);
 

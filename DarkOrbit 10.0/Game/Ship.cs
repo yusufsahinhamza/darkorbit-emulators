@@ -87,16 +87,26 @@ namespace Ow.Game
 
         public string Name { get; set; }
         public int Id { get; set; }
+        public int Damage { get; set; }
         public int BaseHitpoints { get; set; }
+        public int BaseShieldPoints { get; set; }
+        public int Speed { get; set; }
         public string LootId { get; set; }
+        public bool Aggressive { get; set; }
+        public bool Respawnable { get; set; }
         public ShipRewards Rewards { get; set; }
 
-        public Ship(string name, int id, int baseHitpoints, string lootID, ShipRewards rewards)
+        public Ship(string name, int id, int baseHitpoints, int baseShieldPoints, int speed, string lootID, int damage, bool aggressive, bool respawnable, ShipRewards rewards)
         {
             Name = name;
             Id = id;
+            Damage = damage;
+            BaseShieldPoints = baseShieldPoints;
             BaseHitpoints = baseHitpoints;
+            Speed = speed;
             LootId = lootID;
+            Aggressive = aggressive;
+            Respawnable = respawnable;
             Rewards = rewards;
         }
 

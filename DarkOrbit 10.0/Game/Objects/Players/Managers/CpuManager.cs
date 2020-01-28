@@ -67,7 +67,7 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.SendPacket(cloakPacket);
                 Player.SendPacketToInRangePlayers(cloakPacket);
 
-                if (Player.Pet.Activated)
+                if (Player.Pet != null && Player.Pet.Activated)
                 {
                     Player.Pet.Invisible = true;
                     Player.Pet.SendPacketToInRangePlayers("0|n|INV|" + Player.Pet.Id + "|1");

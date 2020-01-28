@@ -13,7 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Game.Objects.Players
+namespace Ow.Game.Objects
 {
     public class ModuleBase
     {
@@ -31,7 +31,7 @@ namespace Ow.Game.Objects.Players
 
     class Storage
     {
-        public Player Player { get; set; }
+        public Character Character { get; set; }
 
         public ConcurrentDictionary<int, Object> InRangeObjects = new ConcurrentDictionary<int, Object>();
         public Dictionary<int, Group> GroupInvites = new Dictionary<int, Group>();
@@ -101,7 +101,9 @@ namespace Ow.Game.Objects.Players
 
         public DateTime lastChangeShipTime = new DateTime();
 
-        public Storage(Player player) { Player = player; }
+        public bool GroupCombatSituation = false;
+
+        public Storage(Character character) { Character = character; }
 
         public void Tick()
         {
@@ -113,7 +115,7 @@ namespace Ow.Game.Objects.Players
                 DeactivePLD8();
             if (underSLM_01 && underSLM_01Time.AddMilliseconds(TimeManager.SLM_01_DURATION) < DateTime.Now)
                 DeactiveSLM_01();
-            if (Player.Invincible && invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
+            if (Character.Invincible && invincibilityEffectTime.AddMilliseconds(TimeManager.INVINCIBILITY_DURATION) < DateTime.Now)
                 DeactiveInvincibilityEffect();
             if (mirroredControlEffect && mirroredControlEffectTime.AddMilliseconds(TimeManager.MIRRORED_CONTROL_DURATION) < DateTime.Now)
                 DeactiveMirroredControlEffect();
@@ -121,6 +123,21 @@ namespace Ow.Game.Objects.Players
                 DeactiveWizardEffect();
             if (underDrawFire && underDrawFireTime.AddMilliseconds(TimeManager.CITADEL_DRAWFIRE_DURATION) < DateTime.Now)
                 DeactiveDrawFireEffect();
+
+            if (Character is Player player && player.Group != null)
+            {
+                if (player.AttackingOrUnderAttack() && !GroupCombatSituation)
+                    SetGroupCombatSituation(true);
+                else if (!player.AttackingOrUnderAttack() && GroupCombatSituation)
+                    SetGroupCombatSituation(false);
+            }
+        }
+
+        public void SetGroupCombatSituation(bool situation)
+        {
+            var player = Character as Player;
+            GroupCombatSituation = situation;
+            player.Group?.UpdateTarget(player, new List<command_i3O> { new GroupPlayerInCombatModule(situation) });
         }
 
         public void DeactivePLD8()
@@ -128,18 +145,27 @@ namespace Ow.Game.Objects.Players
             if (underPLD8)
             {
                 underPLD8 = false;
-                Player.SendPacket("0|n|MAL|REM|" + Player.Id + "");
-                Player.SendPacketToInRangePlayers("0|n|MAL|REM|" + Player.Id + "");
+
+                if (Character is Player player)
+                    player.SendPacket("0|n|MAL|REM|" + Character.Id + "");
+
+                Character.SendPacketToInRangePlayers("0|n|MAL|REM|" + Character.Id + "");
             }
         }
+
         public void DeactiveR_RIC3()
         {
             if (underR_IC3)
             {
                 underR_IC3 = false;
-                Player.SendPacket("0|n|fx|end|ICY_CUBE|" + Player.Id + "");
-                Player.SendPacketToInRangePlayers("0|n|fx|end|ICY_CUBE|" + Player.Id + "");
-                Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
+
+                if (Character is Player player)
+                {
+                    player.SendPacket("0|n|fx|end|ICY_CUBE|" + Character.Id + "");
+                    player.SendCommand(SetSpeedCommand.write(Character.Speed, Character.Speed));
+                }
+
+                Character.SendPacketToInRangePlayers("0|n|fx|end|ICY_CUBE|" + Character.Id + "");
             }
         }
 
@@ -151,11 +177,14 @@ namespace Ow.Game.Objects.Players
 
                 if (underDCR_250Time < underSLM_01Time || !underSLM_01)
                 {
-                    Player.SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
-                    Player.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+                    if (Character is Player)
+                        (Character as Player).SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Character.Id + "");
+
+                    Character.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Character.Id + "");
                 }
 
-                Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
+                if (Character is Player)
+                    (Character as Player).SendCommand(SetSpeedCommand.write(Character.Speed, Character.Speed));
             }
         }
 
@@ -167,20 +196,23 @@ namespace Ow.Game.Objects.Players
 
                 if (underSLM_01Time < underDCR_250Time || !underDCR_250)
                 {
-                    Player.SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
-                    Player.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Player.Id + "");
+                    if (Character is Player)
+                        (Character as Player).SendPacket("0|n|fx|end|SABOTEUR_DEBUFF|" + Character.Id + "");
+
+                    Character.SendPacketToInRangePlayers("0|n|fx|end|SABOTEUR_DEBUFF|" + Character.Id + "");
                 }
 
-                Player.SendCommand(SetSpeedCommand.write(Player.Speed, Player.Speed));
+                if (Character is Player)
+                    (Character as Player).SendCommand(SetSpeedCommand.write(Character.Speed, Character.Speed));
             }
         }
 
         public void DeactiveInvincibilityEffect()
         {
-            if (Player.Invincible)
+            if (Character.Invincible)
             {
-                Player.Invincible = false;
-                Player.RemoveVisualModifier(VisualModifierCommand.INVINCIBILITY);
+                Character.Invincible = false;
+                Character.RemoveVisualModifier(VisualModifierCommand.INVINCIBILITY);
             }
         }
 
@@ -189,7 +221,7 @@ namespace Ow.Game.Objects.Players
             if (mirroredControlEffect)
             {
                 mirroredControlEffect = false;
-                Player.RemoveVisualModifier(VisualModifierCommand.MIRRORED_CONTROLS);
+                Character.RemoveVisualModifier(VisualModifierCommand.MIRRORED_CONTROLS);
             }
         }
 
@@ -198,7 +230,7 @@ namespace Ow.Game.Objects.Players
             if (wizardEffect)
             {
                 wizardEffect = false;
-                Player.RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
+                Character.RemoveVisualModifier(VisualModifierCommand.WIZARD_ATTACK);
             }
         }
 
@@ -207,7 +239,7 @@ namespace Ow.Game.Objects.Players
             if (underDrawFire)
             {
                 underDrawFire = false;
-                Player.RemoveVisualModifier(VisualModifierCommand.DRAW_FIRE_TARGET);
+                Character.RemoveVisualModifier(VisualModifierCommand.DRAW_FIRE_TARGET);
             }
         }
     }

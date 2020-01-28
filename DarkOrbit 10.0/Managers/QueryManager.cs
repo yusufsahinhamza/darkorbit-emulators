@@ -186,7 +186,7 @@ namespace Ow.Managers
                         if (items["pet"] == "true")
                             player.Pet = new Pet(player);
 
-                        player.Equipment = row["configs"].ToString() != "" ? JsonConvert.DeserializeObject<EquipmentBase>(row["configs"].ToString()) : new EquipmentBase(player.Ship.BaseHitpoints, 0, 0, 300, player.Ship.BaseHitpoints, 0, 0, 300);
+                        SetEquipment(player);
                     }
                 }
 
@@ -196,6 +196,95 @@ namespace Ow.Managers
             {
                 Logger.Log("error_log", $"- [QueryManager.cs] GetPlayer({playerId}) exception: {e}");
                 return null;
+            }
+        }
+
+        public static void SetEquipment(Player player)
+        {
+            try
+            {
+                var lf3Damage = 150;
+                var lf4Damage = 200;
+                var bo2Shield = 20000;
+                var g3nSpeed = 10;
+
+                var hitpoints = new int[] { player.Ship.BaseHitpoints + 60000, player.Ship.BaseHitpoints + 60000 };
+                var speed = new int[] { player.Ship.BaseSpeed, player.Ship.BaseSpeed };
+                var damage = new int[] { 0, 0 };
+                var shield = new int[] { 0, 0 };
+
+                using (var mySqlClient = SqlDatabaseManager.GetClient())
+                {
+                    var equipment = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_equipment WHERE userId = {player.Id}");
+                    foreach (DataRow row in equipment.Rows)
+                    {
+                        for (var i = 1; i <= 2; i++)
+                        {
+                            foreach (int itemId in (dynamic)JsonConvert.DeserializeObject(row[$"config{i}_lasers"].ToString()))
+                            {
+                                if (itemId >= 0 && itemId < 40)
+                                    damage[i - 1] += lf3Damage;
+                                else if (itemId >= 140)
+                                    damage[i - 1] += lf4Damage;
+                            }
+
+                            foreach (int itemId in (dynamic)JsonConvert.DeserializeObject(row[$"config{i}_generators"].ToString()))
+                            {
+                                if (itemId >= 40 && itemId < 100)
+                                    shield[i - 1] += bo2Shield;
+                                else if (itemId >= 100 && itemId < 120)
+                                    speed[i - 1] += g3nSpeed;
+                            }
+
+                            var havocCount = 0;
+                            var herculesCount = 0;
+
+                            var drones = (dynamic)JsonConvert.DeserializeObject(row[$"config{i}_drones"].ToString());
+
+                            foreach (var drone in drones)
+                            {
+                                var herculesEquipped = false;
+
+                                foreach (int design in drone["designs"])
+                                {
+                                    if (design >= 120 && design < 130)
+                                        havocCount++;
+                                    else if (design >= 130 && design < 140)
+                                    {
+                                        herculesEquipped = true;
+                                        herculesCount++;
+                                    }
+                                }
+
+                                var droneShield = bo2Shield + 2000;
+
+                                foreach (int item in drone["items"])
+                                {
+                                    if (item >= 0 && item < 40)
+                                        damage[i - 1] += lf3Damage + 15;
+                                    else if (item >= 140)
+                                        damage[i - 1] += lf4Damage + 20;
+                                    else if (item >= 40 && item < 100)
+                                        shield[i - 1] += droneShield + (herculesEquipped ? +Maths.GetPercentage(droneShield, 15) : 0);
+                                }
+                            }
+
+                            if (havocCount == drones.Count)
+                                damage[i - 1] += Maths.GetPercentage(damage[i - 1], 10);
+                            else if (herculesCount == 10)
+                                hitpoints[i - 1] += Maths.GetPercentage(hitpoints[i - 1], 20);
+                        }
+                    }
+                }
+
+                speed[0] += Maths.GetPercentage(speed[0], 20);
+                speed[1] += Maths.GetPercentage(speed[1], 20);
+
+                player.Equipment = new EquipmentBase(hitpoints[0], damage[0], shield[0], speed[0], hitpoints[1], damage[1], shield[1], speed[1]);
+            }
+            catch (Exception e)
+            {
+                Logger.Log("error_log", $"- [QueryManager.cs] SetEquipment({player.Id}) exception: {e}");
             }
         }
 

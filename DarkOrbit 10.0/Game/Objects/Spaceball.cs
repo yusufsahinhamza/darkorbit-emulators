@@ -35,7 +35,7 @@ namespace Ow.Game.Objects
             Speed = 100;
         }
 
-        public new void Tick()
+        public override void Tick()
         {
             if (EventManager.Spaceball.Active)
             {

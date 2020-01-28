@@ -27,7 +27,7 @@ namespace Ow.Game.Objects
 
     class Portal : Activatable
     {
-        public static int JUMP_DELAY = 1000;
+        public static int JUMP_DELAY = 3250;
         public static int SECURE_ZONE_RANGE = 1500;
 
         public Position TargetPosition { get; set; }
@@ -51,13 +51,16 @@ namespace Ow.Game.Objects
             try
             {
                 var player = gameSession.Player;
-                var apc = ActivatePortalCommand.write(TargetSpaceMapId, Id);
 
                 if (!Working || GameManager.GetSpacemap(TargetSpaceMapId) == null || TargetPosition == null) return;
                 if (player.Storage.Jumping) return;
 
                 player.Storage.Jumping = true;
 
+                player.SendCommand(ActivatePortalCommand.write(TargetSpaceMapId, Id));
+                await Task.Delay(JUMP_DELAY);
+
+                player.LastCombatTime = DateTime.Now.AddSeconds(-999);
                 player.Spacemap.RemoveCharacter(player);
                 player.CurrentInRangePortalId = -1;
                 player.Deselection();
@@ -65,11 +68,7 @@ namespace Ow.Game.Objects
                 player.InRangeCharacters.Clear();
                 player.SetPosition(TargetPosition);
 
-                var targetSpacemap = GameManager.GetSpacemap(TargetSpaceMapId);
-                player.Spacemap = targetSpacemap;
-
-                player.SendCommand(apc);
-                await Task.Delay(JUMP_DELAY);
+                player.Spacemap = GameManager.GetSpacemap(TargetSpaceMapId);
 
                 player.Spacemap.AddAndInitPlayer(player);
                 player.Storage.Jumping = false;

@@ -30,6 +30,7 @@ namespace Ow.Game.Objects.Players.Managers
     public class SkillTreeBase
     {
         public int engineering = 0;
+        public int shieldEngineering = 0;
         public int detonation1 = 0;
         public int detonation2 = 0;
         public int heatseekingMissiles = 0;

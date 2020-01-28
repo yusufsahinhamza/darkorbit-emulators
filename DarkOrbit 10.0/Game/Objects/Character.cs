@@ -48,6 +48,8 @@ namespace Ow.Game.Objects
         public DateTime MovementStartTime { get; set; }
         public int MovementTime { get; set; }
 
+        public Storage Storage { get; set; }
+
         public Character SelectedCharacter => Selected as Character;
 
         protected Character(int id, string name, int factionId, Ship ship, Position position, Spacemap spacemap, Clan clan) : base(id)
@@ -59,23 +61,14 @@ namespace Ow.Game.Objects
             Spacemap = spacemap;
             Clan = clan;
 
+            Storage = new Storage(this);
+
             Moving = false;
             OldPosition = new Position(0, 0);
             Destination = position;
             Direction = new Position(0, 0);
             MovementStartTime = new DateTime();
             MovementTime = 0;
-        }
-
-        public override void Tick()
-        {
-            if (!Destroyed)
-            {
-                if (this is Player)
-                    ((Player)this).Tick();
-                else if (this is Spaceball)
-                    ((Spaceball)this).Tick();
-            }
         }
 
         public void SetPosition(Position targetPosition)
@@ -153,13 +146,11 @@ namespace Ow.Game.Objects
                 {
                     InRangeCharacterRemoved?.Invoke(this, new CharacterArgs(character));
 
-                    if (this is Player player)
-                    {
-                        if (SelectedCharacter == character)
-                            player.Deselection();
+                    if (Selected == character)
+                        Deselection();
 
+                    if (this is Player player)
                         player.SendCommand(ShipRemoveCommand.write(character.Id));
-                    }
                 }
                 return success;
             }

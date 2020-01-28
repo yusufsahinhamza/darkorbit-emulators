@@ -58,7 +58,6 @@ namespace Ow.Game.Objects
         public SkillTreeBase SkillTree = new SkillTreeBase();
         public Group Group { get; set; }
         public Pet Pet { get; set; }
-        public Storage Storage { get; set; }
         public AttackManager AttackManager { get; set; }
         public SettingsManager SettingsManager { get; set; }
         public DroneManager DroneManager { get; set; }
@@ -81,7 +80,6 @@ namespace Ow.Game.Objects
 
         public void InitiateManagers()
         {
-            Storage = new Storage(this);
             DroneManager = new DroneManager(this);
             AttackManager = new AttackManager(this);
             TechManager = new TechManager(this);
@@ -118,9 +116,10 @@ namespace Ow.Game.Objects
                 return;
             }
 
-            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastHpRepairTime.AddSeconds(1) >= DateTime.Now) return;
+            if (lastHpRepairTime.AddSeconds(1) >= DateTime.Now) return;
 
-            RepairBot(true);
+            if (!Storage.RepairBotActivated)
+                RepairBot(true);
 
             int repairHitpoints = MaxHitPoints / 40;
             repairHitpoints += Maths.GetPercentage(repairHitpoints, BoosterManager.GetPercentage(BoostedAttributeType.REPAIR));
@@ -313,6 +312,7 @@ namespace Ow.Game.Objects
                 var value = CurrentConfig == 1 ? Equipment.Config1Shield : Equipment.Config2Shield;
                 value += Maths.GetPercentage(value, 40);
                 value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.SHIELD));
+                value += Maths.GetPercentage(value, GetSkillPercentage("Shield Engineering"));
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
@@ -549,7 +549,7 @@ namespace Ow.Game.Objects
                 RankId,
                 false,
                 new ClanRelationModule(!EventManager.JackpotBattle.InEvent(this) ? relationType : ClanRelationModule.NONE),
-                100,
+                0, //rings
                 false,
                 false,
                 Invisible,
@@ -589,7 +589,7 @@ namespace Ow.Game.Objects
                 0,
                 RankId,
                 Clan.Tag,
-                100,
+                0, //rings
                 true,
                 Invisible,
                 true,
@@ -744,17 +744,18 @@ namespace Ow.Game.Objects
 
             Storage.Jumping = true;
 
+            await Task.Delay(Portal.JUMP_DELAY);
+
             SkillManager.DisableAllSkills();
             Ship = GameManager.GetShip(shipId);
             SkillManager.InitiateSkills(true);
 
+            LastCombatTime = DateTime.Now.AddSeconds(-999);
             Spacemap.RemoveCharacter(this);
             CurrentInRangePortalId = -1;
             Deselection();
             Storage.InRangeAssets.Clear();
             InRangeCharacters.Clear();
-
-            await Task.Delay(Portal.JUMP_DELAY);
 
             Spacemap.AddAndInitPlayer(this);
             Storage.Jumping = false;
@@ -763,7 +764,9 @@ namespace Ow.Game.Objects
         public async void Jump(int mapId, Position targetPosition)
         {
             Storage.Jumping = true;
+            await Task.Delay(Portal.JUMP_DELAY);
 
+            LastCombatTime = DateTime.Now.AddSeconds(-999);
             Spacemap.RemoveCharacter(this);
             CurrentInRangePortalId = -1;
             Deselection();
@@ -771,22 +774,7 @@ namespace Ow.Game.Objects
             InRangeCharacters.Clear();
             SetPosition(targetPosition);
 
-            var targetSpacemap = GameManager.GetSpacemap(mapId);
-            Spacemap = targetSpacemap;
-
-            /*
-            using (var mySqlClient = SqlDatabaseManager.GetClient())
-            {
-                var result = mySqlClient.ExecuteQueryRow($"SELECT info FROM player_accounts WHERE userId = {Id}");
-                dynamic info = JsonConvert.DeserializeObject(result["info"].ToString());
-
-                info["MapID"] = Spacemap.Id;
-
-                mySqlClient.ExecuteNonQuery($"UPDATE player_accounts SET Info = '{JsonConvert.SerializeObject(info)}' WHERE userId = {Id}");
-            }
-            */
-
-            await Task.Delay(Portal.JUMP_DELAY);
+            Spacemap = GameManager.GetSpacemap(mapId);
 
             Spacemap.AddAndInitPlayer(this);
             Storage.Jumping = false;
@@ -853,6 +841,8 @@ namespace Ow.Game.Objects
 
         public void Respawn(bool basicRepair = false, bool deathLocation = false, bool atNearestPortal = false, bool fullRepair = false)
         {
+            LastCombatTime = DateTime.Now.AddSeconds(-999);
+
             AddVisualModifier(VisualModifierCommand.INVINCIBILITY, 0, "", 0, true);
 
             Storage.IsInDemilitarizedZone = basicRepair || fullRepair ? true : false;
@@ -880,6 +870,8 @@ namespace Ow.Game.Objects
             }
 
             Spacemap.AddAndInitPlayer(this, Destroyed);
+
+            Group?.UpdateTarget(this, new List<command_i3O> { new GroupPlayerDisconnectedModule(false) });
 
             Destroyed = false;
         }
@@ -960,7 +952,7 @@ namespace Ow.Game.Objects
         public bool AttackingOrUnderAttack(int combatSecond = 10)
         {
             if (LastCombatTime.AddSeconds(combatSecond) > DateTime.Now) return true;
-            if (AttackManager.Attacking) return true;
+            if (LastAttackTime(combatSecond)) return true;
             return false;
         }
 
@@ -976,14 +968,12 @@ namespace Ow.Game.Objects
         {
             AttackManager.Attacking = true;
             SendCommand(AddMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), itemId, new class_K18(class_K18.ACTIVE), new class_I1W(false, 0)));
-            Group?.UpdateTarget(this, new List<command_i3O> { new GroupPlayerAttackingModule(true) });
         }
 
         public void DisableAttack(string itemId)
         {
             AttackManager.Attacking = false;
             SendCommand(RemoveMenuItemHighlightCommand.write(new class_h2P(class_h2P.ITEMS_CONTROL), itemId, new class_K18(class_K18.ACTIVE)));
-            Group?.UpdateTarget(this, new List<command_i3O> { new GroupPlayerAttackingModule(false) });
         }
 
         public Position GetNearestPortalPosition()
@@ -1089,6 +1079,7 @@ namespace Ow.Game.Objects
 
             var detonation1 = SkillTree.detonation1;
             var detonation2 = SkillTree.detonation2;
+            var shieldEngineering = SkillTree.shieldEngineering;
             var engineering = SkillTree.engineering;
             var heatseekingMissiles = SkillTree.heatseekingMissiles;
             var rocketFusion = SkillTree.rocketFusion;
@@ -1098,7 +1089,11 @@ namespace Ow.Game.Objects
             var luck1 = SkillTree.luck1;
             var luck2 = SkillTree.luck2;
 
-            if (skillName == "Engineering")
+            if (skillName == "Shield Engineering")
+            {
+                value += shieldEngineering == 1 ? 4 : shieldEngineering == 2 ? 8 : shieldEngineering == 3 ? 12 : shieldEngineering == 4 ? 18 : shieldEngineering == 5 ? 25 : 0;
+            }
+            else if (skillName == "Engineering")
             {
                 value += engineering == 1 ? 5 : engineering == 2 ? 10 : engineering == 3 ? 15 : engineering == 4 ? 20 : engineering == 5 ? 30 : 0;
             }

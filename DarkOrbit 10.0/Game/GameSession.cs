@@ -37,13 +37,12 @@ namespace Ow.Game
         public GameSession(Player player)
         {
             Player = player;
-
             Program.TickManager.AddTick(this);
         }
 
         public void Tick()
         {
-            if (LastActiveTime.AddMinutes(5) < DateTime.Now && Player.AttackingOrUnderAttack(10))
+            if (LastActiveTime.AddMinutes(3) < DateTime.Now && !Player.AttackingOrUnderAttack(10))
                 Disconnect(DisconnectionType.INACTIVITY);
             if (EstDisconnectionTime < DateTime.Now && InProcessOfDisconnection)
                 Disconnect(DisconnectionType.NORMAL);
@@ -53,7 +52,8 @@ namespace Ow.Game
         {
             try
             {
-                Player.Group?.UpdateTarget(Player, new List<command_i3O> { new GroupPlayerActiveModule(false) });
+                Player.LastCombatTime = DateTime.Now.AddSeconds(-999);
+                Player.Group?.Leave(Player);
                 Player.DisableAttack(Player.Settings.InGameSettings.selectedLaser);
                 Duel.RemovePlayer(Player);
                 Program.TickManager.RemoveTick(Player);
@@ -71,6 +71,7 @@ namespace Ow.Game
         {
             try
             {
+                Player.Group?.UpdateTarget(Player, new List<command_i3O> { new GroupPlayerDisconnectedModule(true) });
                 Player.UpdateCurrentCooldowns();
                 Player.SaveSettings();
                 QueryManager.SavePlayer.Information(Player);

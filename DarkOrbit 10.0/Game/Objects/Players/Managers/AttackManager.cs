@@ -79,9 +79,14 @@ namespace Ow.Game.Objects.Players.Managers
         }
 
         public DateTime lastRocketAttack = new DateTime();
-        public void RocketAttack()
+        public DateTime r_ic3Cooldown = new DateTime();
+        public DateTime pld8Cooldown = new DateTime();
+        public DateTime wiz_xCooldown = new DateTime();
+        public DateTime dcr_250Cooldown = new DateTime();
+
+        public async void RocketAttack()
         {
-            var enemy = Player.Selected;
+            var enemy = Player.SelectedCharacter;
             if (enemy == null) return;
 
             if (Player.Settings.InGameSettings.selectedRocket != AmmunitionManager.WIZ_X)
@@ -90,35 +95,107 @@ namespace Ow.Game.Objects.Players.Managers
             switch (GetSelectedRocket())
             {
                 case 5:
-                    PLD8();
+                    if (pld8Cooldown.AddMilliseconds(TimeManager.PLD8_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+                    {
+                        Player.SendCooldown(AmmunitionManager.PLD_8, TimeManager.PLD8_COOLDOWN);
+                        pld8Cooldown = DateTime.Now;
+                    } else return;
                     break;
                 case 6:
-                    WIZ_X();
+                    if (wiz_xCooldown.AddMilliseconds(TimeManager.WIZARD_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+                    {
+                        Player.SendCooldown(AmmunitionManager.WIZ_X, TimeManager.WIZARD_COOLDOWN);
+                        wiz_xCooldown = DateTime.Now;
+                    } else return;
                     break;
                 case 10:
-                    DCR_250();
+                    if (dcr_250Cooldown.AddMilliseconds(TimeManager.DCR_250_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+                    {
+                        Player.SendCooldown(AmmunitionManager.DCR_250, TimeManager.DCR_250_COOLDOWN);
+                        dcr_250Cooldown = DateTime.Now;
+                    } else return;
                     break;
                 case 18:
-                    R_IC3();
+                    if (r_ic3Cooldown.AddMilliseconds(TimeManager.R_IC3_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
+                    {
+                        Player.SendCooldown(AmmunitionManager.R_IC3, TimeManager.R_IC3_COOLDOWN);
+                        r_ic3Cooldown = DateTime.Now;
+                    } else return;
                     break;
                 default:
                     if (lastRocketAttack.AddSeconds(Player.RocketSpeed) < DateTime.Now)
                     {
-                        var damage = RandomizeDamage(Player.RocketDamage, Player.RocketMissProbability);
-                        Damage(Player, enemy, DamageType.ROCKET, damage, 0);
-
-                        String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
-                        Player.SendPacket(rocketRunPacket);
-                        Player.SendPacketToInRangePlayers(rocketRunPacket);
-
                         Player.SendCooldown(AmmunitionManager.R_310, Player.Premium ? 1000 : 3000);
                         lastRocketAttack = DateTime.Now;
-                    }
+                    } else return;
+                    break;
+            }
+
+            Player.CpuManager.DisableCloak();
+
+            var rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
+            Player.SendPacket(rocketRunPacket);
+            Player.SendPacketToInRangePlayers(rocketRunPacket);
+
+            await Task.Delay(1000);
+
+            switch (GetSelectedRocket())
+            {
+                case 5:
+                case 6:
+                case 18:
+                    if (Player.RocketMissProbability < Randoms.random.NextDouble() && (!(enemy is Player) || (enemy is Player && (enemy as Player).Attackable())))
+                    {
+                        switch (GetSelectedRocket())
+                        {
+                            case 5:
+                                enemy.Storage.underPLD8 = true;
+                                enemy.Storage.underPLD8Time = DateTime.Now;
+
+                                if (enemy is Player)
+                                    (enemy as Player).SendPacket("0|n|MAL|SET|" + enemy.Id + "");
+
+                                enemy.SendPacketToInRangePlayers("0|n|MAL|SET|" + enemy.Id + "");
+                                break;
+                            case 6:
+                                var shipId = Ship.GetRandomShipId(enemy.Ship.Id);
+                                enemy.AddVisualModifier(VisualModifierCommand.WIZARD_ATTACK, 0, GameManager.GetShip(shipId).LootId, 0, true);
+                                break;
+                            case 18:
+                                enemy.Storage.underR_IC3 = true;
+                                enemy.Storage.underR_IC3Time = DateTime.Now;
+
+                                if (enemy is Player)
+                                {
+                                    (enemy as Player).SendPacket("0|n|fx|start|ICY_CUBE|" + enemy.Id + "");
+                                    (enemy as Player).SendCommand(SetSpeedCommand.write(enemy.Speed, enemy.Speed));
+                                }
+
+                                enemy.SendPacketToInRangePlayers("0|n|fx|start|ICY_CUBE|" + enemy.Id + "");
+                                break;
+                            case 10:
+                                if (enemy is Player enemyPlayer)
+                                {
+                                    enemyPlayer.Storage.underDCR_250 = true;
+                                    enemyPlayer.Storage.underDCR_250Time = DateTime.Now;
+
+                                    enemyPlayer.SendPacket("0|n|fx|start|SABOTEUR_DEBUFF|" + enemyPlayer.Id + "");
+                                    enemyPlayer.SendCommand(SetSpeedCommand.write(enemyPlayer.Speed, enemyPlayer.Speed));
+
+                                    enemyPlayer.SendPacketToInRangePlayers("0|n|fx|start|SABOTEUR_DEBUFF|" + enemyPlayer.Id + "");
+                                }
+                                break;
+                        }
+                    } else AttackMissed(enemy, DamageType.ROCKET);
+                    break;
+                default:
+                    var damage = RandomizeDamage(Player.RocketDamage, Player.RocketMissProbability);
+                    Damage(Player, enemy, DamageType.ROCKET, damage, 0);
                     break;
             }
         }
 
-        public void LaunchRocketLauncher()
+        public async void LaunchRocketLauncher()
         {
             var enemy = Player.Selected;
             if (enemy == null) return;
@@ -127,44 +204,31 @@ namespace Ow.Game.Objects.Players.Managers
             Player.SendPacket("0|RL|A|" + Player.Id + "|" + enemy.Id + "|" + RocketLauncher.CurrentLoad + "|" + GetSelectedLauncherId());
             Player.SendPacketToInRangePlayers("0|RL|A|" + Player.Id + "|" + enemy.Id + "|" + RocketLauncher.CurrentLoad + "|" + GetSelectedLauncherId());
 
+            Player.SettingsManager.SendNewItemStatus(CpuManager.ROCKET_LAUNCHER);
+            RocketLauncher.LastReloadTime = DateTime.Now;
+
             var damage = 0;
-            DamageType damageType = 0;
+            DamageType damageType = GetSelectedLauncherId() == (int)DamageType.SHIELD_ABSORBER_ROCKET_URIDIUM ? DamageType.SHIELD_ABSORBER_ROCKET_URIDIUM : DamageType.ROCKET;
 
             for (var i = 0; i < RocketLauncher.CurrentLoad; i++)
             {
                 damage += RandomizeDamage(GetRocketLauncherRocketDamage(), Player.RocketMissProbability);
-                damageType = GetSelectedLauncherId() == (int)DamageType.SHIELD_ABSORBER_ROCKET_URIDIUM ? DamageType.SHIELD_ABSORBER_ROCKET_URIDIUM : DamageType.ROCKET;
-
-                if (GetSelectedLauncherId() == (int)DamageType.SHIELD_ABSORBER_ROCKET_URIDIUM)
-                    Absorbation(Player, enemy, damageType, damage, false);
-                else
-                    Damage(Player, enemy, damageType, damage, 0, false);
-            }
-
-            if (enemy.Invincible || (enemy is Satellite satellite && satellite.BattleStation.Invincible) || (enemy is Player && !(enemy as Player).Attackable()))
-            {
-                damage = 0;
-            }
-
-            if (damage == 0)
-            {
-                if (damageType == DamageType.LASER)
-                    AttackMissed(enemy, damageType);
-            } 
-            else
-            {
-                var attackHitCommand = AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
-                 enemy.Id, enemy.CurrentHitPoints,
-                 enemy.CurrentShieldPoints, enemy.CurrentNanoHull,
-                 damage, false);
-
-                Player.SendCommand(attackHitCommand);
-                Player.SendCommandToInRangePlayers(attackHitCommand);
             }
 
             RocketLauncher.CurrentLoad = 0;
-            Player.SettingsManager.SendNewItemStatus(CpuManager.ROCKET_LAUNCHER);
-            RocketLauncher.LastReloadTime = DateTime.Now;
+
+            if (enemy.Invincible || (enemy is Satellite satellite && satellite.BattleStation.Invincible) || (enemy is Player && !(enemy as Player).Attackable()))
+                damage = 0;
+
+            await Task.Delay(1000);
+
+            if (damage != 0)
+            {
+                if (GetSelectedLauncherId() == (int)DamageType.SHIELD_ABSORBER_ROCKET_URIDIUM)
+                    Absorbation(Player, enemy, damageType, damage);
+                else
+                    Damage(Player, enemy, damageType, damage, 0);
+            }
 
             UpdateAttacker(enemy, Player);
         }
@@ -210,135 +274,6 @@ namespace Ow.Game.Objects.Players.Managers
                 {
                     Player.MainAttacker = null;
                 }
-            }
-        }
-
-        public DateTime r_ic3Cooldown = new DateTime();
-        public void R_IC3()
-        {
-            var enemy = Player.SelectedCharacter;
-            if (!Player.TargetDefinition(enemy)) return;
-
-            if (r_ic3Cooldown.AddMilliseconds(TimeManager.R_IC3_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
-            {
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
-                Player.SendPacket(rocketRunPacket);
-                Player.SendPacketToInRangePlayers(rocketRunPacket);
-
-                Player.SendCooldown(AmmunitionManager.R_IC3, TimeManager.R_IC3_COOLDOWN);
-                r_ic3Cooldown = DateTime.Now;
-
-                if (!(enemy is Player)) return;
-                if (Randoms.random.NextDouble() < Player.RocketMissProbability) return;
-
-                var enemyPlayer = enemy as Player;
-                if (!enemyPlayer.Attackable()) return;
-
-                enemyPlayer.Storage.underR_IC3 = true;
-                enemyPlayer.Storage.underR_IC3Time = DateTime.Now;
-
-                enemyPlayer.SendPacket("0|n|fx|start|ICY_CUBE|" + enemyPlayer.Id + "");
-                enemyPlayer.SendPacketToInRangePlayers("0|n|fx|start|ICY_CUBE|" + enemyPlayer.Id + "");
-                enemyPlayer.SendCommand(SetSpeedCommand.write(enemyPlayer.Speed, enemyPlayer.Speed));
-            }
-        }
-
-        public DateTime pld8Cooldown = new DateTime();
-        public void PLD8()
-        {
-            var enemy = Player.SelectedCharacter;
-            if (enemy == null) return;
-            if (!Player.TargetDefinition(enemy)) return;
-
-            if (pld8Cooldown.AddMilliseconds(TimeManager.PLD8_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
-            {
-                Player.CpuManager.DisableCloak();
-
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
-                Player.SendPacket(rocketRunPacket);
-                Player.SendPacketToInRangePlayers(rocketRunPacket);
-
-                Player.SendCooldown(AmmunitionManager.PLD_8, TimeManager.PLD8_COOLDOWN);
-                pld8Cooldown = DateTime.Now;
-
-                if (!(enemy is Player)) return;
-                if (Randoms.random.NextDouble() < Player.RocketMissProbability) return;
-
-                var enemyPlayer = enemy as Player;
-                if (!enemyPlayer.Attackable()) return;
-
-                enemyPlayer.Storage.underPLD8 = true;
-                enemyPlayer.Storage.underPLD8Time = DateTime.Now;
-
-                enemyPlayer.SendPacket("0|n|MAL|SET|" + enemyPlayer.Id + "");
-                enemyPlayer.SendPacketToInRangePlayers("0|n|MAL|SET|" + enemyPlayer.Id + "");
-            }
-        }
-
-        public DateTime wiz_xCooldown = new DateTime();
-        public void WIZ_X()
-        {
-            var enemy = Player.SelectedCharacter;
-            if (enemy == null) return;
-
-            if (Player.Position.DistanceTo(enemy.Position) > GetRocketRange())
-            {
-                Player.SendPacket("0|A|STM|outofrange");
-                return;
-            }
-
-            if (wiz_xCooldown.AddMilliseconds(TimeManager.WIZARD_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
-            {
-                Player.CpuManager.DisableCloak();
-
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
-                Player.SendPacket(rocketRunPacket);
-                Player.SendPacketToInRangePlayers(rocketRunPacket);
-
-                Player.SendCooldown(AmmunitionManager.WIZ_X, TimeManager.WIZARD_COOLDOWN);
-                wiz_xCooldown = DateTime.Now;
-
-                if (!(enemy is Player)) return;
-                if (Randoms.random.NextDouble() < Player.RocketMissProbability) return;
-
-                var enemyPlayer = enemy as Player;
-
-                var shipId = Ship.GetRandomShipId(enemyPlayer.Ship.Id);
-                enemyPlayer.AddVisualModifier(VisualModifierCommand.WIZARD_ATTACK, 0, GameManager.GetShip(shipId).LootId, 0, true);
-            }
-            
-        }
-
-        public DateTime dcr_250Cooldown = new DateTime();
-        public void DCR_250()
-        {
-            var enemy = Player.SelectedCharacter;
-            if (enemy == null) return;
-            if (!Player.TargetDefinition(enemy)) return;
-
-            if (dcr_250Cooldown.AddMilliseconds(TimeManager.DCR_250_COOLDOWN) < DateTime.Now || Player.Storage.GodMode)
-            {
-                Player.CpuManager.DisableCloak();
-
-                String rocketRunPacket = $"0|v|{Player.Id}|{enemy.Id}|H|{GetSelectedRocket()}|{(Player.SkillTree.rocketFusion == 5 ? 1 : 0)}|{(Player.Storage.PrecisionTargeter || Player.SkillTree.heatseekingMissiles == 5 ? 1 : 0)}";
-                Player.SendPacket(rocketRunPacket);
-                Player.SendPacketToInRangePlayers(rocketRunPacket);
-
-                Player.SendCooldown(AmmunitionManager.DCR_250, TimeManager.DCR_250_COOLDOWN);
-                dcr_250Cooldown = DateTime.Now;
-
-                if (!(enemy is Player)) return;
-                if (Randoms.random.NextDouble() < Player.RocketMissProbability) return;
-
-                var enemyPlayer = enemy as Player;
-                if (!enemyPlayer.Attackable()) return;
-
-                enemyPlayer.Storage.underDCR_250 = true;
-                enemyPlayer.Storage.underDCR_250Time = DateTime.Now;
-
-                enemyPlayer.SendPacket("0|n|fx|start|SABOTEUR_DEBUFF|" + enemyPlayer.Id + "");
-                enemyPlayer.SendPacketToInRangePlayers("0|n|fx|start|SABOTEUR_DEBUFF|" + enemyPlayer.Id + "");
-                enemyPlayer.SendCommand(SetSpeedCommand.write(enemyPlayer.Speed, enemyPlayer.Speed));
             }
         }
 
@@ -472,6 +407,9 @@ namespace Ow.Game.Objects.Players.Managers
                 case 6:
                     value = (int)(baseDmg * 0.97);
                     break;
+                default:
+                    value = (int)(baseDmg * 1.01);
+                    break;
             }
 
             if (missProbability > Randoms.random.NextDouble())
@@ -480,7 +418,7 @@ namespace Ow.Game.Objects.Players.Managers
             return value;
         }
 
-        public void Absorbation(Player attacker, Attackable target, DamageType damageType, int damage, bool showAttackHit = true)
+        public void Absorbation(Player attacker, Attackable target, DamageType damageType, int damage)
         {
             if (attacker.Invincible)
                 attacker.Storage.DeactiveInvincibilityEffect();
@@ -504,31 +442,28 @@ namespace Ow.Game.Objects.Players.Managers
                 Player.SendCommandToInRangePlayers(laserRunCommand);
             }
 
-            if (showAttackHit)
+            if (damage == 0)
             {
-                if (damage == 0)
-                {
-                    if (damageType == DamageType.LASER)
-                        AttackMissed(target, damageType);
-                }
-                else
-                {
-                    var attackHitCommand =
-                    AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
-                         target.Id, target.CurrentHitPoints,
-                         target.CurrentShieldPoints, target.CurrentNanoHull,
-                         damage, false);
+                if (damageType == DamageType.LASER)
+                    AttackMissed(target, damageType);
+            }
+            else
+            {
+                var attackHitCommand =
+                AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
+                     target.Id, target.CurrentHitPoints,
+                     target.CurrentShieldPoints, target.CurrentNanoHull,
+                     damage, false);
 
-                    Player.SendCommand(attackHitCommand);
-                    Player.SendCommandToInRangePlayers(attackHitCommand);
-                }
+                Player.SendCommand(attackHitCommand);
+                Player.SendCommandToInRangePlayers(attackHitCommand);
             }
 
             target.UpdateStatus();
             Player.UpdateStatus();
         }
 
-        public void Damage(Player attacker, Attackable target, DamageType damageType, int damage, double shieldPenetration, bool showAttackHit = true, bool deactiveCloak = true)
+        public void Damage(Player attacker, Attackable target, DamageType damageType, int damage, double shieldPenetration, bool deactiveCloak = true)
         {
             if (damageType == DamageType.MINE && target.Invincible) return;
 
@@ -605,24 +540,24 @@ namespace Ow.Game.Objects.Players.Managers
                 }
             }
 
-            if (showAttackHit)
+            if (damage == 0)
             {
-                if (damage == 0)
-                {
-                    if (damageType == DamageType.LASER)
-                        AttackMissed(target, damageType);
-                }
-                else
-                {
-                    var attackHitCommand =
-                            AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
-                                                 target.Id, target.CurrentHitPoints,
-                                                 target.CurrentShieldPoints, target.CurrentNanoHull,
-                                                 damage > damageShd ? damage : damageShd, false);
+                if (damageType == DamageType.LASER || damageType == DamageType.ROCKET)
+                    AttackMissed(target, damageType);
+            }
+            else
+            {
+                if (target is Npc)
+                    (target as Npc).ReceiveAttack(Player);
 
-                    Player.SendCommand(attackHitCommand);
-                    Player.SendCommandToInRangePlayers(attackHitCommand);
-                }
+                var attackHitCommand =
+                        AttackHitCommand.write(new AttackTypeModule((short)damageType), Player.Id,
+                                             target.Id, target.CurrentHitPoints,
+                                             target.CurrentShieldPoints, target.CurrentNanoHull,
+                                             damage > damageShd ? damage : damageShd, false);
+
+                Player.SendCommand(attackHitCommand);
+                Player.SendCommandToInRangePlayers(attackHitCommand);
             }
 
             if (Player.Settings.InGameSettings.selectedLaser == AmmunitionManager.CBO_100)

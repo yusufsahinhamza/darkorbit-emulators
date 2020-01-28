@@ -90,7 +90,7 @@ namespace Ow.Game
         public int Damage { get; set; }
         public int BaseHitpoints { get; set; }
         public int BaseShieldPoints { get; set; }
-        public int Speed { get; set; }
+        public int BaseSpeed { get; set; }
         public string LootId { get; set; }
         public bool Aggressive { get; set; }
         public bool Respawnable { get; set; }
@@ -103,7 +103,7 @@ namespace Ow.Game
             Damage = damage;
             BaseShieldPoints = baseShieldPoints;
             BaseHitpoints = baseHitpoints;
-            Speed = speed;
+            BaseSpeed = speed;
             LootId = lootID;
             Aggressive = aggressive;
             Respawnable = respawnable;

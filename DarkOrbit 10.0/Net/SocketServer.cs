@@ -131,7 +131,7 @@ class SocketServer
                 ChangeCompany(GameManager.GetPlayerById(Int(parameters["UserId"])), Int(parameters["UridiumPrice"]), Int(parameters["HonorPrice"]));
                 break;
             case "UpdateStatus":
-                UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])), Parse(parameters["Status"]));
+                UpdateStatus(GameManager.GetPlayerById(Int(parameters["UserId"])));
                 break;
             case "JoinToClan":
                 JoinToClan(GameManager.GetPlayerById(Int(parameters["UserId"])), GameManager.GetClan(Int(parameters["ClanId"])));
@@ -243,6 +243,8 @@ class SocketServer
         {
             if (skill == "engineering")
                 player.SkillTree.engineering++;
+            else if (skill == "shieldEngineering")
+                player.SkillTree.shieldEngineering++;
             else if (skill == "detonation1")
                 player.SkillTree.detonation1++;
             else if (skill == "detonation2")
@@ -269,6 +271,7 @@ class SocketServer
         if (player?.GameSession != null)
         {
             player.SkillTree.engineering = 0;
+            player.SkillTree.shieldEngineering = 0;
             player.SkillTree.detonation1 = 0;
             player.SkillTree.detonation2 = 0;
             player.SkillTree.heatseekingMissiles = 0;
@@ -469,18 +472,11 @@ class SocketServer
         }
     }
 
-    public static void UpdateStatus(Player player, JObject status)
+    public static void UpdateStatus(Player player)
     {
         if (player?.GameSession != null)
         {
-            player.Equipment.Config1Hitpoints = Int(status["Config1Hitpoints"]);
-            player.Equipment.Config1Damage = Int(status["Config1Damage"]);
-            player.Equipment.Config1Shield = Int(status["Config1Shield"]);
-            player.Equipment.Config1Speed = Int(status["Config1Speed"]);
-            player.Equipment.Config2Hitpoints = Int(status["Config2Hitpoints"]);
-            player.Equipment.Config2Damage = Int(status["Config2Damage"]);
-            player.Equipment.Config2Shield = Int(status["Config2Shield"]);
-            player.Equipment.Config2Speed = Int(status["Config2Speed"]);
+            QueryManager.SetEquipment(player);   
 
             player.DroneManager.UpdateDrones(true);
             player.UpdateStatus();

@@ -7,22 +7,24 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class GroupPlayerAttackingModule : command_i3O
+    class GroupPlayerDisconnectedModule : command_i3O
     {
-        public const short ID = 27245;
+        public const short ID = 30963;
 
-        public bool attacking = false;
+        public bool disconnected = false;
 
-        public GroupPlayerAttackingModule(bool attacking)
+        public GroupPlayerDisconnectedModule(bool disconnected)
         {
-            this.attacking = attacking;
+            this.disconnected = disconnected;
         }
 
         public override byte[] write()
         {
             var param1 = new ByteArray(ID);
             super(param1);
-            param1.writeBoolean(attacking);
+            param1.writeBoolean(disconnected);
+            param1.writeShort(-32473);
+            param1.writeShort(-30202);
             return param1.Message.ToArray();
         }
     }

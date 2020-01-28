@@ -1,6 +1,7 @@
 ﻿using Ow.Game.Movements;
+using Ow.Game.Objects.AI;
 using Ow.Game.Objects.Collectables;
-using Ow.Game.Objects.Npcs;
+using Ow.Game.Objects.Players;
 using Ow.Game.Objects.Players.Managers;
 using Ow.Managers;
 using Ow.Net.netty.commands;
@@ -16,13 +17,13 @@ namespace Ow.Game.Objects
     class Npc : Character
     {
         public NpcAI NpcAI { get; set; }
+        public bool Attacking = false;
 
         public Npc(int id, Ship ship, Spacemap spacemap, Position position) : base(id, ship.Name, 0, ship, position, spacemap, GameManager.GetClan(0))
         {
             Spacemap.AddCharacter(this);
 
             ShieldAbsorption = 0.8;
-            Speed = ship.Speed;
 
             Damage = ship.Damage;
             MaxHitPoints = ship.BaseHitpoints;
@@ -35,19 +36,36 @@ namespace Ow.Game.Objects
             Program.TickManager.AddTick(this);
         }
 
+        public override void Tick()
+        {
+            Movement.ActualPosition(this);
+            NpcAI.TickAI();
+            CheckShieldPointsRepair();
+            Storage.Tick();
+
+            if (Attacking)
+                Attack();
+        }
+
         public DateTime lastAttackTime = new DateTime();
         public void Attack()
         {
-            var damage = AttackManager.RandomizeDamage(Damage, 0.1);
+            var damage = AttackManager.RandomizeDamage(Damage, (Storage.underPLD8 ? 0.5 : 0.1));
             var target = SelectedCharacter;
 
             if (!TargetDefinition(target, false)) return;
 
+            if (target is Player player && player.AttackManager.EmpCooldown.AddMilliseconds(TimeManager.EMP_DURATION) > DateTime.Now)
+                return;
+
             if (lastAttackTime.AddSeconds(1) < DateTime.Now)
             {
+                if (target is Player && (target as Player).Storage.Spectrum)
+                    damage -= Maths.GetPercentage(damage, 50);
+
                 int damageShd = 0, damageHp = 0;
 
-                double shieldAbsorb = System.Math.Abs(target.ShieldAbsorption - 1);
+                double shieldAbsorb = System.Math.Abs(target.ShieldAbsorption - 0);
 
                 if (shieldAbsorb > 1)
                     shieldAbsorb = 1;
@@ -76,13 +94,6 @@ namespace Ow.Game.Objects
                     damageHp = 0;
                 }
 
-                if (Invisible)
-                {
-                    Invisible = false;
-                    string cloakPacket = "0|n|INV|" + Id + "|0";
-                    SendPacketToInRangePlayers(cloakPacket);
-                }
-
                 if (target is Player && (target as Player).Storage.Sentinel)
                     damageShd -= Maths.GetPercentage(damageShd, 30);
 
@@ -105,7 +116,7 @@ namespace Ow.Game.Objects
                     SendCommandToInRangePlayers(attackHitCommand);
                 }
 
-                if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints == 0)
+                if (damageHp >= target.CurrentHitPoints || target.CurrentHitPoints <= 0)
                     target.Destroy(this, DestructionType.NPC);
                 else
                     target.CurrentHitPoints -= damageHp;
@@ -119,18 +130,35 @@ namespace Ow.Game.Objects
             }
         }
 
-        public bool UnderAttack = false;
-
-        public override void Tick()
+        public DateTime lastShieldRepairTime = new DateTime();
+        private void CheckShieldPointsRepair()
         {
-            Movement.ActualPosition(this);
-            NpcAI.TickMovement();
+            if (LastCombatTime.AddSeconds(10) >= DateTime.Now || lastShieldRepairTime.AddSeconds(1) >= DateTime.Now || CurrentShieldPoints == MaxShieldPoints) return;
 
-            if ((Selected != null && Selected is Player && (Selected as Player).LastAttackTime(1) && (Selected as Player).Selected == this))
-                UnderAttack = true;
+            int repairShield = MaxShieldPoints / 10;
+            CurrentShieldPoints += repairShield;
+            UpdateStatus();
 
-            if (Ship.Aggressive || UnderAttack)
-                Attack();
+            lastShieldRepairTime = DateTime.Now;
+        }
+
+        public void ReceiveAttack(Character character)
+        {
+            Selected = character;
+            Attacking = true;
+        }
+
+        public override int Speed
+        {
+            get
+            {
+                var value = Ship.BaseSpeed;
+
+                if (Storage.underR_IC3)
+                    value -= value;
+
+                return value;
+            }
         }
 
         public override byte[] GetShipCreateCommand()

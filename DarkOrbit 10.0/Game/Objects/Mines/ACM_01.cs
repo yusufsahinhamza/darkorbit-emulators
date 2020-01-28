@@ -24,7 +24,7 @@ namespace Ow.Game.Objects.Mines
             if (Lance)
                 damage += Maths.GetPercentage(damage, 50);
 
-            Player.AttackManager.Damage(Player, player, DamageType.MINE, damage, 0, true, false);
+            Player.AttackManager.Damage(Player, player, DamageType.MINE, damage, 0, false);
         }
     }
 }

@@ -76,7 +76,7 @@
     <Compile Include="Game\Objects\Attackable.cs" />
     <Compile Include="Game\Objects\Character.cs" />
     <Compile Include="Game\Objects\Collectables\CargoBox.cs" />
-    <Compile Include="Game\Objects\Npcs\NpcAI.cs" />
+    <Compile Include="Game\Objects\AI\NpcAI.cs" />
     <Compile Include="Game\Objects\Players\Group.cs" />
     <Compile Include="Game\Objects\Players\Managers\AbstractManager.cs" />
     <Compile Include="Game\Objects\Players\Skills\DrawFire.cs" />
@@ -90,7 +90,7 @@
     <Compile Include="Game\Objects\Players\Skills\Diminisher.cs" />
     <Compile Include="Game\Objects\Players\Skills\Sentinel.cs" />
     <Compile Include="Game\Objects\Players\Skills\Skill.cs" />
-    <Compile Include="Game\Objects\Players\Storage.cs" />
+    <Compile Include="Game\Objects\Storage.cs" />
     <Compile Include="Game\Objects\Npc.cs" />
     <Compile Include="Game\Objects\Spaceball.cs" />
     <Compile Include="Game\Objects\Activatable.cs" />
@@ -177,8 +177,8 @@
     <Compile Include="Net\netty\commands\AssetInfoCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationBuildingStateCommand.cs" />
     <Compile Include="Net\netty\commands\BattleStationErrorCommand.cs" />
-    <Compile Include="Net\netty\commands\GroupPlayerAttackingModule.cs" />
-    <Compile Include="Net\netty\commands\GroupPlayerActiveModule.cs" />
+    <Compile Include="Net\netty\commands\GroupPlayerInCombatModule.cs" />
+    <Compile Include="Net\netty\commands\GroupPlayerDisconnectedModule.cs" />
     <Compile Include="Net\netty\commands\GroupUpdateUICommand.cs" />
     <Compile Include="Net\netty\commands\PetHitpointsUpdateCommand.cs" />
     <Compile Include="Net\netty\commands\PetShieldUpdateCommand.cs" />

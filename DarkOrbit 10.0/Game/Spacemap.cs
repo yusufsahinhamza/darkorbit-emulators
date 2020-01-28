@@ -376,8 +376,8 @@ namespace Ow.Game
             if (petActivated)
                 player.Pet.Deactivate(true);
 
-            AddCharacter(player);
             LoginRequestHandler.SendPlayer(player);
+            AddCharacter(player);
 
             if (petActivated)
                 player.Pet.Activate();
@@ -420,8 +420,8 @@ namespace Ow.Game
             {
                 CharacterRemoved?.Invoke(this, new CharacterArgs(character));
 
-                foreach (var otherCharacter in GameManager.GameSessions.Values.Where(x => x.Player.InRangeCharacters.ContainsKey(character.Id)))
-                    otherCharacter.Player.RemoveInRangeCharacter(character);
+                foreach (var otherCharacter in character.Spacemap.Characters.Values.Where(x => x.InRangeCharacters.ContainsKey(character.Id)))
+                    otherCharacter.RemoveInRangeCharacter(character);
             }
             return success;
         }

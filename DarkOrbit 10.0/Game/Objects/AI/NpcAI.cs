@@ -6,20 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ow.Game.Objects.Npcs
+namespace Ow.Game.Objects.AI
 {
     class NpcAI
     {
         public Npc Npc { get; set; }
 
-        private NpcAIOption AIOption = NpcAIOption.SEARCH_FOR_ENEMIES;
+        public NpcAIOption AIOption = NpcAIOption.SEARCH_FOR_ENEMIES;
         private static int ALIEN_DISTANCE_TO_USER = 300;
 
         public NpcAI(Npc npc) { Npc = npc; }
 
         public DateTime lastMovement = new DateTime();
 
-        public void TickMovement()
+        public void TickAI()
         {
             if(lastMovement.AddSeconds(1) < DateTime.Now)
             {
@@ -34,11 +34,15 @@ namespace Ow.Game.Objects.Npcs
 
                                 if (player.Storage.IsInDemilitarizedZone || player.Invisible || Npc.Position.DistanceTo(player.Position) > Npc.RenderRange)
                                 {
+                                    Npc.Attacking = false;
                                     Npc.Selected = null;
                                     AIOption = NpcAIOption.SEARCH_FOR_ENEMIES;
                                 }
                                 else
                                 {
+                                    if (Npc.Ship.Aggressive)
+                                        Npc.Attacking = true;
+
                                     Npc.Selected = player;
                                     AIOption = NpcAIOption.FLY_TO_ENEMY;
                                 }
@@ -67,6 +71,7 @@ namespace Ow.Game.Objects.Npcs
                         } 
                         else
                         {
+                            Npc.Attacking = false;
                             Npc.Selected = null;
                             AIOption = NpcAIOption.SEARCH_FOR_ENEMIES;
                         }
@@ -81,6 +86,7 @@ namespace Ow.Game.Objects.Npcs
                         }
                         else
                         {
+                            Npc.Attacking = false;
                             Npc.Selected = null;
                             AIOption = NpcAIOption.SEARCH_FOR_ENEMIES;
                         }

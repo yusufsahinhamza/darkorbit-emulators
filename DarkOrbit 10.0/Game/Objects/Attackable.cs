@@ -112,6 +112,11 @@ namespace Ow.Game.Objects
                     player.SendPacket("0|UI|MM|NOISE|1");
                 }
             }
+            else if (this is Npc npc)
+            {
+                npc.Attacking = false;
+                npc.NpcAI.AIOption = NpcAIOption.SEARCH_FOR_ENEMIES;
+            }
         }
 
         public void UpdateStatus()
@@ -140,7 +145,7 @@ namespace Ow.Game.Objects
                 if (otherCharacter is Player otherPlayer && otherPlayer.Selected == this)
                 {
                     if (this is Character character)
-                        otherPlayer.SendCommand(ShipSelectionCommand.write(Id, character.Ship.Id, CurrentShieldPoints, MaxShieldPoints, CurrentHitPoints, MaxHitPoints, CurrentNanoHull, MaxNanoHull, false));
+                        otherPlayer.SendCommand(ShipSelectionCommand.write(Id, character.Ship.Id, CurrentShieldPoints, MaxShieldPoints, CurrentHitPoints, MaxHitPoints, CurrentNanoHull, MaxNanoHull, (this is Player && (this as Player).SkillTree.shieldEngineering == 5)));
                     else if (this is Activatable activatable)
                     {
                         otherPlayer.SendCommand(AssetInfoCommand.write(
@@ -200,6 +205,7 @@ namespace Ow.Game.Objects
                 if (destroyer is Player && (destroyer as Player).Storage.KilledPlayerIds.Where(x => x == player.Id).Count() <= 13)
                     (destroyer as Player).Storage.KilledPlayerIds.Add(player.Id);
 
+                player.Group?.UpdateTarget(player, new List<command_i3O> { new GroupPlayerDisconnectedModule(true) });
                 player.SkillManager.DisableAllSkills();
                 player.SendCommand(destroyCommand);
                 player.DisableAttack(player.Settings.InGameSettings.selectedLaser);
@@ -217,7 +223,6 @@ namespace Ow.Game.Objects
                 {
                     GameManager.SendPacketToAll($"0|A|STM|msg_station_destroyed|%MAP%|{Spacemap.Name}|%LOSER%|{battleStation.Clan.Name}|%STATION%|{battleStation.AsteroidName}");
                 }
-
 
                 battleStation.EquippedStationModule.Remove(battleStation.Clan.Id);
                 battleStation.Clan = GameManager.GetClan(0);
@@ -263,16 +268,12 @@ namespace Ow.Game.Objects
             }
             else if (this is Npc npc)
             {
-                npc.UnderAttack = false;
-
                 if (npc.Ship.Respawnable)
                     new Npc(Randoms.CreateRandomID(), GameManager.GetShip(npc.Ship.Id), npc.Spacemap, Position.Random(npc.Spacemap, 0, 20800, 0, 12800));
             }
 
             if (destroyer is Player destroyerPlayer && destructionType == DestructionType.PLAYER)
             {
-                destroyerPlayer.Deselection();
-
                 int experience = 0;
                 int honor = 0;
                 int uridium = 0;
@@ -289,6 +290,7 @@ namespace Ow.Game.Objects
                     experience = destroyerPlayer.Ship.GetExperienceBoost((this as Character).Ship.Rewards.Experience);
                     honor = destroyerPlayer.GetHonorBoost(destroyerPlayer.Ship.GetHonorBoost((this as Character).Ship.Rewards.Honor));
                     uridium = (this as Character).Ship.Rewards.Uridium;
+                    credits = (this as Character).Ship.Rewards.Credits;
 
                     var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
                     if (count >= 14 && !Duel.InDuel(destroyerPlayer))
@@ -314,10 +316,30 @@ namespace Ow.Game.Objects
 
                 if (reward)
                 {
-                    destroyerPlayer.ChangeData(DataType.CREDITS, credits);
-                    destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
-                    destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
-                    destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                    var groupMembers = destroyerPlayer.Group?.Members.Values.Where(x => x.AttackingOrUnderAttack());
+
+                    if (destroyerPlayer.Group == null || (destroyerPlayer.Group != null && groupMembers.Count() == 0))
+                    {
+                        destroyerPlayer.ChangeData(DataType.CREDITS, credits);
+                        destroyerPlayer.ChangeData(DataType.EXPERIENCE, experience);
+                        destroyerPlayer.ChangeData(DataType.HONOR, honor, changeType);
+                        destroyerPlayer.ChangeData(DataType.URIDIUM, uridium, changeType);
+                    }
+                    else if (this is Npc && destroyerPlayer.Group != null)
+                    {
+                        credits = credits / groupMembers.Count();
+                        experience = experience / groupMembers.Count();
+                        honor = honor / groupMembers.Count();
+                        uridium = uridium / groupMembers.Count();
+
+                        foreach (var member in groupMembers)
+                        {
+                            member.ChangeData(DataType.CREDITS, credits);
+                            member.ChangeData(DataType.EXPERIENCE, experience);
+                            member.ChangeData(DataType.HONOR, honor, changeType);
+                            member.ChangeData(DataType.URIDIUM, uridium, changeType);
+                        }
+                    }
                 }
 
                 if (!Duel.InDuel(destroyerPlayer))
@@ -350,6 +372,9 @@ namespace Ow.Game.Objects
 
                 CurrentHitPoints = 0;
             }
+
+            if (destroyer is Character)
+                destroyer.Deselection();
 
             Deselection();
             InRangeCharacters.Clear();

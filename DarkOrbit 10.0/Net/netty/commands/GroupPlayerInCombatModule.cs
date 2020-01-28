@@ -7,24 +7,22 @@ using Ow.Utils;
 
 namespace Ow.Net.netty.commands
 {
-    class GroupPlayerActiveModule : command_i3O
+    class GroupPlayerInCombatModule : command_i3O
     {
-        public const short ID = 30963;
+        public const short ID = 27245;
 
-        public bool active = false;
+        public bool inCombat = false;
 
-        public GroupPlayerActiveModule(bool active)
+        public GroupPlayerInCombatModule(bool inCombat)
         {
-            this.active = active;
+            this.inCombat = inCombat;
         }
 
         public override byte[] write()
         {
             var param1 = new ByteArray(ID);
             super(param1);
-            param1.writeBoolean(active);
-            param1.writeShort(-32473);
-            param1.writeShort(-30202);
+            param1.writeBoolean(inCombat);
             return param1.Message.ToArray();
         }
     }

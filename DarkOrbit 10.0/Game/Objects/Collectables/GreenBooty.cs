@@ -16,22 +16,51 @@ namespace Ow.Game.Objects.Collectables
 
         public override void Reward(Player player)
         {
-            double rand = Randoms.random.NextDouble();
-            
-            if (rand <= 0.001)
-            {
-                //lf4
-            }
-            else if (rand <= 0.001)
-            {
+           
+                double rand = Randoms.random.NextDouble();
 
-            }
-            else if (rand <= 0.001)
-            {
+                rand = 0.15;
 
-            }
+                if (rand <= 0.02)
+                {
+                    double rand2 = Randoms.random.NextDouble();
 
-            QueryManager.SavePlayer.Information(player);
+                    if (rand2 <= 0.5)
+                    {
+                        //test = "lf4";
+                    }
+                    else
+                    {
+                        //test = "apis";
+                    }
+                }
+                else if (rand <= 0.09)
+                {
+                    //test = "gemi tasarım varsa 10k uri";
+                }
+                else if (rand <= 0.15)
+                {
+                    var hours = Randoms.random.NextDouble() <= 0.1 ? 10 : 1;
+                    var boosterTypes = Randoms.random.NextDouble() <= 0.25 ? new int[] { 1, 16, 9, 11, 6, 3 } : new int[] { 0, 15, 8, 10, 5, 2 };
+                    var boosterType = boosterTypes[Randoms.random.Next(boosterTypes.Length)];
+
+                    player.BoosterManager.Add((BoosterType)boosterType, hours);
+                }
+                else if (rand <= 0.4)
+                {
+                    var logdisk = Randoms.random.Next(1, 10);
+                }
+                else
+                {
+                    var uridium = Randoms.random.Next(1000, 4000);
+                    player.ChangeData(DataType.URIDIUM, uridium);
+                    QueryManager.SavePlayer.Information(player);
+                }
+
+                player.Equipment.Items.BootyKeys--;
+
+                player.SendPacket($"0|A|BK|{player.Equipment.Items.BootyKeys}");
+           
         }
 
         public override byte[] GetCollectableCreateCommand()

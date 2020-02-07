@@ -41,7 +41,8 @@ namespace Ow.Game.Ticks
                 while (true)
                 {
                     for (var i = 0; i < Ticks.Count; i++)
-                        Ticks[i].Tick();
+                        if (Ticks[i] != null)
+                            Ticks[i].Tick();
 
                     await Task.Delay(TICKS_PER_SECOND);
                 }

@@ -62,11 +62,7 @@ namespace Ow.Game.Objects.AI
                         {
                             var player = Npc.Selected as Player;
 
-                            double angle = DegreeToRadian(Randoms.random.Next() * 360);
-                            int newPosX = (int)(player.Position.X + (ALIEN_DISTANCE_TO_USER * Math.Cos(angle)));
-                            int newPosY = (int)(player.Position.Y + (ALIEN_DISTANCE_TO_USER * Math.Sin(angle)));
-
-                            Movement.Move(Npc, new Position(newPosX, newPosY));
+                            Movement.Move(Npc, Position.GetPosOnCircle(player.Position, ALIEN_DISTANCE_TO_USER));
                             AIOption = NpcAIOption.WAIT_PLAYER_MOVE;
                         } 
                         else

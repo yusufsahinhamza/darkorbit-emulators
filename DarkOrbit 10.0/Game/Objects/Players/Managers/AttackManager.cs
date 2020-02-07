@@ -75,7 +75,6 @@ namespace Ow.Game.Objects.Players.Managers
                     else lastAttackTime = DateTime.Now;
                 }
             }
-            RefreshAttackers();
         }
 
         public DateTime lastRocketAttack = new DateTime();
@@ -138,6 +137,8 @@ namespace Ow.Game.Objects.Players.Managers
             Player.SendPacketToInRangePlayers(rocketRunPacket);
 
             await Task.Delay(1000);
+
+            UpdateAttacker(enemy, Player);
 
             switch (GetSelectedRocket())
             {
@@ -235,45 +236,15 @@ namespace Ow.Game.Objects.Players.Managers
 
         public void UpdateAttacker(Attackable target, Player player)
         {
-            if (target.MainAttacker == null)
-                target.MainAttacker = player;
-
-            if (!target.Attackers.ContainsKey(player.Id))
-                target.Attackers.TryAdd(player.Id, new Attacker(player));
-            else
-                target.Attackers[player.Id].Refresh();
-        }
-
-        public void RefreshAttackers()
-        {
-            if (Player.Attackers.Count >= 1)
+            if (!target.Destroyed)
             {
-                foreach (var attacker in Player.Attackers)
-                {
-                    if (attacker.Value?.Player != null && attacker.Value.LastRefresh.AddSeconds(10) > DateTime.Now)
-                    {
-                        if (attacker.Value.FadedToGray && Player.MainAttacker == attacker.Value.Player)
-                        {
-                            attacker.Value.Player.SendPacket($"0|n|USH|{Player.Id}");
-                            attacker.Value.FadedToGray = false;
-                        }
-                        if (!attacker.Value.FadedToGray && Player.MainAttacker != attacker.Value.Player)
-                        {
-                            attacker.Value.Player.SendPacket($"0|n|LSH|{Player.Id}|{Player.Id}");
-                            attacker.Value.FadedToGray = true;
-                        }
-                        continue;
-                    }
-                    Attacker removedAttacker;
-                    Player.Attackers.TryRemove(attacker.Key, out removedAttacker);
-                }
-            }
-            if (Player.MainAttacker != null)
-            {
-                if (!Player.Attackers.ContainsKey(Player.MainAttacker.Id))
-                {
-                    Player.MainAttacker = null;
-                }
+                if (target.MainAttacker == null)
+                    target.MainAttacker = player;
+
+                if (!target.Attackers.ContainsKey(player.Id))
+                    target.Attackers.TryAdd(player.Id, new Attacker(player));
+                else
+                    target.Attackers[player.Id].Refresh();
             }
         }
 

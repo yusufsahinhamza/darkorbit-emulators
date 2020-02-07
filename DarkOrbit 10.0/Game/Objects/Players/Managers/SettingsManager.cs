@@ -13,9 +13,7 @@ namespace Ow.Game.Objects.Players.Managers
     public class DestructionsBase
     {
         public int fpd = 0;
-        public int dbe = 0;
         public int dbrz = 0;
-        public int de = 0;
     }
 
     public class DataBase
@@ -42,7 +40,7 @@ namespace Ow.Game.Objects.Players.Managers
         public int luck2 = 0;
     }
 
-    public class EquipmentBase
+    public class ConfigsBase
     {
         public int Config1Hitpoints = 0;
         public int Config1Damage = 0;
@@ -53,7 +51,7 @@ namespace Ow.Game.Objects.Players.Managers
         public int Config2Shield = 0;
         public int Config2Speed = 0;
 
-        public EquipmentBase(int config1Hitpoints, int config1Damage, int config1Shield, int config1Speed,
+        public ConfigsBase(int config1Hitpoints, int config1Damage, int config1Shield, int config1Speed,
             int config2Hitpoints, int config2Damage, int config2Shield, int config2Speed)
         {
             Config1Hitpoints = config1Hitpoints;
@@ -64,6 +62,28 @@ namespace Ow.Game.Objects.Players.Managers
             Config2Damage = config2Damage;
             Config2Shield = config2Shield;
             Config2Speed = config2Speed;
+        }
+    }
+
+    public class ItemsBase
+    {
+        public int BootyKeys = 0;
+
+        public ItemsBase(int bootyKeys)
+        {
+            BootyKeys = bootyKeys;
+        }
+    }
+
+    public class EquipmentBase
+    {
+        public ConfigsBase Configs = new ConfigsBase(0, 0, 0, 0, 0, 0, 0, 0);
+        public ItemsBase Items = new ItemsBase(0);
+
+        public EquipmentBase(ConfigsBase configs, ItemsBase items)
+        {
+            Configs = configs;
+            Items = items;
         }
     }
 

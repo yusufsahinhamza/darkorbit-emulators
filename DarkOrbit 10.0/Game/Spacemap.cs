@@ -420,7 +420,7 @@ namespace Ow.Game
             {
                 CharacterRemoved?.Invoke(this, new CharacterArgs(character));
 
-                foreach (var otherCharacter in character.Spacemap.Characters.Values.Where(x => x.InRangeCharacters.ContainsKey(character.Id)))
+                foreach (var otherCharacter in Characters.Values.Where(x => x.InRangeCharacters.ContainsKey(character.Id)))
                     otherCharacter.RemoveInRangeCharacter(character);
             }
             return success;

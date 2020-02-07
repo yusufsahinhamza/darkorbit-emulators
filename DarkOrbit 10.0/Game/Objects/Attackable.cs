@@ -266,13 +266,8 @@ namespace Ow.Game.Objects
 
                 QueryManager.BattleStations.Modules(satellite.BattleStation);
             }
-            else if (this is Npc npc)
-            {
-                if (npc.Ship.Respawnable)
-                    new Npc(Randoms.CreateRandomID(), GameManager.GetShip(npc.Ship.Id), npc.Spacemap, Position.Random(npc.Spacemap, 0, 20800, 0, 12800));
-            }
 
-            if (destroyer is Player destroyerPlayer && destructionType == DestructionType.PLAYER)
+            if (destroyer is Player destroyerPlayer)
             {
                 int experience = 0;
                 int honor = 0;
@@ -293,7 +288,7 @@ namespace Ow.Game.Objects
                     credits = (this as Character).Ship.Rewards.Credits;
 
                     var count = destroyerPlayer.Storage.KilledPlayerIds.Where(x => x == Id).Count();
-                    if (count >= 14 && !Duel.InDuel(destroyerPlayer))
+                    if (this is Player && count >= 14 && !Duel.InDuel(destroyerPlayer))
                     {
                         reward = false;
                         destroyerPlayer.SendPacket($"0|A|STM|pusher_info_no_reward|%NAME%|{Name}");
@@ -342,17 +337,12 @@ namespace Ow.Game.Objects
                     }
                 }
 
-                if (!Duel.InDuel(destroyerPlayer))
-                    destroyerPlayer.Destructions.de++;
-
                 if (this is Player)
                 {
                     if (!Duel.InDuel(this as Player))
                     {
                         using (var mySqlClient = SqlDatabaseManager.GetClient())
                             mySqlClient.ExecuteNonQuery($"INSERT INTO log_player_kills (killer_id, target_id) VALUES ({destroyerPlayer.Id}, {Id})");
-
-                        (this as Player).Destructions.dbe++;
                     }
 
                     new CargoBox(Position, Spacemap, false, false, destroyerPlayer);
@@ -371,6 +361,12 @@ namespace Ow.Game.Objects
                 Spacemap.RemoveCharacter(character);
 
                 CurrentHitPoints = 0;
+            }
+
+            if (this is Npc npc)
+            {
+                if (npc.Ship.Respawnable)
+                    npc.Respawn();
             }
 
             if (destroyer is Character)
@@ -472,7 +468,7 @@ namespace Ow.Game.Objects
                     return false;
             }
 
-            var range = this is Player ? (isPlayerRocketAttack ? (this as Player).AttackManager.GetRocketRange() : AttackRange) : this is Satellite ? (this as Satellite).GetRange() : AttackRange;
+            var range = this is Player ? (isPlayerRocketAttack ? (this as Player).AttackManager.GetRocketRange() : AttackRange) : this is Satellite ? (this as Satellite).GetRange() : this is Npc ? 450 : AttackRange;
 
             if (Position.DistanceTo(target.Position) > range)
             {

@@ -49,6 +49,8 @@ namespace Ow.Game.Objects
         public DateTime KillscreenDeathLocationRepairTime = new DateTime();
 
         public int SpeedBoost = 0;
+        public int DamageBoost = 0;
+
         public bool OnBlockedMinePosition = false;
         public bool IsInDemilitarizedZone = false;
         public bool IsInRadiationZone = false;

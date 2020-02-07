@@ -401,6 +401,13 @@ namespace Ow.Chat
                 var speed = Convert.ToInt32(message.Split(' ')[1]);
                 gameSession.Player.SetSpeedBoost(speed);
             }
+            else if (cmd == "/damage+" && Permission == Permissions.ADMINISTRATOR)
+            {
+                if (message.Split(' ').Length < 2) return;
+
+                var damage = Convert.ToInt32(message.Split(' ')[1]);
+                gameSession.Player.Storage.DamageBoost = damage;
+            }
             else if (cmd == "/god" && Permission == Permissions.ADMINISTRATOR)
             {
                 if (message.Split(' ').Length < 2) return;
@@ -554,6 +561,7 @@ namespace Ow.Chat
                     }
                 }
             }
+            /*
             else if (cmd == "/reward" && Permission == Permissions.ADMINISTRATOR)
             {
                 if (message.Split(' ').Length < 4) return;
@@ -590,6 +598,7 @@ namespace Ow.Chat
                     GameManager.ChatClients[player.Id].Send($"dq%You got {amount} {rewardName} from {gameSession.Player.Name}.#");
                 }
             }
+            */
             else
             {
                 if (!cmd.StartsWith("/"))
@@ -633,7 +642,7 @@ namespace Ow.Chat
 
                 GameManager.ChatClients.TryRemove(UserId, out var value);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //ignore
                 //Logger.Log("error_log", $"- [ChatClient.cs] Close void exception: {e}");
@@ -702,7 +711,7 @@ namespace Ow.Chat
 
                 handler.EndSend(ar);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //Logger.Log("error_log", $"- [ChatClient.cs] SendCallback void exception: {e}");
             }

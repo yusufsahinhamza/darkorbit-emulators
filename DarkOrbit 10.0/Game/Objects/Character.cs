@@ -71,6 +71,39 @@ namespace Ow.Game.Objects
             MovementTime = 0;
         }
 
+        public void RefreshAttackers()
+        {
+            if (Attackers.Count >= 1)
+            {
+                foreach (var attacker in Attackers)
+                {
+                    if (attacker.Value?.Player != null && attacker.Value.LastRefresh.AddSeconds(10) > DateTime.Now)
+                    {
+                        if (attacker.Value.FadedToGray && MainAttacker == attacker.Value.Player)
+                        {
+                            attacker.Value.Player.SendPacket($"0|n|USH|{Id}");
+                            attacker.Value.FadedToGray = false;
+                        }
+                        if (!attacker.Value.FadedToGray && MainAttacker != attacker.Value.Player)
+                        {
+                            attacker.Value.Player.SendPacket($"0|n|LSH|{Id}|{Id}");
+                            attacker.Value.FadedToGray = true;
+                        }
+                        continue;
+                    }
+                    Attacker removedAttacker;
+                    Attackers.TryRemove(attacker.Key, out removedAttacker);
+                }
+            }
+            if (MainAttacker != null)
+            {
+                if (!Attackers.ContainsKey(MainAttacker.Id))
+                {
+                    MainAttacker = null;
+                }
+            }
+        }
+
         public void SetPosition(Position targetPosition)
         {
             Destination = targetPosition;

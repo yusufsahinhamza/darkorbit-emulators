@@ -73,7 +73,7 @@ namespace Ow.Managers
                     var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT * FROM server_bans WHERE userId = {bannedId} AND typeId = {typeId}");
                     if (result.Rows.Count >= 1)
                     {
-                        mySqlClient.ExecuteNonQuery($"DELETE FROM server_bans WHERE userId = {bannedId} AND typeId = {typeId}");
+                        mySqlClient.ExecuteNonQuery($"UPDATE server_bans SET ended = 1 WHERE userId = {bannedId} AND typeId = {typeId}");
 
                         var client = GameManager.ChatClients[modId];
 
@@ -87,7 +87,7 @@ namespace Ow.Managers
             {
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
-                    var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 0");
+                    var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 0 AND ended = 0");
                     return result.Rows.Count >= 1 ? true : false;
                 }
             }
@@ -106,8 +106,15 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var result = mySqlClient.ExecuteQueryRow($"SELECT sessionId FROM player_accounts WHERE userId = {userId}");
-                return sessionId == result["sessionId"].ToString();
+                var query = $"SELECT sessionId FROM player_accounts WHERE userId = {userId}";
+                var table = (DataTable)mySqlClient.ExecuteQueryTable(query);
+
+                if (table.Rows.Count >= 1)
+                {
+                    var result = mySqlClient.ExecuteQueryRow(query);
+                    return sessionId == result["sessionId"].ToString();
+                }
+                else return false;
             }
         }
 
@@ -115,7 +122,7 @@ namespace Ow.Managers
         {
             using (var mySqlClient = SqlDatabaseManager.GetClient())
             {
-                var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 1");
+                var result = (DataTable)mySqlClient.ExecuteQueryTable($"SELECT id FROM server_bans WHERE userId = {userId} AND typeId = 1 AND ended = 0");
                 return result.Rows.Count >= 1 ? true : false;
             }
         }
@@ -134,9 +141,10 @@ namespace Ow.Managers
                         var ship = GameManager.GetShip(Convert.ToInt32(row["shipId"]));
                         var factionId = Convert.ToInt32(row["factionId"]);
                         var rankId = Convert.ToInt32(row["rankID"]);
+                        var warRank = Convert.ToInt32(row["warRank"]);
                         var clan = GameManager.GetClan(Convert.ToInt32(row["clanID"]));
 
-                        player = new Player(playerId, name, clan, factionId, rankId, ship);
+                        player = new Player(playerId, name, clan, factionId, rankId, warRank, ship);
                         player.Premium = Convert.ToBoolean(row["premium"]);
                         player.Title = Convert.ToString(row["title"]);
                         player.Data = JsonConvert.DeserializeObject<DataBase>(row["data"].ToString());
@@ -185,10 +193,10 @@ namespace Ow.Managers
 
                         if (items["pet"] == "true")
                             player.Pet = new Pet(player);
-
-                        SetEquipment(player);
                     }
                 }
+
+                SetEquipment(player);
 
                 return player;
             }
@@ -205,7 +213,7 @@ namespace Ow.Managers
             {
                 var lf3Damage = 150;
                 var lf4Damage = 200;
-                var bo2Shield = 20000;
+                var bo2Shield = 15000;
                 var g3nSpeed = 10;
 
                 var hitpoints = new int[] { player.Ship.BaseHitpoints + 60000, player.Ship.BaseHitpoints + 60000 };
@@ -216,8 +224,11 @@ namespace Ow.Managers
                 using (var mySqlClient = SqlDatabaseManager.GetClient())
                 {
                     var equipment = mySqlClient.ExecuteQueryTable($"SELECT * FROM player_equipment WHERE userId = {player.Id}");
+
                     foreach (DataRow row in equipment.Rows)
                     {
+                        dynamic items = JsonConvert.DeserializeObject(row["items"].ToString());
+
                         for (var i = 1; i <= 2; i++)
                         {
                             foreach (int itemId in (dynamic)JsonConvert.DeserializeObject(row[$"config{i}_lasers"].ToString()))
@@ -274,13 +285,16 @@ namespace Ow.Managers
                             else if (herculesCount == 10)
                                 hitpoints[i - 1] += Maths.GetPercentage(hitpoints[i - 1], 20);
                         }
+
+                        speed[0] += Maths.GetPercentage(speed[0], 20);
+                        speed[1] += Maths.GetPercentage(speed[1], 20);
+
+                        var configsBase = new ConfigsBase(hitpoints[0], damage[0], shield[0], speed[0], hitpoints[1], damage[1], shield[1], speed[1]);
+                        var itemsBase = new ItemsBase(0);//TODO = new ItemsBase((int)items["bootyKeys"]);
+
+                        player.Equipment = new EquipmentBase(configsBase, itemsBase);
                     }
                 }
-
-                speed[0] += Maths.GetPercentage(speed[0], 20);
-                speed[1] += Maths.GetPercentage(speed[1], 20);
-
-                player.Equipment = new EquipmentBase(hitpoints[0], damage[0], shield[0], speed[0], hitpoints[1], damage[1], shield[1], speed[1]);
             }
             catch (Exception e)
             {

@@ -22,6 +22,7 @@ namespace Ow.Game.Objects
     {
         public string PetName { get; set; }
         public int RankId { get; set; }
+        public int WarRank { get; set; }
         public bool Premium { get; set; }
         public string Title { get; set; }
 
@@ -66,13 +67,14 @@ namespace Ow.Game.Objects
         public SkillManager SkillManager { get; set; }
         public BoosterManager BoosterManager { get; set; }
 
-        public Player(int id, string name, Clan clan, int factionId, int rankId, Ship ship)
+        public Player(int id, string name, Clan clan, int factionId, int rankId, int warRank, Ship ship)
                      : base(id, name, factionId, ship, new Position(0, 0), null, clan)
         {
             Name = name;
             Clan = clan;
             FactionId = factionId;
             RankId = rankId;
+            WarRank = warRank;
             InitiateManagers();
 
             MaxNanoHull = ship.BaseHitpoints;
@@ -97,6 +99,7 @@ namespace Ow.Game.Objects
             CheckRadiation();
             AttackManager.LaserAttack();
             AttackManager.RocketLauncher.Tick();
+            RefreshAttackers();
             Logout();
 
             Storage.Tick();
@@ -179,7 +182,7 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = CurrentConfig == 1 ? Equipment.Config1Speed : Equipment.Config2Speed;
+                var value = CurrentConfig == 1 ? Equipment.Configs.Config1Speed : Equipment.Configs.Config2Speed;
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
                 {
@@ -225,7 +228,7 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = CurrentConfig == 1 ? Equipment.Config1Hitpoints : Equipment.Config2Hitpoints;
+                var value = CurrentConfig == 1 ? Equipment.Configs.Config1Hitpoints : Equipment.Configs.Config2Hitpoints;
                 value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.MAXHP));
 
                 switch (SettingsManager.Player.Settings.InGameSettings.selectedFormation)
@@ -309,7 +312,7 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = CurrentConfig == 1 ? Equipment.Config1Shield : Equipment.Config2Shield;
+                var value = CurrentConfig == 1 ? Equipment.Configs.Config1Shield : Equipment.Configs.Config2Shield;
                 value += Maths.GetPercentage(value, 40);
                 value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.SHIELD));
                 value += Maths.GetPercentage(value, GetSkillPercentage("Shield Engineering"));
@@ -378,7 +381,7 @@ namespace Ow.Game.Objects
         {
             get
             {
-                var value = CurrentConfig == 1 ? Equipment.Config1Damage : Equipment.Config2Damage;
+                var value = CurrentConfig == 1 ? Equipment.Configs.Config1Damage : Equipment.Configs.Config2Damage;
                 value += Maths.GetPercentage(value, 60); //seprom
                 value += Maths.GetPercentage(value, BoosterManager.GetPercentage(BoostedAttributeType.DAMAGE));
 
@@ -409,7 +412,11 @@ namespace Ow.Game.Objects
                         value -= Maths.GetPercentage(value, 20);
                         break;
                 }
+
                 value = Ship.GetLaserDamageBoost(value, FactionId, (Selected != null ? Selected.FactionId : 0));
+
+                value += Storage.DamageBoost;
+
                 return value;
             }
         }
@@ -549,7 +556,7 @@ namespace Ow.Game.Objects
                 RankId,
                 false,
                 new ClanRelationModule(!EventManager.JackpotBattle.InEvent(this) ? relationType : ClanRelationModule.NONE),
-                0, //rings
+                GetRingsCount(),
                 false,
                 false,
                 Invisible,
@@ -589,11 +596,16 @@ namespace Ow.Game.Objects
                 0,
                 RankId,
                 Clan.Tag,
-                0, //rings
+                GetRingsCount(),
                 true,
                 Invisible,
                 true,
                 VisualModifiers.Values.ToList());
+        }
+
+        public int GetRingsCount()
+        {
+            return WarRank == 1 ? 100 : WarRank == 2 ? 63 : WarRank == 3 ? 31 : WarRank == 4 ? 15 : WarRank == 5 ? 7 : WarRank == 6 ? 3 : WarRank == 7 ? 1 : 0;
         }
 
         public bool Attackable()
@@ -738,13 +750,11 @@ namespace Ow.Game.Objects
             }
         }
 
-        public async void ChangeShip(int shipId)
+        public void ChangeShip(int shipId)
         {
             if (Storage.Jumping) return;
 
             Storage.Jumping = true;
-
-            await Task.Delay(Portal.JUMP_DELAY);
 
             SkillManager.DisableAllSkills();
             Ship = GameManager.GetShip(shipId);

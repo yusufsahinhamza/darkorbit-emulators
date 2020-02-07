@@ -42,6 +42,7 @@ namespace Ow.Game.Objects
             NpcAI.TickAI();
             CheckShieldPointsRepair();
             Storage.Tick();
+            RefreshAttackers();
 
             if (Attacking)
                 Attack();
@@ -140,6 +141,19 @@ namespace Ow.Game.Objects
             UpdateStatus();
 
             lastShieldRepairTime = DateTime.Now;
+        }
+
+        public void Respawn()
+        {
+            LastCombatTime = DateTime.Now.AddSeconds(-999);
+            CurrentHitPoints = MaxHitPoints;
+            CurrentShieldPoints = MaxShieldPoints;
+            SetPosition(Position.Random(Spacemap, 0, 20800, 0, 12800));
+            Spacemap.AddCharacter(this);
+            Attackers.Clear();
+            MainAttacker = null;
+            Destroyed = false;
+
         }
 
         public void ReceiveAttack(Character character)

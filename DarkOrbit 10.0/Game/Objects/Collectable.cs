@@ -51,25 +51,17 @@ namespace Ow.Game.Objects
                 {
                     if (!Character.Moving)
                     {
-                        if (collectTime.AddSeconds(Seconds) < DateTime.Now)
+                        if (!(this is GreenBooty) || (this is GreenBooty && Character is Player player && player.Equipment.Items.BootyKeys >= 1))
                         {
-                            Reward(Character is Pet pet ? pet.Owner : Character as Player);
-                            Dispose();
+                            if (collectTime.AddSeconds(Seconds) < DateTime.Now)
+                            {
+                                Reward(Character is Pet pet ? pet.Owner : Character as Player);
+                                Dispose();
+                            }
                         }
+                        else CancelCollection();
                     }
-                    else
-                    {
-                        Character.Collecting = false;
-
-                        var packet = $"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_CANCELLED}|0|{Character.Id}|-1";
-
-                        if (Character is Player player)
-                            player.SendPacket(packet);
-                        else if (Character is Pet pet)
-                            pet.SendPacketToInRangePlayers(packet);
-
-                        Character = null;
-                    }
+                    else CancelCollection();
                 }
             }
 
@@ -83,6 +75,28 @@ namespace Ow.Game.Objects
                 */
         }
 
+        public void CancelCollection()
+        {
+            Character.Collecting = false;
+
+            var packet = $"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_CANCELLED}|{(Character is Pet ? 1 : 0)}|{Character.Id}";
+
+            if (Character is Player player)
+            {
+                //player.SendPacket($"0|LM|ST|SLC");
+                player.SendPacket(packet);
+            }
+            else if (Character is Pet pet)
+                pet.SendPacketToInRangePlayers(packet);
+
+            if (this is GreenBooty && Character is Player && (Character as Player).Equipment.Items.BootyKeys <= 0)
+                (Character as Player).SendPacket("0|A|STM|msg_booty-key-green_auto_buy_not_active");
+
+            Character = null;
+
+            Program.TickManager.RemoveTick(this);
+        }
+
         public void Collect(Character character)
         {
             if (Disposed) return;
@@ -92,10 +106,13 @@ namespace Ow.Game.Objects
             Character.Moving = false;
             collectTime = DateTime.Now;
 
-            var packet = $"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_ACTIVE}|0|{Character.Id}|{Seconds}";
+            var packet = $"0|{ServerCommands.SET_ATTRIBUTE}|{ServerCommands.ASSEMBLE_COLLECTION_BEAM_ACTIVE}|{(Character is Pet ? 1 : 0)}|{Character.Id}|{Seconds}";
 
             if (Character is Player player)
+            {
+                //player.SendPacket($"0|LM|ST|SLA|{Seconds}");
                 player.SendPacket(packet);
+            }
             else if (Character is Pet pet)
                 pet.SendPacketToInRangePlayers(packet);
 

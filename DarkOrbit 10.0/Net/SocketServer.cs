@@ -157,6 +157,9 @@ class SocketServer
             case "ResetSkillTree":
                 ResetSkillTree(GameManager.GetPlayerById(Int(parameters["UserId"])));
                 break;
+            case "KickPlayer":
+                KickPlayer(GameManager.GetPlayerById(Int(parameters["UserId"])), String(parameters["Reason"]));
+                break;
         }
     }
 
@@ -234,6 +237,15 @@ class SocketServer
         catch (Exception e)
         {
             //Logger.Log("error_log", $"- [SocketServer.cs] SendCallback void exception: {e}");
+        }
+    }
+
+    public static void KickPlayer(Player player, string reason)
+    {
+        if (player?.GameSession != null)
+        {
+            player.SendPacket($"0|A|STD|{reason}");
+            player.GameSession.Disconnect(DisconnectionType.NORMAL);
         }
     }
 

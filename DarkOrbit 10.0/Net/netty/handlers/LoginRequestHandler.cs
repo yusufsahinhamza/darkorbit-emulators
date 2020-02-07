@@ -117,7 +117,7 @@ namespace Ow.Net.netty.handlers
                 player.SendCommand(DroneFormationChangeCommand.write(player.Id, DroneManager.GetSelectedFormationId(player.Settings.InGameSettings.selectedFormation)));
                 player.SendPacket("0|S|CFG|" + player.CurrentConfig);
           
-                player.SendPacket("0|A|BK|0"); //yeşil kutu miktarı
+                player.SendPacket($"0|A|BK|{player.Equipment.Items.BootyKeys}");
                 //player.SendPacket("0|A|JV|0"); //atlama kuponu miktarı
 
                 if (player.Group != null)

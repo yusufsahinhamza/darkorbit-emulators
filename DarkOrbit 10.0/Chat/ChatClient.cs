@@ -434,6 +434,21 @@ namespace Ow.Chat
             {
                 EventManager.JackpotBattle.Start();
             }
+            else if (cmd == "/give_booster" && Permission == Permissions.ADMINISTRATOR)
+            {
+                if (message.Split(' ').Length < 3) return;
+
+                var userId = Convert.ToInt32(message.Split(' ')[1]);
+                var boosterType = Convert.ToInt32(message.Split(' ')[2]);
+                var hours = message.Split(' ').Length == 4 ? Convert.ToInt32(message.Split(' ')[3]) : 10;
+
+                if (!new int[] { 0, 1, 2, 3, 8, 9, 10, 11, 12, 5, 6, 15, 16, 7, 4 }.Contains(boosterType)) return;
+
+                var player = GameManager.GetPlayerById(userId);
+
+                if (player != null)
+                    player.BoosterManager.Add((BoosterType)boosterType, hours);
+            }
             else if (cmd == "/ban" && (Permission == Permissions.ADMINISTRATOR || Permission == Permissions.CHAT_MODERATOR))
             {
                 /*

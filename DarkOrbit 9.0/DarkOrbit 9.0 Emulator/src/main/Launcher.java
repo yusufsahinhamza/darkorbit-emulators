@@ -42,12 +42,12 @@ public class Launcher {
     //	String username = read.nextLine();
     //	System.out.print("Password: ");
     //	String password = read.nextLine();
-    	
+
     //	if (username.equals("") && password.equals(""))
     //	{
         Log.br();
-        Log.p("<======================================","<OrbitOfWarrior 9.0>","======================================>");
-        
+        Log.p("<======================================","<DarkOrbit 9.0>","======================================>");
+
         final PropertiesManager propertiesManager;
         // First read properties
         try {
@@ -79,13 +79,13 @@ public class Launcher {
 
         final CommandLineProcessor cmdProcessor = new CommandLineProcessor(serverManager);
         cmdProcessor.startProcessing();
-        
+
         new Timer().schedule(new TimerTask() {
             public void run() {
             	cmdProcessor.restartManual(60);
             }
         }, 2430000); // 1 saat = 3645000
-    	
+
     	}
  // }
 }

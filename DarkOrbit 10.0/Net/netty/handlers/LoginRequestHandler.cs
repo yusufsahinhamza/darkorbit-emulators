@@ -95,7 +95,7 @@ namespace Ow.Net.netty.handlers
                 Program.TickManager.AddTick(Player);
 
                 QueryManager.SavePlayer.Information(Player);
-                Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
+                Console.Title = $"DarkOrbit | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)
             {

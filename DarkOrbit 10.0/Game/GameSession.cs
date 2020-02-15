@@ -108,7 +108,7 @@ namespace Ow.Game
                 Program.TickManager.RemoveTick(this);
                 GameManager.GameSessions.TryRemove(Player.Id, out var gameSession);
 
-                Console.Title = $"DarkSpace | {GameManager.GameSessions.Count} users online";
+                Console.Title = $"DarkOrbit | {GameManager.GameSessions.Count} users online";
             }
             catch (Exception e)
             {

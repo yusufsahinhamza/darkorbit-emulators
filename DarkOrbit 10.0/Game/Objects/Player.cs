@@ -752,12 +752,9 @@ namespace Ow.Game.Objects
 
         public void ChangeShip(int shipId)
         {
-            if (Storage.Jumping) return;
-
-            Storage.Jumping = true;
-
             SkillManager.DisableAllSkills();
             Ship = GameManager.GetShip(shipId);
+            QueryManager.SetEquipment(this);
             SkillManager.InitiateSkills(true);
 
             LastCombatTime = DateTime.Now.AddSeconds(-999);
@@ -768,7 +765,7 @@ namespace Ow.Game.Objects
             InRangeCharacters.Clear();
 
             Spacemap.AddAndInitPlayer(this);
-            Storage.Jumping = false;
+            UpdateStatus();
         }
 
         public async void Jump(int mapId, Position targetPosition)

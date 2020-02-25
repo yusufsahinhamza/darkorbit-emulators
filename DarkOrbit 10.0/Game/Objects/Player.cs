@@ -622,16 +622,16 @@ namespace Ow.Game.Objects
 
         public void UpdateCurrentCooldowns()
         {
-            Settings.Cooldowns[AmmunitionManager.SMB_01] = AttackManager.SmbCooldown.ToString();
-            Settings.Cooldowns[AmmunitionManager.ISH_01] = AttackManager.IshCooldown.ToString();
-            Settings.Cooldowns[AmmunitionManager.EMP_01] = AttackManager.EmpCooldown.ToString();
-            Settings.Cooldowns["ammunition_mine"] = AttackManager.mineCooldown.ToString();
-            Settings.Cooldowns[AmmunitionManager.DCR_250] = AttackManager.dcr_250Cooldown.ToString();
-            Settings.Cooldowns[AmmunitionManager.PLD_8] = AttackManager.pld8Cooldown.ToString();
-            Settings.Cooldowns[AmmunitionManager.R_IC3] = AttackManager.r_ic3Cooldown.ToString();
+            Settings.Cooldowns[AmmunitionManager.SMB_01] = AttackManager.SmbCooldown.ToString("yyyy-MM-dd HH:mm:ss");
+            Settings.Cooldowns[AmmunitionManager.ISH_01] = AttackManager.IshCooldown.ToString("yyyy-MM-dd HH:mm:ss");
+            Settings.Cooldowns[AmmunitionManager.EMP_01] = AttackManager.EmpCooldown.ToString("yyyy-MM-dd HH:mm:ss");
+            Settings.Cooldowns["ammunition_mine"] = AttackManager.mineCooldown.ToString("yyyy-MM-dd HH:mm:ss");
+            Settings.Cooldowns[AmmunitionManager.DCR_250] = AttackManager.dcr_250Cooldown.ToString("yyyy-MM-dd HH:mm:ss");
+            Settings.Cooldowns[AmmunitionManager.PLD_8] = AttackManager.pld8Cooldown.ToString("yyyy-MM-dd HH:mm:ss");
+            Settings.Cooldowns[AmmunitionManager.R_IC3] = AttackManager.r_ic3Cooldown.ToString("yyyy-MM-dd HH:mm:ss");
 
             foreach (var skill in Storage.Skills.Values)
-                Settings.Cooldowns[skill.LootId] = Storage.Skills[skill.LootId].cooldown.ToString();
+                Settings.Cooldowns[skill.LootId] = Storage.Skills[skill.LootId].cooldown.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
         public void SetCurrentCooldowns()

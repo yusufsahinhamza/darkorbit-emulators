@@ -15,6 +15,12 @@ using System.Threading.Tasks;
 
 namespace Ow.Game.Objects
 {
+    /*
+    example: {"Id":1,"Type":1,"InUse":false}
+    Id: 1 2 3 4 5 . . .
+    Type: const short's StationModuleModule.cs
+    InUse: leave it false, it will be true when player put it on a battlestation
+    */
     public class ModuleBase
     {
         public int Id { get; set; }

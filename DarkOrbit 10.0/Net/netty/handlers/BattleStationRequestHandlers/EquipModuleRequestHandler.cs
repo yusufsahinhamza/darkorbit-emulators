@@ -79,7 +79,7 @@ namespace Ow.Net.netty.handlers.BattleStationRequestHandlers
                     int designId = module.Type == StationModuleModule.REPAIR ? 3 : module.Type == StationModuleModule.LASER_HIGH_RANGE ? 4 : module.Type == StationModuleModule.LASER_MID_RANGE ? 5 : module.Type == StationModuleModule.LASER_LOW_RANGE ? 6 : module.Type == StationModuleModule.ROCKET_LOW_ACCURACY ? 8 : module.Type == StationModuleModule.ROCKET_MID_ACCURACY ? 7 : module.Type == StationModuleModule.HONOR_BOOSTER ? 9 : module.Type == StationModuleModule.DAMAGE_BOOSTER ? 10 : module.Type == StationModuleModule.EXPERIENCE_BOOSTER ? 11 : 0;
 
                     var satellite = new Satellite(battleStation, player.Id, Satellite.GetName(module.Type), designId, module.Id, read.slotId, module.Type, Satellite.GetPosition(battleStation.Position, read.slotId));
-                    satellite.InstallationSecondsLeft = battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION ? 0 : 0;
+                    satellite.InstallationSecondsLeft = battleStation.AssetTypeId == AssetTypeModule.BATTLESTATION ? 0 : 0; //0 is for dont wait for install modules, if you want to wait for install modules change it, also there is different wait times for installing modules to already owned battlestation by a clan or just satellite e.g. 240 : 60
 
                     module.InUse = true;
 
